@@ -88,7 +88,7 @@ where
         witnesses: &[BlsScalar],
         hiding_degree: usize,
         fft: &Fft<BlsScalar>,
-    ) -> FftPolynomial
+    ) -> Polynomial<BlsScalar>
     where
         R: RngCore,
     {
@@ -102,7 +102,7 @@ where
             w_vec_inverse.0.push(blinding_scalar);
         }
 
-        FftPolynomial::from_coefficients_vec(w_vec_inverse.0)
+        w_vec_inverse
     }
 
     /// Prove the circuit
@@ -156,12 +156,21 @@ where
         let o_w_poly = Self::blind_poly(rng, &o_w_scalar, 1, &fft);
         let d_w_poly = Self::blind_poly(rng, &d_w_scalar, 1, &fft);
 
+        let a_w_poly_commit =
+            FftPolynomial::from_coefficients_vec(a_w_poly.0.clone());
+        let b_w_poly_commit =
+            FftPolynomial::from_coefficients_vec(b_w_poly.0.clone());
+        let o_w_poly_commit =
+            FftPolynomial::from_coefficients_vec(o_w_poly.0.clone());
+        let d_w_poly_commit =
+            FftPolynomial::from_coefficients_vec(d_w_poly.0.clone());
+
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
-        let a_w_poly_commit = self.commit_key.commit(&a_w_poly)?;
-        let b_w_poly_commit = self.commit_key.commit(&b_w_poly)?;
-        let o_w_poly_commit = self.commit_key.commit(&o_w_poly)?;
-        let d_w_poly_commit = self.commit_key.commit(&d_w_poly)?;
+        let a_w_poly_commit = self.commit_key.commit(&a_w_poly_commit)?;
+        let b_w_poly_commit = self.commit_key.commit(&b_w_poly_commit)?;
+        let o_w_poly_commit = self.commit_key.commit(&o_w_poly_commit)?;
+        let d_w_poly_commit = self.commit_key.commit(&d_w_poly_commit)?;
 
         // Add wire polynomial commitments to transcript
         transcript.append_commitment(b"a_w", &a_w_poly_commit);
@@ -200,6 +209,7 @@ where
             .compute_permutation_vec(&fft, wires, &beta, &gamma, sigma);
 
         let z_poly = Self::blind_poly(rng, &permutation, 2, &fft);
+        let z_poly = FftPolynomial::from_coefficients_vec(z_poly.0);
         let z_poly_commit = self.commit_key.commit(&z_poly)?;
         transcript.append_commitment(b"z", &z_poly_commit);
 
@@ -273,6 +283,8 @@ where
 
         // round 5
         // compute linearization polynomial
+        let t_poly = Polynomial::new(t_poly.coeffs);
+
         let (r_poly, evaluations) = linearization_poly::compute(
             fft.generator(),
             &self.prover_key,
@@ -341,6 +353,10 @@ where
 
         // compute aggregate witness to polynomials evaluated at the evaluation
         // challenge z. The challenge v is selected inside
+        let a_w_poly = FftPolynomial::from_coefficients_vec(a_w_poly.0);
+        let b_w_poly = FftPolynomial::from_coefficients_vec(b_w_poly.0);
+        let o_w_poly = FftPolynomial::from_coefficients_vec(o_w_poly.0);
+        let d_w_poly = FftPolynomial::from_coefficients_vec(d_w_poly.0);
         let aggregate_witness = self.commit_key.compute_aggregate_witness(
             &[
                 quot,
