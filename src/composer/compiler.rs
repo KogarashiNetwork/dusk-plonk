@@ -396,7 +396,7 @@ impl Compiler {
             label.clone(),
             prover_key,
             commit_key,
-            verifier_key.clone(),
+            verifier_key,
             size,
             constraints,
         );

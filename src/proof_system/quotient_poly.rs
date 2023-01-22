@@ -98,9 +98,7 @@ pub(crate) fn compute(
         (alpha, beta, gamma),
     );
 
-    let range = (0..fft_8n.size()).into_iter();
-
-    let quotient: Vec<_> = range
+    let quotient: Vec<_> = (0..fft_8n.size())
         .map(|i| {
             let numerator = t_1[i] + t_2[i];
             let denominator = prover_key.v_h_coset_8n()[i];

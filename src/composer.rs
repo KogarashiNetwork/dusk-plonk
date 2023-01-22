@@ -58,27 +58,15 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Create an empty constraint system.
     ///
     /// This shouldn't be used directly; instead, use [`Self::initialized`]
-    #[deprecated(
-        since = "13.0",
-        note = "this function is meant for internal use. call `initialized` instead"
-    )]
     fn uninitialized(capacity: usize) -> Self;
 
     /// Constraints count
     fn constraints(&self) -> usize;
 
     /// Allocate a witness value into the composer and return its index.
-    #[deprecated(
-        since = "13.0",
-        note = "this function is meant for internal use. call `append_witness` instead"
-    )]
     fn append_witness_internal(&mut self, witness: BlsScalar) -> Witness;
 
     /// Append a new width-4 poly gate/constraint.
-    #[deprecated(
-        since = "13.0",
-        note = "this function is meant for internal use. call `append_custom_gate` instead"
-    )]
     fn append_custom_gate_internal(&mut self, constraint: Constraint);
 
     /// PLONK runtime controller
@@ -345,10 +333,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
                     .left(wnaf_round.x_beta)
                     .right(wnaf_round.y_beta)
                     .constant(wnaf_round.xy_beta)
-                    .a(wnaf_round.acc_x.into())
-                    .b(wnaf_round.acc_y.into())
-                    .o(wnaf_round.xy_alpha.into())
-                    .d(wnaf_round.accumulated_bit.into());
+                    .a(wnaf_round.acc_x)
+                    .b(wnaf_round.acc_y)
+                    .o(wnaf_round.xy_alpha)
+                    .d(wnaf_round.accumulated_bit);
 
             self.append_custom_gate(constraint)
         }
