@@ -244,6 +244,7 @@ mod test {
     use merlin::Transcript;
     use rand_core::OsRng;
     use zero_bls12_381::Fr as BlsScalar;
+    use zero_kzg::{KeyPair, Polynomial as ZeroPoly};
 
     // Checks that a polynomial `p` was evaluated at a point `z` and returned
     // the value specified `v`. ie. v = p(z).
@@ -335,17 +336,23 @@ mod test {
     }
     #[test]
     fn test_basic_commit() -> Result<(), Error> {
-        let degree = 25;
+        let degree = 2;
+        let r = BlsScalar::from(255);
         let (ck, opening_key) = setup_test(degree)?;
+        let keypair = KeyPair::<TatePairing>::setup(degree as u64, r);
         let point = BlsScalar::from(10);
 
         let poly = Polynomial::rand(degree, &mut OsRng);
+        let z_poly = ZeroPoly(poly.coeffs.clone());
         let value = poly.evaluate(&point);
 
         let proof = open_single(&ck, &poly, &value, &point)?;
+        let witness = keypair.create_witness(&z_poly, point);
 
         let ok = check(&opening_key, point, proof);
+        let z_ok = witness.verify();
         assert!(ok);
+        assert!(z_ok);
         Ok(())
     }
     #[test]
