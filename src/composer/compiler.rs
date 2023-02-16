@@ -4,13 +4,13 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_bls12_381::Fr as BlsScalar;
-use zero_kzg::{Fft, Polynomial};
+use zero_crypto::common::{Group, Pairing, Ring};
+use zero_kzg::{Fft, KeyPair, Polynomial};
 
 use super::{Builder, Circuit, Composer, Prover, Verifier};
-use crate::commitment_scheme::{CommitKey, OpeningKey, PublicParameters};
+use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::fft::{EvaluationDomain, Evaluations, Polynomial as FftPolynomial};
+use crate::fft::{EvaluationDomain, Evaluations};
 use crate::proof_system::preprocess::Polynomials;
 use crate::proof_system::{widget, ProverKey};
 use sp_std::vec;
@@ -22,75 +22,86 @@ impl Compiler {
     /// Create a new arguments set from a given circuit instance
     ///
     /// Use the default implementation of the circuit
-    pub fn compile<C>(
-        pp: &PublicParameters,
+    pub fn compile<C, P>(
+        keypair: &KeyPair<P>,
         label: &[u8],
-    ) -> Result<(Prover<C>, Verifier<C>), Error>
+    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
         C: Circuit,
+        P: Pairing,
     {
-        Self::compile_with_circuit(pp, label, &Default::default())
+        Self::compile_with_circuit::<C, P>(keypair, label, &Default::default())
     }
 
     /// Create a new arguments set from a given circuit instance
     ///
     /// Use the provided circuit instead of the default implementation
-    pub fn compile_with_circuit<C>(
-        pp: &PublicParameters,
+    pub fn compile_with_circuit<C, P>(
+        keypair: &KeyPair<P>,
         label: &[u8],
         circuit: &C,
-    ) -> Result<(Prover<C>, Verifier<C>), Error>
+    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
         C: Circuit,
+        P: Pairing,
     {
-        let max_size = (pp.commit_key.powers_of_g.len() - 1) >> 1;
+        let max_size = (keypair.commit_key().len() - 1) >> 1;
         let mut prover = Builder::initialized(max_size);
 
         circuit.circuit(&mut prover)?;
 
         let n = (prover.constraints() + 6).next_power_of_two();
 
-        let (commit, opening) = pp.trim(n)?;
+        keypair.trim(n);
 
         let (prover, verifier) =
-            Self::preprocess(label, commit, opening, &prover)?;
+            Self::preprocess::<C, P>(label, keypair, &prover)?;
 
         Ok((prover, verifier))
     }
 
-    fn preprocess<C>(
+    fn preprocess<C, P>(
         label: &[u8],
-        commit_key: CommitKey,
-        opening_key: OpeningKey,
-        prover: &Builder,
-    ) -> Result<(Prover<C>, Verifier<C>), Error>
+        keypair: &KeyPair<P>,
+        prover: &Builder<P>,
+    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
         C: Circuit,
+        P: Pairing,
     {
         let mut perm = prover.perm.clone();
 
         let constraints = prover.constraints();
         let size = constraints.next_power_of_two();
         let k = size.trailing_zeros();
-        let fft = Fft::<BlsScalar>::new(k as usize);
+        let fft = Fft::<P::ScalarField>::new(k as usize);
 
         // 1. pad circuit to a power of two
         //
         // we use allocated vectors because the current ifft api only accepts
         // slices
-        let mut q_m = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_l = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_r = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_o = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_c = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_d = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_arith = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_range = Polynomial::new(vec![BlsScalar::zero(); size]);
-        let mut q_logic = Polynomial::new(vec![BlsScalar::zero(); size]);
+        let mut q_m =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_l =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_r =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_o =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_c =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_d =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_arith =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_range =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_logic =
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_fixed_group_add =
-            Polynomial::new(vec![BlsScalar::zero(); size]);
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_variable_group_add =
-            Polynomial::new(vec![BlsScalar::zero(); size]);
+            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
 
         prover.constraints.iter().enumerate().for_each(|(i, c)| {
             q_m.0[i] = c.q_m;
@@ -118,64 +129,46 @@ impl Compiler {
         fft.idft(&mut q_fixed_group_add);
         fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = FftPolynomial::from_coefficients_vec(q_m.0.clone());
-        let q_l_poly = FftPolynomial::from_coefficients_vec(q_l.0.clone());
-        let q_r_poly = FftPolynomial::from_coefficients_vec(q_r.0.clone());
-        let q_o_poly = FftPolynomial::from_coefficients_vec(q_o.0.clone());
-        let q_c_poly = FftPolynomial::from_coefficients_vec(q_c.0.clone());
-        let q_d_poly = FftPolynomial::from_coefficients_vec(q_d.0.clone());
-        let q_arith_poly =
-            FftPolynomial::from_coefficients_vec(q_arith.0.clone());
-        let q_range_poly =
-            FftPolynomial::from_coefficients_vec(q_range.0.clone());
-        let q_logic_poly =
-            FftPolynomial::from_coefficients_vec(q_logic.0.clone());
-        let q_fixed_group_add_poly =
-            FftPolynomial::from_coefficients_vec(q_fixed_group_add.0.clone());
-        let q_variable_group_add_poly = FftPolynomial::from_coefficients_vec(
-            q_variable_group_add.0.clone(),
-        );
+        let q_m_poly = Polynomial(q_m.0.clone());
+        let q_l_poly = Polynomial(q_l.0.clone());
+        let q_r_poly = Polynomial(q_r.0.clone());
+        let q_o_poly = Polynomial(q_o.0.clone());
+        let q_c_poly = Polynomial(q_c.0.clone());
+        let q_d_poly = Polynomial(q_d.0.clone());
+        let q_arith_poly = Polynomial(q_arith.0.clone());
+        let q_range_poly = Polynomial(q_range.0.clone());
+        let q_logic_poly = Polynomial(q_logic.0.clone());
+        let q_fixed_group_add_poly = Polynomial(q_fixed_group_add.0.clone());
+        let q_variable_group_add_poly =
+            Polynomial(q_variable_group_add.0.clone());
 
         // 2. compute the sigma polynomials
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
             perm.compute_sigma_polynomials(size, &fft);
 
-        let q_m_poly_commit = commit_key.commit(&q_m_poly).unwrap_or_default();
-        let q_l_poly_commit = commit_key.commit(&q_l_poly).unwrap_or_default();
-        let q_r_poly_commit = commit_key.commit(&q_r_poly).unwrap_or_default();
-        let q_o_poly_commit = commit_key.commit(&q_o_poly).unwrap_or_default();
-        let q_c_poly_commit = commit_key.commit(&q_c_poly).unwrap_or_default();
-        let q_d_poly_commit = commit_key.commit(&q_d_poly).unwrap_or_default();
-        let q_arith_poly_commit =
-            commit_key.commit(&q_arith_poly).unwrap_or_default();
-        let q_range_poly_commit =
-            commit_key.commit(&q_range_poly).unwrap_or_default();
-        let q_logic_poly_commit =
-            commit_key.commit(&q_logic_poly).unwrap_or_default();
-        let q_fixed_group_add_poly_commit = commit_key
-            .commit(&q_fixed_group_add_poly)
-            .unwrap_or_default();
-        let q_variable_group_add_poly_commit = commit_key
-            .commit(&q_variable_group_add_poly)
-            .unwrap_or_default();
+        let q_m_poly_commit = keypair.commit(&q_m_poly);
+        let q_l_poly_commit = keypair.commit(&q_l_poly);
+        let q_r_poly_commit = keypair.commit(&q_r_poly);
+        let q_o_poly_commit = keypair.commit(&q_o_poly);
+        let q_c_poly_commit = keypair.commit(&q_c_poly);
+        let q_d_poly_commit = keypair.commit(&q_d_poly);
+        let q_arith_poly_commit = keypair.commit(&q_arith_poly);
+        let q_range_poly_commit = keypair.commit(&q_range_poly);
+        let q_logic_poly_commit = keypair.commit(&q_logic_poly);
+        let q_fixed_group_add_poly_commit =
+            keypair.commit(&q_fixed_group_add_poly);
+        let q_variable_group_add_poly_commit =
+            keypair.commit(&q_variable_group_add_poly);
 
-        let s_sigma_1_poly_commit =
-            FftPolynomial::from_coefficients_vec(s_sigma_1_poly.0.clone());
-        let s_sigma_2_poly_commit =
-            FftPolynomial::from_coefficients_vec(s_sigma_2_poly.0.clone());
-        let s_sigma_3_poly_commit =
-            FftPolynomial::from_coefficients_vec(s_sigma_3_poly.0.clone());
-        let s_sigma_4_poly_commit =
-            FftPolynomial::from_coefficients_vec(s_sigma_4_poly.0.clone());
+        let s_sigma_1_poly_commit = Polynomial(s_sigma_1_poly.0.clone());
+        let s_sigma_2_poly_commit = Polynomial(s_sigma_2_poly.0.clone());
+        let s_sigma_3_poly_commit = Polynomial(s_sigma_3_poly.0.clone());
+        let s_sigma_4_poly_commit = Polynomial(s_sigma_4_poly.0.clone());
 
-        let s_sigma_1_poly_commit =
-            commit_key.commit(&s_sigma_1_poly_commit)?;
-        let s_sigma_2_poly_commit =
-            commit_key.commit(&s_sigma_2_poly_commit)?;
-        let s_sigma_3_poly_commit =
-            commit_key.commit(&s_sigma_3_poly_commit)?;
-        let s_sigma_4_poly_commit =
-            commit_key.commit(&s_sigma_4_poly_commit)?;
+        let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit);
+        let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit);
+        let s_sigma_3_poly_commit = keypair.commit(&s_sigma_3_poly_commit);
+        let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly_commit);
 
         // verifier Key for arithmetic circuits
         let arithmetic_verifier_key = widget::arithmetic::VerifierKey {
@@ -243,8 +236,10 @@ impl Compiler {
         let mut s_sigma_2 = s_sigma_2_poly.clone();
         let mut s_sigma_3 = s_sigma_3_poly.clone();
         let mut s_sigma_4 = s_sigma_4_poly.clone();
-        let mut min_p =
-            Polynomial::new(vec![BlsScalar::zero(), BlsScalar::one()]);
+        let mut min_p = Polynomial::new(vec![
+            P::ScalarField::zero(),
+            P::ScalarField::one(),
+        ]);
 
         fft_8n.coset_dft(&mut q_m);
         fft_8n.coset_dft(&mut q_l);
@@ -302,16 +297,12 @@ impl Compiler {
         let linear_eval_8n =
             Evaluations::from_vec_and_domain(min_p.0, domain_8n);
 
-        let s_sigma_1_poly =
-            FftPolynomial::from_coefficients_vec(s_sigma_1_poly.0);
-        let s_sigma_2_poly =
-            FftPolynomial::from_coefficients_vec(s_sigma_2_poly.0);
-        let s_sigma_3_poly =
-            FftPolynomial::from_coefficients_vec(s_sigma_3_poly.0);
-        let s_sigma_4_poly =
-            FftPolynomial::from_coefficients_vec(s_sigma_4_poly.0);
+        let s_sigma_1_poly = Polynomial(s_sigma_1_poly.0);
+        let s_sigma_2_poly = Polynomial(s_sigma_2_poly.0);
+        let s_sigma_3_poly = Polynomial(s_sigma_3_poly.0);
+        let s_sigma_4_poly = Polynomial(s_sigma_4_poly.0);
 
-        let selectors = Polynomials {
+        let selectors = Polynomials::<P> {
             q_m: q_m_poly,
             q_l: q_l_poly,
             q_r: q_r_poly,
@@ -394,8 +385,8 @@ impl Compiler {
 
         let prover = Prover::new(
             label.clone(),
+            *keypair,
             prover_key,
-            commit_key,
             verifier_key,
             size,
             constraints,
@@ -404,7 +395,12 @@ impl Compiler {
         let verifier = Verifier::new(
             label,
             verifier_key,
-            opening_key,
+            // TODO FIX
+            OpeningKey::new(
+                keypair.commit_key()[0],
+                keypair.opening_key(),
+                keypair.opening_key(),
+            ),
             public_input_indexes,
             size,
             constraints,

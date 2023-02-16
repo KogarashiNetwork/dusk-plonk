@@ -4,69 +4,69 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::{fft::Polynomial, proof_system::ProverKey};
+use crate::proof_system::ProverKey;
 
 use codec::{Decode, Encode};
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::common::Pairing;
 use zero_kzg::Polynomial as ZeroPoly;
 
 /// Evaluations at points `z` or and `z * root of unity`
 #[allow(dead_code)]
-pub(crate) struct Evaluations {
-    pub(crate) proof: ProofEvaluations,
+pub(crate) struct Evaluations<P: Pairing> {
+    pub(crate) proof: ProofEvaluations<P>,
     // Evaluation of the linearization sigma polynomial at `z`
-    pub(crate) t_eval: BlsScalar,
+    pub(crate) t_eval: P::ScalarField,
 }
 
 /// Subset of all of the evaluations. These evaluations
 /// are added to the [`Proof`](super::Proof).
 #[derive(Debug, Eq, PartialEq, Clone, Default, Decode, Encode)]
-pub(crate) struct ProofEvaluations {
+pub(crate) struct ProofEvaluations<P: Pairing> {
     // Evaluation of the witness polynomial for the left wire at `z`
-    pub(crate) a_eval: BlsScalar,
+    pub(crate) a_eval: P::ScalarField,
     // Evaluation of the witness polynomial for the right wire at `z`
-    pub(crate) b_eval: BlsScalar,
+    pub(crate) b_eval: P::ScalarField,
     // Evaluation of the witness polynomial for the output wire at `z`
-    pub(crate) c_eval: BlsScalar,
+    pub(crate) c_eval: P::ScalarField,
     // Evaluation of the witness polynomial for the fourth wire at `z`
-    pub(crate) d_eval: BlsScalar,
+    pub(crate) d_eval: P::ScalarField,
     //
-    pub(crate) a_next_eval: BlsScalar,
+    pub(crate) a_next_eval: P::ScalarField,
     //
-    pub(crate) b_next_eval: BlsScalar,
+    pub(crate) b_next_eval: P::ScalarField,
     // Evaluation of the witness polynomial for the fourth wire at `z * root of
     // unity`
-    pub(crate) d_next_eval: BlsScalar,
+    pub(crate) d_next_eval: P::ScalarField,
     // Evaluation of the arithmetic selector polynomial at `z`
-    pub(crate) q_arith_eval: BlsScalar,
+    pub(crate) q_arith_eval: P::ScalarField,
     //
-    pub(crate) q_c_eval: BlsScalar,
+    pub(crate) q_c_eval: P::ScalarField,
     //
-    pub(crate) q_l_eval: BlsScalar,
+    pub(crate) q_l_eval: P::ScalarField,
     //
-    pub(crate) q_r_eval: BlsScalar,
+    pub(crate) q_r_eval: P::ScalarField,
     //
     // Evaluation of the left sigma polynomial at `z`
-    pub(crate) s_sigma_1_eval: BlsScalar,
+    pub(crate) s_sigma_1_eval: P::ScalarField,
     // Evaluation of the right sigma polynomial at `z`
-    pub(crate) s_sigma_2_eval: BlsScalar,
+    pub(crate) s_sigma_2_eval: P::ScalarField,
     // Evaluation of the out sigma polynomial at `z`
-    pub(crate) s_sigma_3_eval: BlsScalar,
+    pub(crate) s_sigma_3_eval: P::ScalarField,
 
     // Evaluation of the linearization sigma polynomial at `z`
-    pub(crate) r_poly_eval: BlsScalar,
+    pub(crate) r_poly_eval: P::ScalarField,
 
     // (Shifted) Evaluation of the permutation polynomial at `z * root of
     // unity`
-    pub(crate) perm_eval: BlsScalar,
+    pub(crate) perm_eval: P::ScalarField,
 }
 
 /// Compute the linearization polynomial.
 // TODO: Improve the method signature
 #[allow(clippy::type_complexity)]
-pub(crate) fn compute(
-    group_generator: BlsScalar,
-    prover_key: &ProverKey,
+pub(crate) fn compute<P: Pairing>(
+    group_generator: P::ScalarField,
+    prover_key: &ProverKey<P>,
     (
         alpha,
         beta,
@@ -77,22 +77,22 @@ pub(crate) fn compute(
         var_base_separation_challenge,
         z_challenge,
     ): &(
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
     ),
-    a_w_poly: &ZeroPoly<BlsScalar>,
-    b_w_poly: &ZeroPoly<BlsScalar>,
-    c_w_poly: &ZeroPoly<BlsScalar>,
-    d_w_poly: &ZeroPoly<BlsScalar>,
-    t_x_poly: &ZeroPoly<BlsScalar>,
-    z_poly: &Polynomial,
-) -> (Polynomial, Evaluations) {
+    a_w_poly: &ZeroPoly<P::ScalarField>,
+    b_w_poly: &ZeroPoly<P::ScalarField>,
+    c_w_poly: &ZeroPoly<P::ScalarField>,
+    d_w_poly: &ZeroPoly<P::ScalarField>,
+    t_x_poly: &ZeroPoly<P::ScalarField>,
+    z_poly: &ZeroPoly<P::ScalarField>,
+) -> (ZeroPoly<P::ScalarField>, Evaluations<P>) {
     // Compute evaluations
     let t_eval = t_x_poly.evaluate(z_challenge);
     let a_eval = a_w_poly.evaluate(z_challenge);
@@ -112,10 +112,10 @@ pub(crate) fn compute(
     let q_l_eval = prover_key.fixed_base.q_l.0.evaluate(z_challenge);
     let q_r_eval = prover_key.fixed_base.q_r.0.evaluate(z_challenge);
 
-    let a_next_eval = a_w_poly.evaluate(&(z_challenge * group_generator));
-    let b_next_eval = b_w_poly.evaluate(&(z_challenge * group_generator));
-    let d_next_eval = d_w_poly.evaluate(&(z_challenge * group_generator));
-    let perm_eval = z_poly.evaluate(&(z_challenge * group_generator));
+    let a_next_eval = a_w_poly.evaluate(&(*z_challenge * group_generator));
+    let b_next_eval = b_w_poly.evaluate(&(*z_challenge * group_generator));
+    let d_next_eval = d_w_poly.evaluate(&(*z_challenge * group_generator));
+    let perm_eval = z_poly.evaluate(&(*z_challenge * group_generator));
 
     let f_1 = compute_circuit_satisfiability(
         (
@@ -147,7 +147,7 @@ pub(crate) fn compute(
         z_poly,
     );
 
-    let r_poly = &f_1 + &f_2;
+    let r_poly = f_1 + f_2;
 
     // Evaluate linearization polynomial at challenge `z`
     let r_poly_eval = r_poly.evaluate(z_challenge);
@@ -178,26 +178,31 @@ pub(crate) fn compute(
     )
 }
 
-fn compute_circuit_satisfiability(
+fn compute_circuit_satisfiability<P: Pairing>(
     (
         range_separation_challenge,
         logic_separation_challenge,
         fixed_base_separation_challenge,
         var_base_separation_challenge,
-    ): (&BlsScalar, &BlsScalar, &BlsScalar, &BlsScalar),
-    a_eval: &BlsScalar,
-    b_eval: &BlsScalar,
-    c_eval: &BlsScalar,
-    d_eval: &BlsScalar,
-    a_next_eval: &BlsScalar,
-    b_next_eval: &BlsScalar,
-    d_next_eval: &BlsScalar,
-    q_arith_eval: &BlsScalar,
-    q_c_eval: &BlsScalar,
-    q_l_eval: &BlsScalar,
-    q_r_eval: &BlsScalar,
-    prover_key: &ProverKey,
-) -> Polynomial {
+    ): (
+        &P::ScalarField,
+        &P::ScalarField,
+        &P::ScalarField,
+        &P::ScalarField,
+    ),
+    a_eval: &P::ScalarField,
+    b_eval: &P::ScalarField,
+    c_eval: &P::ScalarField,
+    d_eval: &P::ScalarField,
+    a_next_eval: &P::ScalarField,
+    b_next_eval: &P::ScalarField,
+    d_next_eval: &P::ScalarField,
+    q_arith_eval: &P::ScalarField,
+    q_c_eval: &P::ScalarField,
+    q_l_eval: &P::ScalarField,
+    q_r_eval: &P::ScalarField,
+    prover_key: &ProverKey<P>,
+) -> ZeroPoly<P::ScalarField> {
     let a = prover_key.arithmetic.compute_linearization(
         a_eval,
         b_eval,
@@ -252,10 +257,14 @@ fn compute_circuit_satisfiability(
         d_next_eval,
     );
 
-    let mut linearization_poly = &a + &b;
-    linearization_poly += &c;
-    linearization_poly += &d;
-    linearization_poly += &e;
+    let mut linearization_poly = a + b;
+    // TODO FIX
+    // linearization_poly += &c;
+    // linearization_poly += &d;
+    // linearization_poly += &e;
+    linearization_poly = linearization_poly + c;
+    linearization_poly = linearization_poly + d;
+    linearization_poly = linearization_poly + e;
 
     linearization_poly
 }

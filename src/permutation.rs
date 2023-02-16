@@ -6,11 +6,10 @@
 
 use crate::constraint_system::{WireData, Witness};
 use alloc::vec::Vec;
-use constants::{K1, K2, K3};
+use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
 use sp_std::vec;
-use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::*;
 use zero_kzg::{Fft, Polynomial};
 
@@ -20,21 +19,27 @@ pub(crate) mod constants;
 /// to create the permutation polynomial. In the literature, Z(X) is the
 /// "accumulator", this is what this codebase calls the permutation polynomial.
 #[derive(Debug, Clone)]
-pub(crate) struct Permutation {
+pub(crate) struct Permutation<P: Pairing> {
     // Maps a witness to the wires that it is associated to.
     pub(crate) witness_map: HashMap<Witness, Vec<WireData>>,
+    _marker: PhantomData<P>,
 }
 
-impl Permutation {
+impl<P: Pairing> Permutation<P> {
+    const K1: P::ScalarField = P::ScalarField::from(7);
+    const K2: P::ScalarField = P::ScalarField::from(13);
+    const K3: P::ScalarField = P::ScalarField::from(17);
+
     /// Creates a Permutation struct with an expected capacity of zero.
-    pub(crate) fn new() -> Permutation {
+    pub(crate) fn new() -> Permutation<P> {
         Permutation::with_capacity(0)
     }
 
     /// Creates a Permutation struct with an expected capacity of `n`.
-    pub(crate) fn with_capacity(size: usize) -> Permutation {
+    pub(crate) fn with_capacity(size: usize) -> Permutation<P> {
         Permutation {
             witness_map: HashMap::with_capacity(size),
+            _marker: PhantomData,
         }
     }
 
@@ -141,11 +146,11 @@ impl Permutation {
     fn compute_permutation_lagrange(
         &self,
         sigma_mapping: &[WireData],
-        fft: &Fft<BlsScalar>,
-    ) -> Vec<BlsScalar> {
+        fft: &Fft<P::ScalarField>,
+    ) -> Vec<P::ScalarField> {
         let roots: Vec<_> = fft.elements.clone();
 
-        let lagrange_poly: Vec<BlsScalar> = sigma_mapping
+        let lagrange_poly: Vec<P::ScalarField> = sigma_mapping
             .iter()
             .map(|x| match x {
                 WireData::Left(index) => {
@@ -154,15 +159,15 @@ impl Permutation {
                 }
                 WireData::Right(index) => {
                     let root = &roots[*index];
-                    K1 * root
+                    Self::K1 * root
                 }
                 WireData::Output(index) => {
                     let root = &roots[*index];
-                    K2 * root
+                    Self::K2 * root
                 }
                 WireData::Fourth(index) => {
                     let root = &roots[*index];
-                    K3 * root
+                    Self::K3 * root
                 }
             })
             .collect();
@@ -175,8 +180,8 @@ impl Permutation {
     pub(crate) fn compute_sigma_polynomials(
         &mut self,
         n: usize,
-        fft: &Fft<BlsScalar>,
-    ) -> [Polynomial<BlsScalar>; 4] {
+        fft: &Fft<P::ScalarField>,
+    ) -> [Polynomial<P::ScalarField>; 4] {
         // Compute sigma mappings
         let sigmas = self.compute_sigma_permutations(n);
 
@@ -208,16 +213,16 @@ impl Permutation {
     // for any number of wires.
     pub(crate) fn compute_permutation_vec(
         &self,
-        fft: &Fft<BlsScalar>,
-        wires: [&[BlsScalar]; 4],
-        beta: &BlsScalar,
-        gamma: &BlsScalar,
-        mut sigma_polys: [Polynomial<BlsScalar>; 4],
-    ) -> Vec<BlsScalar> {
+        fft: &Fft<P::ScalarField>,
+        wires: [&[P::ScalarField]; 4],
+        beta: &P::ScalarField,
+        gamma: &P::ScalarField,
+        mut sigma_polys: [Polynomial<P::ScalarField>; 4],
+    ) -> Vec<P::ScalarField> {
         let n = fft.size();
 
         // Constants defining cosets H, k1H, k2H, etc
-        let ks = vec![BlsScalar::one(), K1, K2, K3];
+        let ks = vec![P::ScalarField::one(), Self::K1, Self::K2, Self::K3];
 
         // Transpose wires and sigma values to get "rows" in the form [a_w_i,
         // b_w_i, c_w_i, ... ] where each row contains the wire and sigma
@@ -225,7 +230,7 @@ impl Permutation {
         let gatewise_wires = izip!(wires[0], wires[1], wires[2], wires[3])
             .map(|(w0, w1, w2, w3)| vec![w0, w1, w2, w3]);
 
-        let gatewise_sigmas: Vec<Vec<BlsScalar>> = sigma_polys
+        let gatewise_sigmas: Vec<Vec<P::ScalarField>> = sigma_polys
             .iter_mut()
             .map(|sigma| {
                 fft.dft(sigma);
@@ -242,7 +247,7 @@ impl Permutation {
 
         // Compute all roots
         // Non-parallelizable?
-        let roots: Vec<BlsScalar> = fft.elements.clone();
+        let roots: Vec<P::ScalarField> = fft.elements.clone();
 
         let product_argument = izip!(roots, gatewise_sigmas, gatewise_wires)
             // Associate each wire value in a gate with the k defining its coset
@@ -262,25 +267,25 @@ impl Permutation {
                     wire_params
                         .clone()
                         .map(|(_sigma, wire, k)| {
-                            wire + beta * k * gate_root + gamma
+                            *wire + *beta * k * gate_root + gamma
                         })
-                        .product::<BlsScalar>(),
+                        .product::<P::ScalarField>(),
                     // Denominator product
                     wire_params
-                        .map(|(sigma, wire, _k)| wire + beta * sigma + gamma)
-                        .product::<BlsScalar>(),
+                        .map(|(sigma, wire, _k)| *wire + *beta * sigma + gamma)
+                        .product::<P::ScalarField>(),
                 )
             })
             // Divide each pair to get the single scalar representing each gate
             .map(|(n, d)| n * d.invert().unwrap())
             // Collect into vector intermediary since rayon does not support
             // `scan`
-            .collect::<Vec<BlsScalar>>();
+            .collect::<Vec<P::ScalarField>>();
 
         let mut z = Vec::with_capacity(n);
 
         // First element is one
-        let mut state = BlsScalar::one();
+        let mut state = P::ScalarField::one();
         z.push(state);
 
         // Accumulate by successively multiplying the scalars
@@ -303,14 +308,16 @@ impl Permutation {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::fft::{EvaluationDomain, Polynomial};
+    use crate::fft::EvaluationDomain;
+    use crate::permutation::constants::*;
     use rand_core::OsRng;
     use zero_bls12_381::Fr as BlsScalar;
     use zero_kzg::Polynomial as ZeroPoly;
+    use zero_pairing::TatePairing;
 
     #[allow(dead_code)]
     fn compute_fast_permutation_poly(
-        domain: &EvaluationDomain,
+        domain: &EvaluationDomain<TatePairing>,
         a_w: &[BlsScalar],
         b_w: &[BlsScalar],
         c_w: &[BlsScalar],
@@ -348,14 +355,22 @@ mod test {
         let s_sigma_4_mapping = s_sigma_4_poly.0;
 
         // Compute beta * sigma polynomials
-        let beta_s_sigma_1: Vec<_> =
-            s_sigma_1_mapping.iter().map(|sigma| sigma * beta).collect();
-        let beta_s_sigma_2: Vec<_> =
-            s_sigma_2_mapping.iter().map(|sigma| sigma * beta).collect();
-        let beta_s_sigma_3: Vec<_> =
-            s_sigma_3_mapping.iter().map(|sigma| sigma * beta).collect();
-        let beta_s_sigma_4: Vec<_> =
-            s_sigma_4_mapping.iter().map(|sigma| sigma * beta).collect();
+        let beta_s_sigma_1: Vec<_> = s_sigma_1_mapping
+            .iter()
+            .map(|sigma| *sigma * beta)
+            .collect();
+        let beta_s_sigma_2: Vec<_> = s_sigma_2_mapping
+            .iter()
+            .map(|sigma| *sigma * beta)
+            .collect();
+        let beta_s_sigma_3: Vec<_> = s_sigma_3_mapping
+            .iter()
+            .map(|sigma| *sigma * beta)
+            .collect();
+        let beta_s_sigma_4: Vec<_> = s_sigma_4_mapping
+            .iter()
+            .map(|sigma| *sigma * beta)
+            .collect();
 
         // Compute beta * roots * K1
         let beta_roots_k1: Vec<_> =
@@ -370,16 +385,16 @@ mod test {
             common_roots.iter().map(|x| x * K3).collect();
 
         // Compute left_wire + gamma
-        let a_w_gamma: Vec<_> = a_w.iter().map(|a_w| a_w + gamma).collect();
+        let a_w_gamma: Vec<_> = a_w.iter().map(|a_w| *a_w + gamma).collect();
 
         // Compute right_wire + gamma
-        let b_w_gamma: Vec<_> = b_w.iter().map(|b_w| b_w + gamma).collect();
+        let b_w_gamma: Vec<_> = b_w.iter().map(|b_w| *b_w + gamma).collect();
 
         // Compute out_wire + gamma
-        let c_w_gamma: Vec<_> = c_w.iter().map(|c_w| c_w + gamma).collect();
+        let c_w_gamma: Vec<_> = c_w.iter().map(|c_w| *c_w + gamma).collect();
 
         // Compute fourth_wire + gamma
-        let d_w_gamma: Vec<_> = d_w.iter().map(|d_w| d_w + gamma).collect();
+        let d_w_gamma: Vec<_> = d_w.iter().map(|d_w| *d_w + gamma).collect();
 
         // Compute 6 accumulator components
         // Parallelizable
@@ -483,7 +498,7 @@ mod test {
     }
 
     fn compute_slow_permutation_poly<I>(
-        domain: &EvaluationDomain,
+        domain: &EvaluationDomain<TatePairing>,
         a_w: I,
         b_w: I,
         c_w: I,
@@ -683,7 +698,7 @@ mod test {
 
     #[test]
     fn test_permutation_format() {
-        let mut perm: Permutation = Permutation::new();
+        let mut perm: Permutation<TatePairing> = Permutation::new();
 
         let num_witnesses = 10u8;
         for i in 0..num_witnesses {
@@ -782,7 +797,8 @@ mod test {
         assert_eq!(s_sigma_4[2], WireData::Fourth(3));
         assert_eq!(s_sigma_4[3], WireData::Fourth(0));
 
-        let domain = EvaluationDomain::new(num_wire_mappings).unwrap();
+        let domain =
+            EvaluationDomain::<TatePairing>::new(num_wire_mappings).unwrap();
         let fft = Fft::<BlsScalar>::new(k);
         let w = domain.group_gen;
         let w_squared = w.pow(2);
@@ -867,7 +883,7 @@ mod test {
 
     #[test]
     fn test_permutation_compute_sigmas() {
-        let mut perm: Permutation = Permutation::new();
+        let mut perm: Permutation<TatePairing> = Permutation::new();
 
         let var_one = perm.new_witness();
         let var_two = perm.new_witness();
@@ -978,7 +994,8 @@ mod test {
         let k = 1;
         let num_wire_mappings = 2;
         let mut perm = Permutation::new();
-        let domain = EvaluationDomain::new(num_wire_mappings).unwrap();
+        let domain =
+            EvaluationDomain::<TatePairing>::new(num_wire_mappings).unwrap();
         let fft = Fft::<BlsScalar>::new(k);
 
         let var_one = perm.new_witness();
@@ -1016,8 +1033,8 @@ mod test {
 
     fn test_correct_permutation_poly(
         n: usize,
-        mut perm: Permutation,
-        domain: &EvaluationDomain,
+        mut perm: Permutation<TatePairing>,
+        domain: &EvaluationDomain<TatePairing>,
         fft: &Fft<BlsScalar>,
         a_w: Vec<BlsScalar>,
         b_w: Vec<BlsScalar>,
@@ -1090,7 +1107,7 @@ mod test {
         // permutation polynomial (z)
         let mut z_vec = ZeroPoly::new(z_vec);
         fft.idft(&mut z_vec);
-        let z_poly = Polynomial::from_coefficients_vec(z_vec.0);
+        let z_poly = ZeroPoly::new(z_vec.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1140,9 +1157,9 @@ mod test {
         // Test that the shifted polynomial is correct
         let mut shifted_z = ZeroPoly::new(shift_poly_by_one(fast_z_vec));
         fft.idft(&mut shifted_z);
-        let shifted_z_poly = Polynomial::from_coefficients_vec(shifted_z.0);
+        let shifted_z_poly = ZeroPoly::new(shifted_z.0);
         for element in fft.elements.iter() {
-            let z_eval = z_poly.evaluate(&(element * domain.group_gen));
+            let z_eval = z_poly.evaluate(&(*element * domain.group_gen));
             let shifted_z_eval = shifted_z_poly.evaluate(&element);
 
             assert_eq!(z_eval, shifted_z_eval)

@@ -6,32 +6,33 @@
 
 //! Methods to preprocess the constraint system for use in a proof
 
-use crate::fft::Polynomial;
+use zero_crypto::common::Pairing;
+use zero_kzg::Polynomial;
 
 /// Struct that contains all selector and permutation [`Polynomials`]s
-pub(crate) struct Polynomials {
+pub(crate) struct Polynomials<P: Pairing> {
     // selector polynomials defining arithmetic circuits
-    pub(crate) q_m: Polynomial,
-    pub(crate) q_l: Polynomial,
-    pub(crate) q_r: Polynomial,
-    pub(crate) q_o: Polynomial,
-    pub(crate) q_c: Polynomial,
+    pub(crate) q_m: Polynomial<P::ScalarField>,
+    pub(crate) q_l: Polynomial<P::ScalarField>,
+    pub(crate) q_r: Polynomial<P::ScalarField>,
+    pub(crate) q_o: Polynomial<P::ScalarField>,
+    pub(crate) q_c: Polynomial<P::ScalarField>,
 
     // additional selector for 3-input gates added for efficiency of
     // implementation
-    pub(crate) q_4: Polynomial,
+    pub(crate) q_4: Polynomial<P::ScalarField>,
 
     // additional selectors for different kinds of circuits added for
     // efficiency of implementation
-    pub(crate) q_arith: Polynomial, // arithmetic circuits
-    pub(crate) q_range: Polynomial, // range proofs
-    pub(crate) q_logic: Polynomial, // boolean operations
-    pub(crate) q_fixed_group_add: Polynomial, // ecc circuits
-    pub(crate) q_variable_group_add: Polynomial, // ecc circuits
+    pub(crate) q_arith: Polynomial<P::ScalarField>, // arithmetic circuits
+    pub(crate) q_range: Polynomial<P::ScalarField>, // range proofs
+    pub(crate) q_logic: Polynomial<P::ScalarField>, // boolean operations
+    pub(crate) q_fixed_group_add: Polynomial<P::ScalarField>, // ecc circuits
+    pub(crate) q_variable_group_add: Polynomial<P::ScalarField>, // ecc circuits
 
     // copy permutation polynomials
-    pub(crate) s_sigma_1: Polynomial,
-    pub(crate) s_sigma_2: Polynomial,
-    pub(crate) s_sigma_3: Polynomial,
-    pub(crate) s_sigma_4: Polynomial, // for q_4
+    pub(crate) s_sigma_1: Polynomial<P::ScalarField>,
+    pub(crate) s_sigma_2: Polynomial<P::ScalarField>,
+    pub(crate) s_sigma_3: Polynomial<P::ScalarField>,
+    pub(crate) s_sigma_4: Polynomial<P::ScalarField>, // for q_4
 }

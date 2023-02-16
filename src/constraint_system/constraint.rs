@@ -6,7 +6,8 @@
 
 use crate::composer::{Builder, Composer};
 use crate::constraint_system::Witness;
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::behave::{Group, Ring};
+use zero_crypto::common::Pairing;
 
 /// Selectors used to address a coefficient inside of a [`Constraint`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,8 +55,8 @@ pub(crate) enum WiredWitness {
 /// Constraint representation containing the coefficients of a polynomial
 /// evaluation
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Constraint {
-    coefficients: [BlsScalar; 13],
+pub struct Constraint<P: Pairing> {
+    coefficients: [P::ScalarField; 13],
     witnesses: [Witness; 4],
 
     // TODO Workaround solution to keep the sparse public input indexes in the
@@ -80,29 +81,29 @@ pub struct Constraint {
     has_public_input: bool,
 }
 
-impl Default for Constraint {
+impl<P: Pairing> Default for Constraint<P> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl AsRef<[BlsScalar]> for Constraint {
-    fn as_ref(&self) -> &[BlsScalar] {
+impl<P: Pairing> AsRef<[P::ScalarField]> for Constraint<P> {
+    fn as_ref(&self) -> &[P::ScalarField] {
         &self.coefficients
     }
 }
 
-impl Constraint {
+impl<P: Pairing> Constraint<P> {
     /// Initiate the composition of a new selector description of a circuit.
     pub const fn new() -> Self {
         Self {
-            coefficients: [BlsScalar::zero(); 13],
-            witnesses: [Builder::ZERO; 4],
+            coefficients: [P::ScalarField::zero(); 13],
+            witnesses: [Builder::<P>::ZERO; 4],
             has_public_input: false,
         }
     }
 
-    fn set<T: Into<BlsScalar>>(mut self, r: Selector, s: T) -> Self {
+    fn set<T: Into<P::ScalarField>>(mut self, r: Selector, s: T) -> Self {
         self.coefficients[r as usize] = s.into();
 
         self
@@ -130,7 +131,7 @@ impl Constraint {
     }
 
     /// Return a reference to the specified selector of a circuit constraint.
-    pub(crate) const fn coeff(&self, r: Selector) -> &BlsScalar {
+    pub(crate) const fn coeff(&self, r: Selector) -> &P::ScalarField {
         &self.coefficients[r as usize]
     }
 
@@ -140,37 +141,37 @@ impl Constraint {
     }
 
     /// Set `s` as the polynomial selector for the multiplication coefficient.
-    pub fn mult<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn mult<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Multiplication, s)
     }
 
     /// Set `s` as the polynomial selector for the left coefficient.
-    pub fn left<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn left<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Left, s)
     }
 
     /// Set `s` as the polynomial selector for the right coefficient.
-    pub fn right<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn right<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Right, s)
     }
 
     /// Set `s` as the polynomial selector for the output coefficient.
-    pub fn output<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn output<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Output, s)
     }
 
     /// Set `s` as the polynomial selector for the fourth (advice) coefficient.
-    pub fn fourth<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn fourth<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Fourth, s)
     }
 
     /// Set `s` as the polynomial selector for the constant of the constraint.
-    pub fn constant<T: Into<BlsScalar>>(self, s: T) -> Self {
+    pub fn constant<T: Into<P::ScalarField>>(self, s: T) -> Self {
         self.set(Selector::Constant, s)
     }
 
     /// Set `s` as the public input of the constraint evaluation.
-    pub fn public<T: Into<BlsScalar>>(mut self, s: T) -> Self {
+    pub fn public<T: Into<P::ScalarField>>(mut self, s: T) -> Self {
         self.has_public_input = true;
 
         self.set(Selector::PublicInput, s)
@@ -233,8 +234,8 @@ impl Constraint {
     // with this struct
     pub(crate) fn logic_xor(s: &Self) -> Self {
         Self::from_external(s)
-            .set(Selector::Constant, -BlsScalar::one())
-            .set(Selector::Logic, -BlsScalar::one())
+            .set(Selector::Constant, -P::ScalarField::one())
+            .set(Selector::Logic, -P::ScalarField::one())
     }
 
     #[allow(dead_code)]

@@ -4,6 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use zero_crypto::common::Pairing;
+
 use crate::error::Error;
 
 use super::Composer;
@@ -13,7 +15,7 @@ use super::Composer;
 /// The default implementation will be used to generate the proving arguments.
 pub trait Circuit: Default {
     /// Circuit definition
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
+    fn circuit<C, P: Pairing>(&self, composer: &mut C) -> Result<(), Error>
     where
-        C: Composer;
+        C: Composer<P>;
 }

@@ -6,7 +6,7 @@
 
 //! PLONK runtime controller
 
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::common::Pairing;
 
 use crate::constraint_system::{Constraint, Witness};
 
@@ -15,19 +15,19 @@ use crate::debugger::Debugger;
 
 /// Runtime events
 #[derive(Debug, Clone, Copy)]
-pub enum RuntimeEvent {
+pub enum RuntimeEvent<P: Pairing> {
     /// A witness was appended to the constraint system
     WitnessAppended {
         /// Appended witness
         w: Witness,
         /// Witness value
-        v: BlsScalar,
+        v: P::ScalarField,
     },
 
     /// A constraint was appended
     ConstraintAppended {
         /// Appended constraint
-        c: Constraint,
+        c: Constraint<P>,
     },
 
     /// The proof construction was finished
@@ -52,7 +52,7 @@ impl Runtime {
     }
 
     #[allow(unused_variables)]
-    pub(crate) fn event(&mut self, event: RuntimeEvent) {
+    pub(crate) fn event<P: Pairing>(&mut self, event: RuntimeEvent<P>) {
         #[cfg(feature = "debug")]
         self.debugger.event(event);
     }

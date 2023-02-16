@@ -17,9 +17,7 @@
 mod kzg10;
 
 pub(crate) use kzg10::AggregateProof;
-pub(crate) use kzg10::Commitment;
-pub use kzg10::PublicParameters;
-pub(crate) use kzg10::{CommitKey, OpeningKey};
+pub(crate) use kzg10::OpeningKey;
 
 #[cfg(all(feature = "alloc", feature = "rkyv-impl"))]
 pub use kzg10::{

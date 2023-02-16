@@ -6,8 +6,8 @@
 
 use alloc::vec::Vec;
 use rand_core::RngCore;
-use zero_bls12_381::{Fr as BlsScalar, G1Projective, G2Projective};
-use zero_crypto::common::Group;
+use zero_bls12_381::{Fr as BlsScalar, G1Projective};
+use zero_crypto::common::{Group, Pairing, Ring};
 
 #[cfg(feature = "rkyv-impl")]
 #[inline(always)]
@@ -29,12 +29,12 @@ where
 }
 
 /// Returns a vector of BlsScalars of increasing powers of x from x^0 to x^d.
-pub(crate) fn powers_of(
-    scalar: &BlsScalar,
+pub(crate) fn powers_of<P: Pairing>(
+    scalar: &P::ScalarField,
     max_degree: usize,
-) -> Vec<BlsScalar> {
+) -> Vec<P::ScalarField> {
     let mut powers = Vec::with_capacity(max_degree + 1);
-    powers.push(BlsScalar::one());
+    powers.push(P::ScalarField::one());
     for i in 1..=max_degree {
         powers.push(powers[i - 1] * scalar);
     }
@@ -42,17 +42,23 @@ pub(crate) fn powers_of(
 }
 
 /// Generates a random BlsScalar using a RNG seed.
-pub(crate) fn random_scalar<R: RngCore>(rng: &mut R) -> BlsScalar {
-    BlsScalar::random(rng)
+pub(crate) fn random_scalar<R: RngCore, P: Pairing>(
+    rng: &mut R,
+) -> P::ScalarField {
+    P::ScalarField::random(rng)
 }
 
 /// Generates a random G1 Point using an RNG seed.
-pub(crate) fn random_g1_point<R: RngCore>(rng: &mut R) -> G1Projective {
-    G1Projective::ADDITIVE_GENERATOR * random_scalar(rng)
+pub(crate) fn random_g1_point<R: RngCore, P: Pairing>(
+    rng: &mut R,
+) -> P::G1Projective {
+    P::G1Projective::ADDITIVE_GENERATOR * random_scalar::<R, P>(rng)
 }
 /// Generates a random G2 point using an RNG seed.
-pub(crate) fn random_g2_point<R: RngCore>(rng: &mut R) -> G2Projective {
-    G2Projective::ADDITIVE_GENERATOR * random_scalar(rng)
+pub(crate) fn random_g2_point<R: RngCore, P: Pairing>(
+    rng: &mut R,
+) -> P::G2Projective {
+    P::G2Projective::ADDITIVE_GENERATOR * random_scalar::<R, P>(rng)
 }
 
 /// This function is only used to generate the SRS.
@@ -68,15 +74,15 @@ pub(crate) fn slow_multiscalar_mul_single_base(
 // while we do not have batch inversion for scalars
 use core::ops::MulAssign;
 
-pub fn batch_inversion(v: &mut [BlsScalar]) {
+pub fn batch_inversion<P: Pairing>(v: &mut [P::ScalarField]) {
     // Montgomery’s Trick and Fast Implementation of Masked AES
     // Genelle, Prouff and Quisquater
     // Section 3.2
 
     // First pass: compute [a, ab, abc, ...]
     let mut prod = Vec::with_capacity(v.len());
-    let mut tmp = BlsScalar::one();
-    for f in v.iter().filter(|f| f != &&BlsScalar::zero()) {
+    let mut tmp = P::ScalarField::one();
+    for f in v.iter().filter(|f| f != &&P::ScalarField::zero()) {
         tmp.mul_assign(f);
         prod.push(tmp);
     }
@@ -90,9 +96,14 @@ pub fn batch_inversion(v: &mut [BlsScalar]) {
         // Backwards
         .rev()
         // Ignore normalized elements
-        .filter(|f| f != &&BlsScalar::zero())
+        .filter(|f| f != &&P::ScalarField::zero())
         // Backwards, skip last element, fill in one for last term.
-        .zip(prod.into_iter().rev().skip(1).chain(Some(BlsScalar::one())))
+        .zip(
+            prod.into_iter()
+                .rev()
+                .skip(1)
+                .chain(Some(P::ScalarField::one())),
+        )
     {
         // tmp := tmp * f; f := tmp * s = 1/f
         let new_tmp = tmp * *f;
@@ -102,6 +113,8 @@ pub fn batch_inversion(v: &mut [BlsScalar]) {
 }
 #[cfg(test)]
 mod test {
+    use zero_pairing::TatePairing;
+
     use super::*;
     #[test]
     fn test_batch_inversion() {
@@ -114,7 +127,7 @@ mod test {
         let original_scalars = vec![one, two, three, four, five];
         let mut inverted_scalars = vec![one, two, three, four, five];
 
-        batch_inversion(&mut inverted_scalars);
+        batch_inversion::<TatePairing>(&mut inverted_scalars);
         for (x, x_inv) in original_scalars.iter().zip(inverted_scalars.iter()) {
             assert_eq!(x.invert().unwrap(), *x_inv);
         }

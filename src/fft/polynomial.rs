@@ -12,6 +12,7 @@ use core::ops::{Add, AddAssign, Deref, DerefMut, Mul, Neg, Sub, SubAssign};
 use sp_std::vec;
 use sp_std::vec::Vec;
 use zero_bls12_381::Fr as BlsScalar;
+use zero_pairing::TatePairing;
 
 /// Represents a polynomial in coeffiient form.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -94,7 +95,7 @@ impl Polynomial {
         }
 
         // Compute powers of points
-        let powers = util::powers_of(point, self.len());
+        let powers = util::powers_of::<TatePairing>(point, self.len());
 
         let p_evals = self.iter().zip(powers.into_iter()).map(|(c, p)| p * c);
 
@@ -355,7 +356,8 @@ mod test {
         pub(crate) fn rand<R: RngCore>(d: usize, mut rng: &mut R) -> Self {
             let mut random_coeffs = Vec::with_capacity(d + 1);
             for _ in 0..=d {
-                random_coeffs.push(util::random_scalar(&mut rng));
+                random_coeffs
+                    .push(util::random_scalar::<R, TatePairing>(&mut rng));
             }
             Self::from_coefficients_vec(random_coeffs)
         }

@@ -12,39 +12,37 @@
 //! This allows us to perform polynomial operations in O(n)
 //! by performing an O(n log n) FFT over such a domain.
 
-use zero_bls12_381::Fr as BlsScalar;
-
 use sp_std::vec;
 
 /// Defines a domain over which finite field (I)FFTs can be performed. Works
 /// only for fields that have a large multiplicative subgroup of size that is
 /// a power-of-2.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub(crate) struct EvaluationDomain {
+pub(crate) struct EvaluationDomain<P: Pairing> {
     /// The size of the domain.
     pub(crate) size: u64,
     /// `log_2(self.size)`.
     pub(crate) log_size_of_group: u32,
     /// Size of the domain as a field element.
-    pub(crate) size_as_field_element: BlsScalar,
+    pub(crate) size_as_field_element: P::ScalarField,
     /// Inverse of the size in the field.
-    pub(crate) size_inv: BlsScalar,
+    pub(crate) size_inv: P::ScalarField,
     /// A generator of the subgroup.
-    pub(crate) group_gen: BlsScalar,
+    pub(crate) group_gen: P::ScalarField,
     /// Inverse of the generator of the subgroup.
-    pub(crate) group_gen_inv: BlsScalar,
+    pub(crate) group_gen_inv: P::ScalarField,
     /// Multiplicative generator of the finite field.
-    pub(crate) generator_inv: BlsScalar,
+    pub(crate) generator_inv: P::ScalarField,
 }
 
 use crate::error::Error;
 use crate::fft::Evaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_bls12_381::{MULTIPLICATIVE_GENERATOR, ROOT_OF_UNITY, TWO_ADACITY};
+use zero_bls12_381::TWO_ADACITY;
 use zero_crypto::behave::*;
 
-impl EvaluationDomain {
+impl<P: Pairing> EvaluationDomain<P> {
     /// Construct a domain that is large enough for evaluations of a
     /// polynomial having `num_coeffs` coefficients.
     pub(crate) fn new(num_coeffs: usize) -> Result<Self, Error> {
@@ -62,11 +60,11 @@ impl EvaluationDomain {
         // Compute the generator for the multiplicative subgroup.
         // It should be 2^(log_size_of_group) root of unity.
 
-        let mut group_gen = ROOT_OF_UNITY;
+        let mut group_gen = P::ScalarField::ROOT_OF_UNITY;
         for _ in log_size_of_group..TWO_ADACITY {
             group_gen = group_gen.square();
         }
-        let size_as_field_element = BlsScalar::from(size);
+        let size_as_field_element = P::ScalarField::from(size);
         let size_inv = size_as_field_element.invert().unwrap();
 
         Ok(EvaluationDomain {
@@ -76,7 +74,9 @@ impl EvaluationDomain {
             size_inv,
             group_gen,
             group_gen_inv: group_gen.invert().unwrap(),
-            generator_inv: MULTIPLICATIVE_GENERATOR.invert().unwrap(),
+            generator_inv: P::ScalarField::MULTIPLICATIVE_GENERATOR
+                .invert()
+                .unwrap(),
         })
     }
 
@@ -90,14 +90,14 @@ impl EvaluationDomain {
     /// point `tau`.
     pub(crate) fn evaluate_all_lagrange_coefficients(
         &self,
-        tau: BlsScalar,
-    ) -> Vec<BlsScalar> {
+        tau: P::ScalarField,
+    ) -> Vec<P::ScalarField> {
         // Evaluate all Lagrange polynomials
         let size = self.size as usize;
         let t_size = tau.pow(self.size);
-        let one = BlsScalar::one();
-        if t_size == BlsScalar::one() {
-            let mut u = vec![BlsScalar::zero(); size];
+        let one = P::ScalarField::one();
+        if t_size == P::ScalarField::one() {
+            let mut u = vec![P::ScalarField::zero(); size];
             let mut omega_i = one;
             for i in 0..size {
                 if omega_i == tau {
@@ -112,8 +112,8 @@ impl EvaluationDomain {
 
             let mut l = (t_size - one) * self.size_inv;
             let mut r = one;
-            let mut u = vec![BlsScalar::zero(); size];
-            let mut ls = vec![BlsScalar::zero(); size];
+            let mut u = vec![P::ScalarField::zero(); size];
+            let mut ls = vec![P::ScalarField::zero(); size];
             for i in 0..size {
                 u[i] = tau - r;
                 ls[i] = l;
@@ -121,7 +121,7 @@ impl EvaluationDomain {
                 r *= &self.group_gen;
             }
 
-            batch_inversion(u.as_mut_slice());
+            batch_inversion::<P>(u.as_mut_slice());
 
             u.iter_mut().zip(ls).for_each(|(tau_minus_r, l)| {
                 *tau_minus_r = l * *tau_minus_r;
@@ -137,13 +137,14 @@ impl EvaluationDomain {
     pub(crate) fn compute_vanishing_poly_over_coset(
         &self,            // domain to evaluate over
         poly_degree: u64, // degree of the vanishing polynomial
-    ) -> Evaluations {
+    ) -> Evaluations<P> {
         assert!((self.size() as u64) > poly_degree);
-        let coset_gen = MULTIPLICATIVE_GENERATOR.pow(poly_degree);
+        let coset_gen =
+            P::ScalarField::MULTIPLICATIVE_GENERATOR.pow(poly_degree);
         let v_h: Vec<_> = (0..self.size())
             .map(|i| {
                 (coset_gen * self.group_gen.pow(poly_degree * i as u64))
-                    - BlsScalar::one()
+                    - P::ScalarField::one()
             })
             .collect();
         Evaluations::from_vec_and_domain(v_h, *self)

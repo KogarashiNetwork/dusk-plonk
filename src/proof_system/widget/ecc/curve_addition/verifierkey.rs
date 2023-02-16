@@ -4,27 +4,28 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::commitment_scheme::Commitment;
-use zero_crypto::behave::PrimeField;
+use zero_crypto::{
+    behave::{FftField, PrimeField},
+    common::Pairing,
+};
+use zero_kzg::Commitment;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub(crate) struct VerifierKey {
-    pub(crate) q_variable_group_add: Commitment,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub(crate) struct VerifierKey<P: Pairing> {
+    pub(crate) q_variable_group_add: Commitment<P>,
 }
 
 use crate::proof_system::linearization_poly::ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_bls12_381::{Fr as BlsScalar, G1Affine};
-use zero_jubjub::EDWARDS_D;
 
-impl VerifierKey {
+impl<P: Pairing> VerifierKey<P> {
     pub(crate) fn compute_linearization_commitment(
         &self,
-        curve_add_separation_challenge: &BlsScalar,
-        scalars: &mut Vec<BlsScalar>,
-        points: &mut Vec<G1Affine>,
-        evaluations: &ProofEvaluations,
+        curve_add_separation_challenge: &P::ScalarField,
+        scalars: &mut Vec<P::ScalarField>,
+        points: &mut Vec<P::G1Affine>,
+        evaluations: &ProofEvaluations<P>,
     ) {
         let kappa = curve_add_separation_challenge.square();
 
@@ -47,12 +48,12 @@ impl VerifierKey {
 
         // Check x_3 is correct
         let x3_lhs = x1_y2 + y1_x2;
-        let x3_rhs = x_3 + (x_3 * (EDWARDS_D * x1_y2 * y1_x2));
+        let x3_rhs = x_3 + (x_3 * (P::ScalarField::EDWARDS_D * x1_y2 * y1_x2));
         let x3_consistency = (x3_lhs - x3_rhs) * kappa;
 
         // Check y_3 is correct
         let y3_lhs = y1_y2 + x1_x2;
-        let y3_rhs = y_3 - (y_3 * EDWARDS_D * x1_y2 * y1_x2);
+        let y3_rhs = y_3 - (y_3 * P::ScalarField::EDWARDS_D * x1_y2 * y1_x2);
         let y3_consistency = (y3_lhs - y3_rhs) * kappa.square();
 
         let identity = xy_consistency + x3_consistency + y3_consistency;

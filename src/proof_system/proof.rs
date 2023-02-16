@@ -8,9 +8,9 @@
 //! are needed to univocally identify a prove of some statement.
 
 use super::linearization_poly::ProofEvaluations;
-use crate::commitment_scheme::Commitment;
 use codec::{Decode, Encode};
-use zero_kzg::Polynomial;
+use zero_crypto::behave::Ring;
+use zero_kzg::{Commitment, Polynomial};
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
 /// Quotient, Shifted and Opening polynomials as well as the
@@ -22,36 +22,36 @@ use zero_kzg::Polynomial;
 /// [`Verifier`](crate::prelude::Verifier) have in common succintly
 /// and without any capabilities of adquiring any kind of knowledge about the
 /// witness used to construct the Proof.
-#[derive(Debug, Eq, PartialEq, Clone, Default, Decode, Encode)]
+#[derive(Debug, Eq, PartialEq, Clone, Decode, Encode)]
 
-pub struct Proof {
+pub struct Proof<P: Pairing> {
     /// Commitment to the witness polynomial for the left wires.
-    pub(crate) a_comm: Commitment,
+    pub(crate) a_comm: Commitment<P>,
     /// Commitment to the witness polynomial for the right wires.
-    pub(crate) b_comm: Commitment,
+    pub(crate) b_comm: Commitment<P>,
     /// Commitment to the witness polynomial for the output wires.
-    pub(crate) c_comm: Commitment,
+    pub(crate) c_comm: Commitment<P>,
     /// Commitment to the witness polynomial for the fourth wires.
-    pub(crate) d_comm: Commitment,
+    pub(crate) d_comm: Commitment<P>,
 
     /// Commitment to the permutation polynomial.
-    pub(crate) z_comm: Commitment,
+    pub(crate) z_comm: Commitment<P>,
 
     /// Commitment to the quotient polynomial.
-    pub(crate) t_low_comm: Commitment,
+    pub(crate) t_low_comm: Commitment<P>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_mid_comm: Commitment,
+    pub(crate) t_mid_comm: Commitment<P>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_high_comm: Commitment,
+    pub(crate) t_high_comm: Commitment<P>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_4_comm: Commitment,
+    pub(crate) t_4_comm: Commitment<P>,
 
     /// Commitment to the opening polynomial.
-    pub(crate) w_z_chall_comm: Commitment,
+    pub(crate) w_z_chall_comm: Commitment<P>,
     /// Commitment to the shifted opening polynomial.
-    pub(crate) w_z_chall_w_comm: Commitment,
+    pub(crate) w_z_chall_w_comm: Commitment<P>,
     /// Subset of all of the evaluations added to the proof.
-    pub(crate) evaluations: ProofEvaluations,
+    pub(crate) evaluations: ProofEvaluations<P>,
 }
 
 use crate::{
@@ -67,17 +67,20 @@ use crate::{
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zero_bls12_381::{msm_variable_base, Fr as BlsScalar, G1Affine};
-use zero_crypto::behave::{FftField, Group, PrimeField};
+use zero_bls12_381::msm_variable_base;
+use zero_crypto::{
+    behave::{FftField, Group, PrimeField},
+    common::Pairing,
+};
 
-impl Proof {
+impl<P: Pairing> Proof<P> {
     /// Performs the verification of a [`Proof`] returning a boolean result.
     pub(crate) fn verify(
         &self,
-        verifier_key: &VerifierKey,
+        verifier_key: &VerifierKey<P>,
         transcript: &mut Transcript,
-        opening_key: &OpeningKey,
-        pub_inputs: &[BlsScalar],
+        opening_key: &OpeningKey<P>,
+        pub_inputs: &[P::ScalarField],
     ) -> Result<(), Error> {
         let n = verifier_key.n.next_power_of_two();
         let domain = EvaluationDomain::new(verifier_key.n)?;
@@ -98,23 +101,48 @@ impl Proof {
         transcript.append_commitment(b"d_w", &self.d_comm);
 
         // Compute beta and gamma challenges
-        let beta = transcript.challenge_scalar(b"beta");
-        transcript.append_scalar(b"beta", &beta);
-        let gamma = transcript.challenge_scalar(b"gamma");
+        let beta = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+            &mut transcript,
+            b"beta",
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"beta",
+            &beta,
+        );
+        let gamma = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+            &mut transcript,
+            b"gamma",
+        );
 
         // Add commitment to permutation polynomial to transcript
         transcript.append_commitment(b"z", &self.z_comm);
 
         // Compute quotient challenge
-        let alpha = transcript.challenge_scalar(b"alpha");
+        let alpha = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+            &mut transcript,
+            b"alpha",
+        );
         let range_sep_challenge =
-            transcript.challenge_scalar(b"range separation challenge");
+            <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+                &mut transcript,
+                b"range separation challenge",
+            );
         let logic_sep_challenge =
-            transcript.challenge_scalar(b"logic separation challenge");
+            <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+                &mut transcript,
+                b"logic separation challenge",
+            );
         let fixed_base_sep_challenge =
-            transcript.challenge_scalar(b"fixed base separation challenge");
+            <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+                &mut transcript,
+                b"fixed base separation challenge",
+            );
         let var_base_sep_challenge =
-            transcript.challenge_scalar(b"variable base separation challenge");
+            <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+                &mut transcript,
+                b"variable base separation challenge",
+            );
 
         // Add commitment to quotient polynomial to transcript
         transcript.append_commitment(b"t_low", &self.t_low_comm);
@@ -123,7 +151,11 @@ impl Proof {
         transcript.append_commitment(b"t_4", &self.t_4_comm);
 
         // Compute evaluation challenge z
-        let z_challenge = transcript.challenge_scalar(b"z_challenge");
+        let z_challenge =
+            <Transcript as TranscriptProtocol<P>>::challenge_scalar(
+                &mut transcript,
+                b"z_challenge",
+            );
 
         // Compute zero polynomial evaluated at challenge `z`
         let z_h_eval = Polynomial::t(n as u64, z_challenge);
@@ -151,27 +183,91 @@ impl Proof {
         let t_comm = self.compute_quotient_commitment(&z_challenge, n);
 
         // Add evaluations to transcript
-        transcript.append_scalar(b"a_eval", &self.evaluations.a_eval);
-        transcript.append_scalar(b"b_eval", &self.evaluations.b_eval);
-        transcript.append_scalar(b"c_eval", &self.evaluations.c_eval);
-        transcript.append_scalar(b"d_eval", &self.evaluations.d_eval);
-        transcript.append_scalar(b"a_next_eval", &self.evaluations.a_next_eval);
-        transcript.append_scalar(b"b_next_eval", &self.evaluations.b_next_eval);
-        transcript.append_scalar(b"d_next_eval", &self.evaluations.d_next_eval);
-        transcript
-            .append_scalar(b"s_sigma_1_eval", &self.evaluations.s_sigma_1_eval);
-        transcript
-            .append_scalar(b"s_sigma_2_eval", &self.evaluations.s_sigma_2_eval);
-        transcript
-            .append_scalar(b"s_sigma_3_eval", &self.evaluations.s_sigma_3_eval);
-        transcript
-            .append_scalar(b"q_arith_eval", &self.evaluations.q_arith_eval);
-        transcript.append_scalar(b"q_c_eval", &self.evaluations.q_c_eval);
-        transcript.append_scalar(b"q_l_eval", &self.evaluations.q_l_eval);
-        transcript.append_scalar(b"q_r_eval", &self.evaluations.q_r_eval);
-        transcript.append_scalar(b"perm_eval", &self.evaluations.perm_eval);
-        transcript.append_scalar(b"t_eval", &t_eval);
-        transcript.append_scalar(b"r_eval", &self.evaluations.r_poly_eval);
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"a_eval",
+            &self.evaluations.a_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"b_eval",
+            &self.evaluations.b_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"c_eval",
+            &self.evaluations.c_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"d_eval",
+            &self.evaluations.d_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"a_next_eval",
+            &self.evaluations.a_next_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"b_next_eval",
+            &self.evaluations.b_next_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"d_next_eval",
+            &self.evaluations.d_next_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"s_sigma_1_eval",
+            &self.evaluations.s_sigma_1_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"s_sigma_2_eval",
+            &self.evaluations.s_sigma_2_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"s_sigma_3_eval",
+            &self.evaluations.s_sigma_3_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"q_arith_eval",
+            &self.evaluations.q_arith_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"q_c_eval",
+            &self.evaluations.q_c_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"q_l_eval",
+            &self.evaluations.q_l_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"q_r_eval",
+            &self.evaluations.q_r_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"perm_eval",
+            &self.evaluations.perm_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"t_eval",
+            &t_eval,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_scalar(
+            &mut transcript,
+            b"r_eval",
+            &self.evaluations.r_poly_eval,
+        );
 
         // Compute linearization commitment
         let r_comm = self.compute_linearization_commitment(
@@ -256,16 +352,16 @@ impl Proof {
     #[allow(clippy::too_many_arguments)]
     fn compute_quotient_evaluation(
         &self,
-        domain: &EvaluationDomain,
-        pub_inputs: &[BlsScalar],
-        alpha: &BlsScalar,
-        beta: &BlsScalar,
-        gamma: &BlsScalar,
-        z_challenge: &BlsScalar,
-        z_h_eval: &BlsScalar,
-        l1_eval: &BlsScalar,
-        z_hat_eval: &BlsScalar,
-    ) -> BlsScalar {
+        domain: &EvaluationDomain<P>,
+        pub_inputs: &[P::ScalarField],
+        alpha: &P::ScalarField,
+        beta: &P::ScalarField,
+        gamma: &P::ScalarField,
+        z_challenge: &P::ScalarField,
+        z_h_eval: &P::ScalarField,
+        l1_eval: &P::ScalarField,
+        z_hat_eval: &P::ScalarField,
+    ) -> P::ScalarField {
         // Compute the public input polynomial evaluated at challenge `z`
         let pi_eval = compute_barycentric_eval(pub_inputs, z_challenge, domain);
 
@@ -276,15 +372,15 @@ impl Proof {
         let a = self.evaluations.r_poly_eval + pi_eval;
 
         // a + beta * sigma_1 + gamma
-        let beta_sig1 = beta * self.evaluations.s_sigma_1_eval;
+        let beta_sig1 = *beta * self.evaluations.s_sigma_1_eval;
         let b_0 = self.evaluations.a_eval + beta_sig1 + gamma;
 
         // b + beta * sigma_2 + gamma
-        let beta_sig2 = beta * self.evaluations.s_sigma_2_eval;
+        let beta_sig2 = *beta * self.evaluations.s_sigma_2_eval;
         let b_1 = self.evaluations.b_eval + beta_sig2 + gamma;
 
         // c + beta * sigma_3 + gamma
-        let beta_sig3 = beta * self.evaluations.s_sigma_3_eval;
+        let beta_sig3 = *beta * self.evaluations.s_sigma_3_eval;
         let b_2 = self.evaluations.c_eval + beta_sig3 + gamma;
 
         // ((d + gamma) * z_hat) * alpha_0
@@ -293,7 +389,7 @@ impl Proof {
         let b = b_0 * b_1 * b_2 * b_3;
 
         // l_1(z) * alpha_0^2
-        let c = l1_eval * alpha_sq;
+        let c = *l1_eval * alpha_sq;
 
         // Return t_eval
         (
@@ -304,9 +400,9 @@ impl Proof {
 
     fn compute_quotient_commitment(
         &self,
-        z_challenge: &BlsScalar,
+        z_challenge: &P::ScalarField,
         n: usize,
-    ) -> Commitment {
+    ) -> Commitment<P> {
         let z_n = z_challenge.pow(n as u64);
         let z_two_n = z_challenge.pow(2 * n as u64);
         let z_three_n = z_challenge.pow(3 * n as u64);
@@ -314,28 +410,33 @@ impl Proof {
             + self.t_mid_comm.0 * z_n
             + self.t_high_comm.0 * z_two_n
             + self.t_4_comm.0 * z_three_n;
-        Commitment::from(t_comm)
+        Commitment::new(t_comm)
     }
 
     // Commitment to [r]_1
     #[allow(clippy::too_many_arguments)]
     fn compute_linearization_commitment(
         &self,
-        alpha: &BlsScalar,
-        beta: &BlsScalar,
-        gamma: &BlsScalar,
+        alpha: &P::ScalarField,
+        beta: &P::ScalarField,
+        gamma: &P::ScalarField,
         (
             range_sep_challenge,
             logic_sep_challenge,
             fixed_base_sep_challenge,
             var_base_sep_challenge,
-        ): (&BlsScalar, &BlsScalar, &BlsScalar, &BlsScalar),
-        z_challenge: &BlsScalar,
-        l1_eval: BlsScalar,
-        verifier_key: &VerifierKey,
-    ) -> Commitment {
+        ): (
+            &P::ScalarField,
+            &P::ScalarField,
+            &P::ScalarField,
+            &P::ScalarField,
+        ),
+        z_challenge: &P::ScalarField,
+        l1_eval: P::ScalarField,
+        verifier_key: &VerifierKey<P>,
+    ) -> Commitment<P> {
         let mut scalars: Vec<_> = Vec::with_capacity(6);
-        let mut points: Vec<G1Affine> = Vec::with_capacity(6);
+        let mut points: Vec<P::G1Affine> = Vec::with_capacity(6);
 
         verifier_key.arithmetic.compute_linearization_commitment(
             &mut scalars,
@@ -385,23 +486,23 @@ impl Proof {
     }
 }
 
-fn compute_first_lagrange_evaluation(
-    domain: &EvaluationDomain,
-    z_h_eval: &BlsScalar,
-    z_challenge: &BlsScalar,
-) -> BlsScalar {
-    let n_fr = BlsScalar::from(domain.size() as u64);
-    let denom = n_fr * (z_challenge - BlsScalar::one());
-    z_h_eval * denom.invert().unwrap()
+fn compute_first_lagrange_evaluation<P: Pairing>(
+    domain: &EvaluationDomain<P>,
+    z_h_eval: &P::ScalarField,
+    z_challenge: &P::ScalarField,
+) -> P::ScalarField {
+    let n_fr = P::ScalarField::from(domain.size() as u64);
+    let denom = n_fr * (*z_challenge - P::ScalarField::one());
+    *z_h_eval * denom.invert().unwrap()
 }
 
-fn compute_barycentric_eval(
-    evaluations: &[BlsScalar],
-    point: &BlsScalar,
-    domain: &EvaluationDomain,
-) -> BlsScalar {
-    let numerator =
-        (point.pow(domain.size() as u64) - BlsScalar::one()) * domain.size_inv;
+fn compute_barycentric_eval<P: Pairing>(
+    evaluations: &[P::ScalarField],
+    point: &P::ScalarField,
+    domain: &EvaluationDomain<P>,
+) -> P::ScalarField {
+    let numerator = (point.pow(domain.size() as u64) - P::ScalarField::one())
+        * domain.size_inv;
 
     // Indices with non-zero evaluations
     #[cfg(not(feature = "std"))]
@@ -413,7 +514,7 @@ fn compute_barycentric_eval(
     let non_zero_evaluations: Vec<usize> = range
         .filter(|&i| {
             let evaluation = &evaluations[i];
-            evaluation != &BlsScalar::zero()
+            evaluation != &P::ScalarField::zero()
         })
         .collect();
 
@@ -424,18 +525,19 @@ fn compute_barycentric_eval(
     #[cfg(feature = "std")]
     let range = (0..non_zero_evaluations.len()).into_par_iter();
 
-    let mut denominators: Vec<BlsScalar> = range
+    let mut denominators: Vec<P::ScalarField> = range
         .clone()
         .map(|i| {
             // index of non-zero evaluation
             let index = non_zero_evaluations[i];
 
-            (domain.group_gen_inv.pow(index as u64) * point) - BlsScalar::one()
+            (domain.group_gen_inv.pow(index as u64) * point)
+                - P::ScalarField::one()
         })
         .collect();
-    batch_inversion(&mut denominators);
+    batch_inversion::<P>(&mut denominators);
 
-    let result: BlsScalar = range
+    let result: P::ScalarField = range
         .map(|i| {
             let eval_index = non_zero_evaluations[i];
             let eval = evaluations[eval_index];

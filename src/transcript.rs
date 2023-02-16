@@ -11,22 +11,23 @@ use core::mem;
 
 use dusk_bytes::Serializable;
 use merlin::Transcript;
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::behave::FftField;
+use zero_crypto::common::Pairing;
+use zero_kzg::Commitment;
 
-use crate::commitment_scheme::Commitment;
 use crate::proof_system::VerifierKey;
 
 /// Transcript adds an abstraction over the Merlin transcript
 /// For convenience
-pub(crate) trait TranscriptProtocol {
+pub(crate) trait TranscriptProtocol<P: Pairing> {
     /// Append a `commitment` with the given `label`.
-    fn append_commitment(&mut self, label: &'static [u8], comm: &Commitment);
+    fn append_commitment(&mut self, label: &'static [u8], comm: &Commitment<P>);
 
     /// Append a `BlsScalar` with the given `label`.
-    fn append_scalar(&mut self, label: &'static [u8], s: &BlsScalar);
+    fn append_scalar(&mut self, label: &'static [u8], s: &P::ScalarField);
 
     /// Compute a `label`ed challenge variable.
-    fn challenge_scalar(&mut self, label: &'static [u8]) -> BlsScalar;
+    fn challenge_scalar(&mut self, label: &'static [u8]) -> P::ScalarField;
 
     /// Append domain separator for the circuit size.
     fn circuit_domain_sep(&mut self, n: u64);
@@ -34,25 +35,29 @@ pub(crate) trait TranscriptProtocol {
     /// Create a new instance of the base transcript of the protocol
     fn base(
         label: &[u8],
-        verifier_key: &VerifierKey,
+        verifier_key: &VerifierKey<P>,
         constraints: usize,
     ) -> Self;
 }
 
-impl TranscriptProtocol for Transcript {
-    fn append_commitment(&mut self, label: &'static [u8], comm: &Commitment) {
+impl<P: Pairing> TranscriptProtocol<P> for Transcript {
+    fn append_commitment(
+        &mut self,
+        label: &'static [u8],
+        comm: &Commitment<P>,
+    ) {
         self.append_message(label, &comm.0.to_bytes());
     }
 
-    fn append_scalar(&mut self, label: &'static [u8], s: &BlsScalar) {
+    fn append_scalar(&mut self, label: &'static [u8], s: &P::ScalarField) {
         self.append_message(label, &s.to_bytes())
     }
 
-    fn challenge_scalar(&mut self, label: &'static [u8]) -> BlsScalar {
+    fn challenge_scalar(&mut self, label: &'static [u8]) -> P::ScalarField {
         let mut buf = [0u8; 64];
         self.challenge_bytes(label, &mut buf);
 
-        BlsScalar::from_bytes_wide(&buf)
+        P::ScalarField::from_bytes_wide(&buf)
     }
 
     fn circuit_domain_sep(&mut self, n: u64) {
@@ -62,7 +67,7 @@ impl TranscriptProtocol for Transcript {
 
     fn base(
         label: &[u8],
-        verifier_key: &VerifierKey,
+        verifier_key: &VerifierKey<P>,
         constraints: usize,
     ) -> Self {
         // Transcript can't be serialized/deserialized. One alternative is to
@@ -77,7 +82,10 @@ impl TranscriptProtocol for Transcript {
 
         let mut transcript = Transcript::new(label);
 
-        transcript.circuit_domain_sep(constraints as u64);
+        <Transcript as TranscriptProtocol<P>>::circuit_domain_sep(
+            &mut transcript,
+            constraints as u64,
+        );
 
         verifier_key.seed_transcript(&mut transcript);
 

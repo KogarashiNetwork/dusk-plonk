@@ -4,8 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use zero_crypto::common::Pairing;
+
 use crate::constraint_system::Witness;
-use zero_bls12_381::Fr as BlsScalar;
 
 /// Represents a JubJub point in the circuit
 #[derive(Debug, Clone, Copy)]
@@ -34,7 +35,7 @@ impl WitnessPoint {
 #[derive(Debug, Clone, Copy)]
 /// Contains all of the components needed to verify that a bit scalar
 /// multiplication was computed correctly
-pub(crate) struct WnafRound<T: Into<Witness>> {
+pub(crate) struct WnafRound<T: Into<Witness>, P: Pairing> {
     /// This is the accumulated x coordinate point that we wish to add (so
     /// far.. depends on where you are in the scalar mul) it is linked to
     /// the wnaf entry, so must not be revealed
@@ -52,10 +53,10 @@ pub(crate) struct WnafRound<T: Into<Witness>> {
     pub xy_alpha: T,
     /// This is the possible x co-ordinate of the wnaf point we are going to
     /// add Actual x-co-ordinate = b_i * x_\beta
-    pub x_beta: BlsScalar,
+    pub x_beta: P::ScalarField,
     /// This is the possible y co-ordinate of the wnaf point we are going to
     /// add Actual y coordinate = (b_i)^2 [y_\beta -1] + 1
-    pub y_beta: BlsScalar,
+    pub y_beta: P::ScalarField,
     /// This is the multiplication of x_\beta * y_\beta
-    pub xy_beta: BlsScalar,
+    pub xy_beta: P::ScalarField,
 }

@@ -6,10 +6,10 @@
 
 use alloc::vec::Vec;
 use core::ops;
-
 use hashbrown::HashMap;
 use sp_std::vec;
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::behave::Group;
+use zero_crypto::common::Pairing;
 
 use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
 use crate::permutation::Permutation;
@@ -19,24 +19,24 @@ use super::{Composer, Polynomial};
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
-pub struct Builder {
+pub struct Builder<P: Pairing> {
     /// Constraint system gates
-    pub(crate) constraints: Vec<Polynomial>,
+    pub(crate) constraints: Vec<Polynomial<P>>,
 
     /// Sparse representation of the public inputs
-    pub(crate) public_inputs: HashMap<usize, BlsScalar>,
+    pub(crate) public_inputs: HashMap<usize, P::ScalarField>,
 
     /// Witness values
-    pub(crate) witnesses: Vec<BlsScalar>,
+    pub(crate) witnesses: Vec<P::ScalarField>,
 
     /// Permutation argument.
-    pub(crate) perm: Permutation,
+    pub(crate) perm: Permutation<P>,
 
     /// PLONK runtime controller
     pub(crate) runtime: Runtime,
 }
 
-impl Builder {
+impl<P: Pairing> Builder<P> {
     pub(crate) fn public_input_indexes(&self) -> Vec<usize> {
         let mut public_input_indexes: Vec<_> =
             self.public_inputs.keys().copied().collect();
@@ -46,7 +46,7 @@ impl Builder {
         public_input_indexes
     }
 
-    pub(crate) fn public_inputs(&self) -> Vec<BlsScalar> {
+    pub(crate) fn public_inputs(&self) -> Vec<P::ScalarField> {
         self.public_input_indexes()
             .iter()
             .filter_map(|idx| self.public_inputs.get(idx).copied())
@@ -55,10 +55,10 @@ impl Builder {
 
     pub(crate) fn dense_public_inputs(
         public_input_indexes: &[usize],
-        public_inputs: &[BlsScalar],
+        public_inputs: &[P::ScalarField],
         size: usize,
-    ) -> Vec<BlsScalar> {
-        let mut dense_public_inputs = vec![BlsScalar::zero(); size];
+    ) -> Vec<P::ScalarField> {
+        let mut dense_public_inputs = vec![P::ScalarField::zero(); size];
 
         public_input_indexes
             .iter()
@@ -69,15 +69,15 @@ impl Builder {
     }
 }
 
-impl ops::Index<Witness> for Builder {
-    type Output = BlsScalar;
+impl<P: Pairing> ops::Index<Witness> for Builder<P> {
+    type Output = P::ScalarField;
 
     fn index(&self, w: Witness) -> &Self::Output {
         &self.witnesses[w.index()]
     }
 }
 
-impl Composer for Builder {
+impl<P: Pairing> Composer<P> for Builder<P> {
     fn uninitialized(capacity: usize) -> Self {
         Self {
             constraints: Vec::with_capacity(capacity),
@@ -92,7 +92,7 @@ impl Composer for Builder {
         self.constraints.len()
     }
 
-    fn append_witness_internal(&mut self, witness: BlsScalar) -> Witness {
+    fn append_witness_internal(&mut self, witness: P::ScalarField) -> Witness {
         let n = self.witnesses.len();
 
         // Get a new Witness from the permutation
@@ -104,7 +104,7 @@ impl Composer for Builder {
         Witness::new(n)
     }
 
-    fn append_custom_gate_internal(&mut self, constraint: Constraint) {
+    fn append_custom_gate_internal(&mut self, constraint: Constraint<P>) {
         let n = self.constraints.len();
 
         let w_a = constraint.witness(WiredWitness::A);
