@@ -106,13 +106,13 @@ fn select_works() {
         one_res: BlsScalar,
 
         point_bit: BlsScalar,
-        point_a: JubJubExtended,
-        point_b: JubJubExtended,
-        point_res: JubJubExtended,
+        point_a: JubjubExtend,
+        point_b: JubjubExtend,
+        point_res: JubjubExtend,
 
         identity_bit: BlsScalar,
-        identity_a: JubJubExtended,
-        identity_res: JubJubExtended,
+        identity_a: JubjubExtend,
+        identity_res: JubjubExtend,
     }
 
     impl DummyCircuit {
@@ -125,10 +125,10 @@ fn select_works() {
             one_bit: BlsScalar,
             one_a: BlsScalar,
             point_bit: BlsScalar,
-            point_a: JubJubExtended,
-            point_b: JubJubExtended,
+            point_a: JubjubExtend,
+            point_b: JubjubExtend,
             identity_bit: BlsScalar,
-            identity_a: JubJubExtended,
+            identity_a: JubjubExtend,
         ) -> Self {
             let res = if bit == BlsScalar::one() { a } else { b };
 
@@ -153,7 +153,7 @@ fn select_works() {
             let identity_res = if identity_bit == BlsScalar::one() {
                 identity_a
             } else {
-                JubJubExtended::identity()
+                JubjubExtend::ADDITIVE_IDENTITY
             };
 
             Self {
@@ -189,12 +189,12 @@ fn select_works() {
             let one_a = BlsScalar::from(11u64);
             let point_bit = BlsScalar::zero();
             let point_a =
-                zero_jubjub::GENERATOR_EXTENDED * &JubJubScalar::from(13u64);
+                JubjubExtend::ADDITIVE_GENERATOR * JubjubScalar::from(13u64);
             let point_b =
-                zero_jubjub::GENERATOR_EXTENDED * &JubJubScalar::from(17u64);
+                JubjubExtend::ADDITIVE_GENERATOR * JubjubScalar::from(17u64);
             let identity_bit = BlsScalar::one();
             let identity_a =
-                zero_jubjub::GENERATOR_EXTENDED * &JubJubScalar::from(19u64);
+                JubjubExtend::ADDITIVE_GENERATOR * JubjubScalar::from(19u64);
 
             Self::new(
                 bit,
@@ -274,13 +274,13 @@ fn select_works() {
         let one_bit = bit;
         let one_a = BlsScalar::random(&mut rng);
         let point_bit = bit;
-        let point_a = JubJubScalar::random(&mut rng);
-        let point_a = zero_jubjub::GENERATOR_EXTENDED * &point_a;
-        let point_b = JubJubScalar::random(&mut rng);
-        let point_b = zero_jubjub::GENERATOR_EXTENDED * &point_b;
+        let point_a = JubjubScalar::random(&mut rng);
+        let point_a = JubjubExtend::ADDITIVE_GENERATOR * point_a;
+        let point_b = JubjubScalar::random(&mut rng);
+        let point_b = JubjubExtend::ADDITIVE_GENERATOR * point_b;
         let identity_bit = bit;
-        let identity_a = JubJubScalar::random(&mut rng);
-        let identity_a = zero_jubjub::GENERATOR_EXTENDED * &identity_a;
+        let identity_a = JubjubScalar::random(&mut rng);
+        let identity_a = JubjubExtend::ADDITIVE_GENERATOR * identity_a;
 
         let circuit = DummyCircuit::new(
             bit,
@@ -313,13 +313,13 @@ fn select_works() {
         let one_bit = bit;
         let one_a = BlsScalar::random(&mut rng);
         let point_bit = bit;
-        let point_a = JubJubScalar::random(&mut rng);
-        let point_a = zero_jubjub::GENERATOR_EXTENDED * &point_a;
-        let point_b = JubJubScalar::random(&mut rng);
-        let point_b = zero_jubjub::GENERATOR_EXTENDED * &point_b;
+        let point_a = JubjubScalar::random(&mut rng);
+        let point_a = JubjubExtend::ADDITIVE_GENERATOR * point_a;
+        let point_b = JubjubScalar::random(&mut rng);
+        let point_b = JubjubExtend::ADDITIVE_GENERATOR * point_b;
         let identity_bit = bit;
-        let identity_a = JubJubScalar::random(&mut rng);
-        let identity_a = zero_jubjub::GENERATOR_EXTENDED * &identity_a;
+        let identity_a = JubjubScalar::random(&mut rng);
+        let identity_a = JubjubExtend::ADDITIVE_GENERATOR * identity_a;
 
         let circuit = DummyCircuit::new(
             bit,
@@ -353,13 +353,13 @@ fn select_works() {
     let one_bit = bit;
     let one_a = BlsScalar::random(&mut rng);
     let point_bit = bit;
-    let point_a = JubJubScalar::random(&mut rng);
-    let point_a = zero_jubjub::GENERATOR_EXTENDED * &point_a;
-    let point_b = JubJubScalar::random(&mut rng);
-    let point_b = zero_jubjub::GENERATOR_EXTENDED * &point_b;
+    let point_a = JubjubScalar::random(&mut rng);
+    let point_a = JubjubExtend::ADDITIVE_GENERATOR * point_a;
+    let point_b = JubjubScalar::random(&mut rng);
+    let point_b = JubjubExtend::ADDITIVE_GENERATOR * point_b;
     let identity_bit = bit;
-    let identity_a = JubJubScalar::random(&mut rng);
-    let identity_a = zero_jubjub::GENERATOR_EXTENDED * &identity_a;
+    let identity_a = JubjubScalar::random(&mut rng);
+    let identity_a = JubjubExtend::ADDITIVE_GENERATOR * identity_a;
 
     let base = DummyCircuit::new(
         bit,
@@ -407,7 +407,7 @@ fn select_works() {
     {
         let mut circuit = base.clone();
 
-        let x = zero_jubjub::GENERATOR_EXTENDED * &JubJubScalar::one();
+        let x = JubjubExtend::ADDITIVE_GENERATOR * JubjubScalar::one();
 
         circuit.point_res = circuit.point_res + x;
 
@@ -418,7 +418,7 @@ fn select_works() {
     {
         let mut circuit = base.clone();
 
-        let x = zero_jubjub::GENERATOR_EXTENDED * &JubJubScalar::one();
+        let x = JubjubExtend::ADDITIVE_GENERATOR * JubjubScalar::one();
 
         circuit.identity_res = circuit.identity_res + x;
 

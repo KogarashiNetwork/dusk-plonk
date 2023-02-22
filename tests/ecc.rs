@@ -15,25 +15,28 @@ fn mul_generator_works() {
 
     let n = 1 << 9;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let pp = PublicParameters::setup(n, &mut rng).expect(
+        "failed to create
+pp",
+    );
 
     pub struct DummyCircuit {
-        a: JubJubScalar,
-        b: JubJubExtended,
+        a: JubjubScalar,
+        b: JubjubExtend,
     }
 
     impl DummyCircuit {
-        pub fn new(a: JubJubScalar) -> Self {
+        pub fn new(a: JubjubScalar) -> Self {
             Self {
                 a,
-                b: zero_jubjub::GENERATOR_EXTENDED * &a,
+                b: JubjubExtend::ADDITIVE_GENERATOR * a,
             }
         }
     }
 
     impl Default for DummyCircuit {
         fn default() -> Self {
-            Self::new(JubJubScalar::from(7u64))
+            Self::new(JubjubScalar::from(7u64))
         }
     }
 
@@ -47,7 +50,7 @@ fn mul_generator_works() {
 
             let w_x = composer.component_mul_generator(
                 w_a,
-                zero_jubjub::GENERATOR_EXTENDED,
+                JubjubExtend::ADDITIVE_GENERATOR,
             )?;
 
             composer.assert_equal_point(w_b, w_x);
@@ -61,7 +64,7 @@ fn mul_generator_works() {
 
     // default works
     {
-        let a = JubJubScalar::random(&mut rng);
+        let a = JubjubScalar::random(&mut rng);
         let (proof, public_inputs) = prover
             .prove(&mut rng, &DummyCircuit::new(a))
             .expect("failed to prove");
@@ -73,11 +76,11 @@ fn mul_generator_works() {
 
     // negative check
     {
-        let a = JubJubScalar::from(7u64);
-        let b = zero_jubjub::GENERATOR_EXTENDED * &a;
+        let a = JubjubScalar::from(7u64);
+        let b = JubjubExtend::ADDITIVE_GENERATOR * a;
 
-        let x = JubJubScalar::from(8u64);
-        let y = zero_jubjub::GENERATOR_EXTENDED * &x;
+        let x = JubjubScalar::from(8u64);
+        let y = JubjubExtend::ADDITIVE_GENERATOR * x;
 
         assert_ne!(b, y);
 
@@ -89,10 +92,10 @@ fn mul_generator_works() {
     // invalid jubjub won't panic
     {
         let a = -BlsScalar::one();
-        let a = JubJubScalar::to_mont_form(a.0);
+        let a = JubjubScalar::to_mont_form(a.0);
 
-        let x = JubJubScalar::from(8u64);
-        let y = zero_jubjub::GENERATOR_EXTENDED * &x;
+        let x = JubjubScalar::from(8u64);
+        let y = JubjubExtend::ADDITIVE_GENERATOR * x;
 
         prover
             .prove(&mut rng, &DummyCircuit { a, b: y })
@@ -106,18 +109,21 @@ fn add_point_works() {
 
     let n = 1 << 4;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let pp = PublicParameters::setup(n, &mut rng).expect(
+        "failed to create
+pp",
+    );
 
     pub struct DummyCircuit {
-        a: JubJubExtended,
-        b: JubJubExtended,
-        c: JubJubExtended,
+        a: JubjubExtend,
+        b: JubjubExtend,
+        c: JubjubExtend,
     }
 
     impl DummyCircuit {
-        pub fn new(a: &JubJubScalar, b: &JubJubScalar) -> Self {
-            let a = zero_jubjub::GENERATOR_EXTENDED * a;
-            let b = zero_jubjub::GENERATOR_EXTENDED * b;
+        pub fn new(a: &JubjubScalar, b: &JubjubScalar) -> Self {
+            let a = JubjubExtend::ADDITIVE_GENERATOR * *a;
+            let b = JubjubExtend::ADDITIVE_GENERATOR * *b;
             let c = a + b;
 
             Self { a, b, c }
@@ -126,7 +132,7 @@ fn add_point_works() {
 
     impl Default for DummyCircuit {
         fn default() -> Self {
-            Self::new(&JubJubScalar::from(7u64), &JubJubScalar::from(8u64))
+            Self::new(&JubjubScalar::from(7u64), &JubjubScalar::from(8u64))
         }
     }
 
@@ -152,8 +158,8 @@ fn add_point_works() {
 
     // default works
     {
-        let a = JubJubScalar::random(&mut rng);
-        let b = JubJubScalar::random(&mut rng);
+        let a = JubjubScalar::random(&mut rng);
+        let b = JubjubScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
             .prove(&mut rng, &DummyCircuit::new(&a, &b))
@@ -166,15 +172,15 @@ fn add_point_works() {
 
     // identity works
     {
-        let a = JubJubScalar::random(&mut rng);
-        let a = zero_jubjub::GENERATOR_EXTENDED * &a;
+        let a = JubjubScalar::random(&mut rng);
+        let a = JubjubExtend::ADDITIVE_GENERATOR * a;
 
         let (proof, public_inputs) = prover
             .prove(
                 &mut rng,
                 &DummyCircuit {
                     a,
-                    b: JubJubExtended::identity(),
+                    b: JubjubExtend::ADDITIVE_IDENTITY,
                     c: a,
                 },
             )
@@ -191,9 +197,9 @@ fn add_point_works() {
             .prove(
                 &mut rng,
                 &DummyCircuit {
-                    a: JubJubExtended::identity(),
-                    b: JubJubExtended::identity(),
-                    c: JubJubExtended::identity(),
+                    a: JubjubExtend::ADDITIVE_IDENTITY,
+                    b: JubjubExtend::ADDITIVE_IDENTITY,
+                    c: JubjubExtend::ADDITIVE_IDENTITY,
                 },
             )
             .expect("failed to prove");
@@ -205,14 +211,14 @@ fn add_point_works() {
 
     // negative check
     {
-        let a = JubJubScalar::from(7u64);
-        let a = zero_jubjub::GENERATOR_EXTENDED * &a;
+        let a = JubjubScalar::from(7u64);
+        let a = JubjubExtend::ADDITIVE_GENERATOR * a;
 
-        let b = JubJubScalar::from(8u64);
-        let b = zero_jubjub::GENERATOR_EXTENDED * &b;
+        let b = JubjubScalar::from(8u64);
+        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
 
-        let c = JubJubScalar::from(9u64);
-        let c = zero_jubjub::GENERATOR_EXTENDED * &c;
+        let c = JubjubScalar::from(9u64);
+        let c = JubjubExtend::ADDITIVE_GENERATOR * c;
 
         assert_ne!(c, a + b);
 
@@ -228,17 +234,20 @@ fn mul_point_works() {
 
     let n = 1 << 13;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let pp = PublicParameters::setup(n, &mut rng).expect(
+        "failed to create
+pp",
+    );
 
     pub struct DummyCircuit {
-        a: JubJubScalar,
-        b: JubJubExtended,
-        c: JubJubExtended,
+        a: JubjubScalar,
+        b: JubjubExtend,
+        c: JubjubExtend,
     }
 
     impl DummyCircuit {
-        pub fn new(a: JubJubScalar, b: JubJubExtended) -> Self {
-            let c = b * &a;
+        pub fn new(a: JubjubScalar, b: JubjubExtend) -> Self {
+            let c = b * a;
 
             Self { a, b, c }
         }
@@ -246,10 +255,10 @@ fn mul_point_works() {
 
     impl Default for DummyCircuit {
         fn default() -> Self {
-            let b = JubJubScalar::from(8u64);
-            let b = zero_jubjub::GENERATOR_EXTENDED * &b;
+            let b = JubjubScalar::from(8u64);
+            let b = JubjubExtend::ADDITIVE_GENERATOR * b;
 
-            Self::new(JubJubScalar::from(7u64), b)
+            Self::new(JubjubScalar::from(7u64), b)
         }
     }
 
@@ -275,9 +284,9 @@ fn mul_point_works() {
 
     // default works
     {
-        let a = JubJubScalar::random(&mut rng);
-        let b = JubJubScalar::random(&mut rng);
-        let b = zero_jubjub::GENERATOR_EXTENDED * &b;
+        let a = JubjubScalar::random(&mut rng);
+        let b = JubjubScalar::random(&mut rng);
+        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
 
         let (proof, public_inputs) = prover
             .prove(&mut rng, &DummyCircuit::new(a, b))
@@ -290,13 +299,13 @@ fn mul_point_works() {
 
     // negative works
     {
-        let a = JubJubScalar::random(&mut rng);
-        let b = JubJubScalar::random(&mut rng);
-        let b = zero_jubjub::GENERATOR_EXTENDED * &b;
-        let c = b * &a;
+        let a = JubjubScalar::random(&mut rng);
+        let b = JubjubScalar::random(&mut rng);
+        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
+        let c = b * a;
 
-        let x = JubJubScalar::random(&mut rng);
-        let x = zero_jubjub::GENERATOR_EXTENDED * &x;
+        let x = JubjubScalar::random(&mut rng);
+        let x = JubjubExtend::ADDITIVE_GENERATOR * x;
 
         assert_ne!(c, x);
 
