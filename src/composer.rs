@@ -13,9 +13,11 @@ use core::ops::{Index, Neg};
 use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
-use zero_crypto::behave::{FftField, Group, PrimeField, Ring};
+use zero_crypto::behave::{
+    Curve, CurveExtend, FftField, Group, PrimeField, Ring,
+};
 use zero_crypto::common::Pairing;
-use zero_jubjub::{Fp as JubJubScalar, JubJubAffine, JubJubExtended};
+use zero_jubjub::{Fp as JubJubScalar, JubjubAffine, JubjubExtend};
 
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
@@ -227,7 +229,7 @@ pub trait Composer<PR: Pairing>:
     /// `generator` will be appended to the circuit description as constant
     ///
     /// Will error if `jubjub` doesn't fit `Fr`
-    fn component_mul_generator<P: Into<JubJubExtended>>(
+    fn component_mul_generator<P: Into<JubjubExtend>>(
         &mut self,
         jubjub: Witness,
         generator: P,
@@ -243,7 +245,7 @@ pub trait Composer<PR: Pairing>:
 
         // compute 2^iG
         let mut wnaf_point_multiples: Vec<_> = {
-            let mut multiples = vec![JubJubExtended::identity(); bits];
+            let mut multiples = vec![JubjubExtend::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
 
@@ -251,7 +253,7 @@ pub trait Composer<PR: Pairing>:
                 multiples[i] = multiples[i - 1].double();
             }
 
-            zero_jubjub::batch_normalize(&mut multiples).collect()
+            JubjubExtend::batch_normalize(&mut multiples).collect()
         };
 
         wnaf_point_multiples.reverse();
@@ -269,7 +271,7 @@ pub trait Composer<PR: Pairing>:
 
         // initialize the accumulators
         let mut scalar_acc = vec![PR::ScalarField::zero()];
-        let mut point_acc = vec![JubJubAffine::identity()];
+        let mut point_acc = vec![JubjubAffine::ADDITIVE_IDENTITY];
 
         // auxillary point to help with checks on the backend
         let two = PR::ScalarField::from(2u64);
@@ -279,7 +281,10 @@ pub trait Composer<PR: Pairing>:
             .enumerate()
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
-                    0 => (PR::ScalarField::zero(), JubJubAffine::identity()),
+                    0 => (
+                        PR::ScalarField::zero(),
+                        JubjubAffine::ADDITIVE_IDENTITY,
+                    ),
                     -1 => {
                         (PR::ScalarField::one().neg(), -wnaf_point_multiples[i])
                     }
@@ -291,8 +296,8 @@ pub trait Composer<PR: Pairing>:
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let a = JubJubExtended::from(point_acc[i]);
-                let b = JubJubExtended::from(point_to_add);
+                let a = JubjubExtend::from(point_acc[i]);
+                let b = JubjubExtend::from(point_to_add);
                 let point = a + b;
                 point_acc.push(point.into());
 
@@ -510,7 +515,7 @@ pub trait Composer<PR: Pairing>:
     }
 
     /// Appends a point in affine form as [`WitnessPoint`]
-    fn append_point<P: Into<JubJubAffine>>(
+    fn append_point<P: Into<JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -524,7 +529,7 @@ pub trait Composer<PR: Pairing>:
 
     /// Constrain a point into the circuit description and return an allocated
     /// [`WitnessPoint`] with its coordinates
-    fn append_constant_point<P: Into<JubJubAffine>>(
+    fn append_constant_point<P: Into<JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -539,7 +544,7 @@ pub trait Composer<PR: Pairing>:
     /// Appends a point in affine form as [`WitnessPoint`]
     ///
     /// Creates two public inputs as `(x, y)`
-    fn append_public_point<P: Into<JubJubAffine>>(
+    fn append_public_point<P: Into<JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -645,7 +650,7 @@ pub trait Composer<PR: Pairing>:
     /// Asserts `point == public`.
     ///
     /// Will add `public` affine coordinates `(x,y)` as public inputs
-    fn assert_equal_public_point<P: Into<JubJubAffine>>(
+    fn assert_equal_public_point<P: Into<JubjubAffine>>(
         &mut self,
         point: WitnessPoint,
         public: P,
@@ -681,10 +686,10 @@ pub trait Composer<PR: Pairing>:
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = JubJubAffine::from_raw_unchecked(self[x_1], self[y_1]);
-        let p2 = JubJubAffine::from_raw_unchecked(self[x_2], self[y_2]);
+        let p1 = JubjubAffine::from_raw_unchecked(self[x_1], self[y_1]);
+        let p2 = JubjubAffine::from_raw_unchecked(self[x_2], self[y_2]);
 
-        let point: JubJubAffine = (JubJubExtended::from(p1) + p2).into();
+        let point: JubjubAffine = (JubjubExtend::from(p1) + p2).into();
 
         let x_3 = point.get_x();
         let y_3 = point.get_y();
