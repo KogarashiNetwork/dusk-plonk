@@ -6,9 +6,9 @@
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;
+use zero_crypto::common::Pairing;
 
 use merlin::Transcript;
-use zero_bls12_381::Fr as BlsScalar;
 
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
@@ -18,20 +18,20 @@ use crate::transcript::TranscriptProtocol;
 use super::Builder;
 
 /// Verify proofs of a given circuit
-pub struct Verifier<C> {
-    verifier_key: VerifierKey,
-    opening_key: OpeningKey,
+pub struct Verifier<C, P: Pairing> {
+    verifier_key: VerifierKey<P>,
+    opening_key: OpeningKey<P>,
     public_input_indexes: Vec<usize>,
     transcript: Transcript,
     size: usize,
     circuit: PhantomData<C>,
 }
 
-impl<C> Verifier<C> {
+impl<C, P: Pairing> Verifier<C, P> {
     pub(crate) fn new(
         label: Vec<u8>,
-        verifier_key: VerifierKey,
-        opening_key: OpeningKey,
+        verifier_key: VerifierKey<P>,
+        opening_key: OpeningKey<P>,
         public_input_indexes: Vec<usize>,
         size: usize,
         constraints: usize,
@@ -52,8 +52,8 @@ impl<C> Verifier<C> {
     /// Verify a generated proof
     pub fn verify(
         &self,
-        proof: &Proof,
-        public_inputs: &[BlsScalar],
+        proof: &Proof<P>,
+        public_inputs: &[P::ScalarField],
     ) -> Result<(), Error> {
         if public_inputs.len() != self.public_input_indexes.len() {
             return Err(Error::InconsistentPublicInputsLen {
@@ -64,11 +64,15 @@ impl<C> Verifier<C> {
 
         let mut transcript = self.transcript.clone();
 
-        public_inputs
-            .iter()
-            .for_each(|pi| transcript.append_scalar(b"pi", pi));
+        public_inputs.iter().for_each(|pi| {
+            <Transcript as TranscriptProtocol<P>>::append_scalar(
+                &mut transcript,
+                b"pi",
+                pi,
+            )
+        });
 
-        let dense_public_inputs = Builder::dense_public_inputs(
+        let dense_public_inputs = Builder::<P>::dense_public_inputs(
             &self.public_input_indexes,
             public_inputs,
             self.size,

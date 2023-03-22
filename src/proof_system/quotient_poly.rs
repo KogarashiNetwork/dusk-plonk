@@ -4,28 +4,28 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::{error::Error, fft::Polynomial, proof_system::ProverKey};
+use crate::{error::Error, proof_system::ProverKey};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
-use zero_bls12_381::Fr as BlsScalar;
+
 use zero_crypto::behave::*;
 use zero_kzg::{Fft, Polynomial as ZeroPoly};
 
 /// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
 /// [`ProverKey`] and some other info.
-pub(crate) fn compute(
-    fft: &Fft<BlsScalar>,
-    prover_key: &ProverKey,
-    z_poly: &Polynomial,
+pub(crate) fn compute<P: Pairing>(
+    fft: &Fft<P::ScalarField>,
+    prover_key: &ProverKey<P>,
+    z_poly: &ZeroPoly<P::ScalarField>,
     (a_w_poly, b_w_poly, c_w_poly, d_w_poly): (
-        &ZeroPoly<BlsScalar>,
-        &ZeroPoly<BlsScalar>,
-        &ZeroPoly<BlsScalar>,
-        &ZeroPoly<BlsScalar>,
+        &ZeroPoly<P::ScalarField>,
+        &ZeroPoly<P::ScalarField>,
+        &ZeroPoly<P::ScalarField>,
+        &ZeroPoly<P::ScalarField>,
     ),
-    public_inputs_poly: &Polynomial,
+    public_inputs_poly: &ZeroPoly<P::ScalarField>,
     (
         alpha,
         beta,
@@ -35,21 +35,21 @@ pub(crate) fn compute(
         fixed_base_challenge,
         var_base_challenge,
     ): &(
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
-        BlsScalar,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
+        P::ScalarField,
     ),
-) -> Result<Polynomial, Error> {
+) -> Result<ZeroPoly<P::ScalarField>, Error> {
     // Compute 8n evals
     let n = (8 * fft.size()).next_power_of_two();
     let k = n.trailing_zeros();
-    let fft_8n = Fft::<BlsScalar>::new(k as usize);
+    let fft_8n = Fft::<P::ScalarField>::new(k as usize);
 
-    let mut z_poly = ZeroPoly::new(z_poly.coeffs.clone());
+    let mut z_poly = ZeroPoly::new(z_poly.0.clone());
     let mut a_w_poly = a_w_poly.clone();
     let mut b_w_poly = b_w_poly.clone();
     let mut c_w_poly = c_w_poly.clone();
@@ -70,11 +70,11 @@ pub(crate) fn compute(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = Polynomial::from_coefficients_vec(z_poly.0);
-    let a_w_eval_8n = Polynomial::from_coefficients_vec(a_w_poly.0);
-    let b_w_eval_8n = Polynomial::from_coefficients_vec(b_w_poly.0);
-    let c_w_eval_8n = Polynomial::from_coefficients_vec(c_w_poly.0);
-    let d_w_eval_8n = Polynomial::from_coefficients_vec(d_w_poly.0);
+    let z_eval_8n = ZeroPoly::from_coefficients_vec(z_poly.0);
+    let a_w_eval_8n = ZeroPoly::from_coefficients_vec(a_w_poly.0);
+    let b_w_eval_8n = ZeroPoly::from_coefficients_vec(b_w_poly.0);
+    let c_w_eval_8n = ZeroPoly::from_coefficients_vec(c_w_poly.0);
+    let d_w_eval_8n = ZeroPoly::from_coefficients_vec(d_w_poly.0);
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -108,29 +108,34 @@ pub(crate) fn compute(
     let mut quotient = ZeroPoly::new(quotient);
     fft_8n.coset_idft(&mut quotient);
 
-    Ok(Polynomial::from_coefficients_vec(quotient.0))
+    Ok(ZeroPoly::from_coefficients_vec(quotient.0))
 }
 
 // Ensures that the circuit is satisfied
 // Ensures that the circuit is satisfied
-fn compute_circuit_satisfiability_equation(
-    fft: &Fft<BlsScalar>,
+fn compute_circuit_satisfiability_equation<P: Pairing>(
+    fft: &Fft<P::ScalarField>,
     (
         range_challenge,
         logic_challenge,
         fixed_base_challenge,
         var_base_challenge,
-    ): (&BlsScalar, &BlsScalar, &BlsScalar, &BlsScalar),
-    prover_key: &ProverKey,
-    (a_w_eval_8n, b_w_eval_8n, c_w_eval_8n, d_w_eval_8n): (
-        &[BlsScalar],
-        &[BlsScalar],
-        &[BlsScalar],
-        &[BlsScalar],
+    ): (
+        &P::ScalarField,
+        &P::ScalarField,
+        &P::ScalarField,
+        &P::ScalarField,
     ),
-    pi_poly: &Polynomial,
-) -> Vec<BlsScalar> {
-    let mut pi_poly = ZeroPoly::new(pi_poly.coeffs.clone());
+    prover_key: &ProverKey<P>,
+    (a_w_eval_8n, b_w_eval_8n, c_w_eval_8n, d_w_eval_8n): (
+        &[P::ScalarField],
+        &[P::ScalarField],
+        &[P::ScalarField],
+        &[P::ScalarField],
+    ),
+    pi_poly: &ZeroPoly<P::ScalarField>,
+) -> Vec<P::ScalarField> {
+    let mut pi_poly = ZeroPoly::new(pi_poly.0.clone());
     fft.coset_dft(&mut pi_poly);
     let public_eval_8n = pi_poly.0;
 
@@ -138,7 +143,7 @@ fn compute_circuit_satisfiability_equation(
     let range = (0..fft.size()).into_iter();
 
     #[cfg(feature = "std")]
-    let range = (0..fft.size()).into_par_iter();
+    let range = (0..fft.size()).into_iter();
 
     let t: Vec<_> = range
         .map(|i| {
@@ -207,21 +212,21 @@ fn compute_circuit_satisfiability_equation(
     t
 }
 
-fn compute_permutation_checks(
-    fft: &Fft<BlsScalar>,
-    fft_n8: &Fft<BlsScalar>,
-    prover_key: &ProverKey,
+fn compute_permutation_checks<P: Pairing>(
+    fft: &Fft<P::ScalarField>,
+    fft_n8: &Fft<P::ScalarField>,
+    prover_key: &ProverKey<P>,
     (a_w_eval_8n, b_w_eval_8n, c_w_eval_8n, d_w_eval_8n): (
-        &[BlsScalar],
-        &[BlsScalar],
-        &[BlsScalar],
-        &[BlsScalar],
+        &[P::ScalarField],
+        &[P::ScalarField],
+        &[P::ScalarField],
+        &[P::ScalarField],
     ),
-    z_eval_8n: &[BlsScalar],
-    (alpha, beta, gamma): (&BlsScalar, &BlsScalar, &BlsScalar),
-) -> Vec<BlsScalar> {
-    let l1_poly_alpha = compute_first_lagrange_poly_scaled(fft, alpha.square());
-    let mut l1_poly_alpha = ZeroPoly::new(l1_poly_alpha.coeffs);
+    z_eval_8n: &[P::ScalarField],
+    (alpha, beta, gamma): (&P::ScalarField, &P::ScalarField, &P::ScalarField),
+) -> Vec<P::ScalarField> {
+    let mut l1_poly_alpha =
+        compute_first_lagrange_poly_scaled::<P>(fft, alpha.square());
     fft_n8.coset_dft(&mut l1_poly_alpha);
     let l1_alpha_sq_evals = l1_poly_alpha.0;
 
@@ -251,12 +256,12 @@ fn compute_permutation_checks(
     t
 }
 
-fn compute_first_lagrange_poly_scaled(
-    fft: &Fft<BlsScalar>,
-    scale: BlsScalar,
-) -> Polynomial {
-    let mut x_evals = ZeroPoly::new(vec![BlsScalar::zero(); fft.size()]);
+fn compute_first_lagrange_poly_scaled<P: Pairing>(
+    fft: &Fft<P::ScalarField>,
+    scale: P::ScalarField,
+) -> ZeroPoly<P::ScalarField> {
+    let mut x_evals = ZeroPoly::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
     fft.idft(&mut x_evals);
-    Polynomial::from_coefficients_vec(x_evals.0)
+    ZeroPoly::from_coefficients_vec(x_evals.0)
 }

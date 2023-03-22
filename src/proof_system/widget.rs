@@ -14,29 +14,30 @@ pub mod range;
 ///
 /// This structure is used by the Verifier in order to verify a
 /// [`Proof`](super::Proof).
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 
-pub struct VerifierKey {
+pub struct VerifierKey<P: Pairing> {
     /// Circuit size (not padded to a power of two).
     pub(crate) n: usize,
     /// VerifierKey for arithmetic gates
-    pub(crate) arithmetic: arithmetic::VerifierKey,
+    pub(crate) arithmetic: arithmetic::VerifierKey<P>,
     /// VerifierKey for logic gates
-    pub(crate) logic: logic::VerifierKey,
+    pub(crate) logic: logic::VerifierKey<P>,
     /// VerifierKey for range gates
-    pub(crate) range: range::VerifierKey,
+    pub(crate) range: range::VerifierKey<P>,
     /// VerifierKey for fixed base curve addition gates
-    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::VerifierKey,
+    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::VerifierKey<P>,
     /// VerifierKey for variable base curve addition gates
-    pub(crate) variable_base: ecc::curve_addition::VerifierKey,
+    pub(crate) variable_base: ecc::curve_addition::VerifierKey<P>,
     /// VerifierKey for permutation checks
-    pub(crate) permutation: permutation::VerifierKey,
+    pub(crate) permutation: permutation::VerifierKey<P>,
 }
 
 use crate::{fft::Evaluations, transcript::TranscriptProtocol};
 use merlin::Transcript;
+use zero_crypto::common::Pairing;
 
-impl VerifierKey {
+impl<P: Pairing> VerifierKey<P> {
     /// Adds the circuit description to the transcript
     pub(crate) fn seed_transcript(&self, transcript: &mut Transcript) {
         transcript.append_commitment(b"q_m", &self.arithmetic.q_m);
@@ -63,7 +64,10 @@ impl VerifierKey {
         transcript.append_commitment(b"s_sigma_4", &self.permutation.s_sigma_1);
 
         // Append circuit size to transcript
-        transcript.circuit_domain_sep(self.n as u64);
+        <Transcript as TranscriptProtocol<P>>::circuit_domain_sep(
+            transcript,
+            self.n as u64,
+        );
     }
 }
 
@@ -72,31 +76,31 @@ impl VerifierKey {
 /// This structure is used by the Prover in order to construct a
 /// [`Proof`](crate::proof_system::Proof).
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ProverKey {
+pub struct ProverKey<P: Pairing> {
     /// Circuit size
     pub(crate) n: usize,
     /// ProverKey for arithmetic gate
-    pub(crate) arithmetic: arithmetic::ProverKey,
+    pub(crate) arithmetic: arithmetic::ProverKey<P>,
     /// ProverKey for logic gate
-    pub(crate) logic: logic::ProverKey,
+    pub(crate) logic: logic::ProverKey<P>,
     /// ProverKey for range gate
-    pub(crate) range: range::ProverKey,
+    pub(crate) range: range::ProverKey<P>,
     /// ProverKey for fixed base curve addition gates
-    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProverKey,
+    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProverKey<P>,
     /// ProverKey for variable base curve addition gates
-    pub(crate) variable_base: ecc::curve_addition::ProverKey,
+    pub(crate) variable_base: ecc::curve_addition::ProverKey<P>,
     /// ProverKey for permutation checks
-    pub(crate) permutation: permutation::ProverKey,
+    pub(crate) permutation: permutation::ProverKey<P>,
     // Pre-processes the 8n Evaluations for the vanishing polynomial, so
     // they do not need to be computed at the proving stage.
     // Note: With this, we can combine all parts of the quotient polynomial
     // in their evaluation phase and divide by the quotient
     // polynomial without having to perform IFFT
-    pub(crate) v_h_coset_8n: Evaluations,
+    pub(crate) v_h_coset_8n: Evaluations<P>,
 }
 
-impl ProverKey {
-    pub(crate) fn v_h_coset_8n(&self) -> &Evaluations {
+impl<P: Pairing> ProverKey<P> {
+    pub(crate) fn v_h_coset_8n(&self) -> &Evaluations<P> {
         &self.v_h_coset_8n
     }
 }

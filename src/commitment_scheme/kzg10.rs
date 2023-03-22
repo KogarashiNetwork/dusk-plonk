@@ -11,10 +11,7 @@ pub mod srs;
 
 pub(crate) use proof::AggregateProof;
 
-pub use key::{CommitKey, OpeningKey};
-pub use srs::PublicParameters;
+pub use key::OpeningKey;
 
 pub(crate) mod commitment;
 pub(crate) mod proof;
-
-pub(crate) use commitment::Commitment;

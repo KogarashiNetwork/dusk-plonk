@@ -4,17 +4,18 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::commitment_scheme::Commitment;
+use zero_crypto::common::Pairing;
+use zero_kzg::Commitment;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub(crate) struct VerifierKey {
-    pub q_m: Commitment,
-    pub q_l: Commitment,
-    pub q_r: Commitment,
-    pub q_o: Commitment,
-    pub q_4: Commitment,
-    pub q_c: Commitment,
-    pub q_arith: Commitment,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub(crate) struct VerifierKey<P: Pairing> {
+    pub q_m: Commitment<P>,
+    pub q_l: Commitment<P>,
+    pub q_r: Commitment<P>,
+    pub q_o: Commitment<P>,
+    pub q_4: Commitment<P>,
+    pub q_c: Commitment<P>,
+    pub q_arith: Commitment<P>,
 }
 
 mod alloc {
@@ -22,14 +23,13 @@ mod alloc {
     use crate::proof_system::linearization_poly::ProofEvaluations;
     #[rustfmt::skip]
     use ::alloc::vec::Vec;
-    use zero_bls12_381::{Fr as BlsScalar, G1Affine};
 
-    impl VerifierKey {
+    impl<P: Pairing> VerifierKey<P> {
         pub(crate) fn compute_linearization_commitment(
             &self,
-            scalars: &mut Vec<BlsScalar>,
-            points: &mut Vec<G1Affine>,
-            evaluations: &ProofEvaluations,
+            scalars: &mut Vec<P::ScalarField>,
+            points: &mut Vec<P::G1Affine>,
+            evaluations: &ProofEvaluations<P>,
         ) {
             let q_arith_eval = evaluations.q_arith_eval;
 

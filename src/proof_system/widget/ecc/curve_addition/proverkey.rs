@@ -4,29 +4,28 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::fft::{Evaluations, Polynomial};
-use zero_bls12_381::Fr as BlsScalar;
+use crate::fft::Evaluations;
 use zero_crypto::behave::*;
-use zero_jubjub::EDWARDS_D;
+use zero_kzg::Polynomial as ZeroPoly;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub(crate) struct ProverKey {
-    pub(crate) q_variable_group_add: (Polynomial, Evaluations),
+pub(crate) struct ProverKey<P: Pairing> {
+    pub(crate) q_variable_group_add: (ZeroPoly<P::ScalarField>, Evaluations<P>),
 }
 
-impl ProverKey {
+impl<P: Pairing> ProverKey<P> {
     pub(crate) fn compute_quotient_i(
         &self,
         index: usize,
-        curve_add_separation_challenge: &BlsScalar,
-        a_w_i: &BlsScalar,      // x_1
-        a_w_i_next: &BlsScalar, // x_3
-        b_w_i: &BlsScalar,      // y_1
-        b_w_i_next: &BlsScalar, // y_3
-        c_w_i: &BlsScalar,      // x_2
-        d_w_i: &BlsScalar,      // y_2
-        d_w_i_next: &BlsScalar, // x_1 * y_2
-    ) -> BlsScalar {
+        curve_add_separation_challenge: &P::ScalarField,
+        a_w_i: &P::ScalarField,      // x_1
+        a_w_i_next: &P::ScalarField, // x_3
+        b_w_i: &P::ScalarField,      // y_1
+        b_w_i_next: &P::ScalarField, // y_3
+        c_w_i: &P::ScalarField,      // x_2
+        d_w_i: &P::ScalarField,      // y_2
+        d_w_i_next: &P::ScalarField, // x_1 * y_2
+    ) -> P::ScalarField {
         let q_variable_group_add_i = &self.q_variable_group_add.1[index];
 
         let kappa = curve_add_separation_challenge.square();
@@ -42,20 +41,28 @@ impl ProverKey {
         // Checks
         //
         // Check x1 * y2 is correct
-        let xy_consistency = x_1 * y_2 - x1_y2;
+        let xy_consistency = *x_1 * y_2 - x1_y2;
 
-        let y1_x2 = y_1 * x_2;
-        let y1_y2 = y_1 * y_2;
-        let x1_x2 = x_1 * x_2;
+        let y1_x2 = *y_1 * x_2;
+        let y1_y2 = *y_1 * y_2;
+        let x1_x2 = *x_1 * x_2;
 
         // Check x_3 is correct
-        let x3_lhs = x1_y2 + y1_x2;
-        let x3_rhs = x_3 + (x_3 * EDWARDS_D * x1_y2 * y1_x2);
+        let x3_lhs = *x1_y2 + y1_x2;
+        let x3_rhs = *x_3
+            + (*x_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2);
         let x3_consistency = (x3_lhs - x3_rhs) * kappa;
 
         // // Check y_3 is correct
         let y3_lhs = y1_y2 + x1_x2;
-        let y3_rhs = y_3 - y_3 * EDWARDS_D * x1_y2 * y1_x2;
+        let y3_rhs: P::ScalarField = *y_3
+            - *y_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2;
         let y3_consistency = (y3_lhs - y3_rhs) * kappa.square();
 
         let identity = xy_consistency + x3_consistency + y3_consistency;
@@ -65,15 +72,15 @@ impl ProverKey {
 
     pub(crate) fn compute_linearization(
         &self,
-        curve_add_separation_challenge: &BlsScalar,
-        a_eval: &BlsScalar,
-        a_next_eval: &BlsScalar,
-        b_eval: &BlsScalar,
-        b_next_eval: &BlsScalar,
-        c_eval: &BlsScalar,
-        d_eval: &BlsScalar,
-        d_next_eval: &BlsScalar,
-    ) -> Polynomial {
+        curve_add_separation_challenge: &P::ScalarField,
+        a_eval: &P::ScalarField,
+        a_next_eval: &P::ScalarField,
+        b_eval: &P::ScalarField,
+        b_next_eval: &P::ScalarField,
+        c_eval: &P::ScalarField,
+        d_eval: &P::ScalarField,
+        d_next_eval: &P::ScalarField,
+    ) -> ZeroPoly<P::ScalarField> {
         let q_variable_group_add_poly = &self.q_variable_group_add.0;
 
         let kappa = curve_add_separation_challenge.square();
@@ -89,24 +96,33 @@ impl ProverKey {
         // Checks
         //
         // Check x1 * y2 is correct
-        let xy_consistency = x_1 * y_2 - x1_y2;
+        let xy_consistency = *x_1 * y_2 - x1_y2;
 
-        let y1_x2 = y_1 * x_2;
-        let y1_y2 = y_1 * y_2;
-        let x1_x2 = x_1 * x_2;
+        let y1_x2 = *y_1 * x_2;
+        let y1_y2 = *y_1 * y_2;
+        let x1_x2 = *x_1 * x_2;
 
         // Check x_3 is correct
-        let x3_lhs = x1_y2 + y1_x2;
-        let x3_rhs = x_3 + (x_3 * (EDWARDS_D * x1_y2 * y1_x2));
+        let x3_lhs = *x1_y2 + y1_x2;
+        let x3_rhs = *x_3
+            + (*x_3
+                * (Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                    * x1_y2
+                    * y1_x2));
         let x3_consistency = (x3_lhs - x3_rhs) * kappa;
 
         // Check y_3 is correct
         let y3_lhs = y1_y2 + x1_x2;
-        let y3_rhs = y_3 - y_3 * EDWARDS_D * x1_y2 * y1_x2;
+        let y3_rhs = *y_3
+            - *y_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2;
         let y3_consistency = (y3_lhs - y3_rhs) * kappa.square();
 
         let identity = xy_consistency + x3_consistency + y3_consistency;
 
-        q_variable_group_add_poly * &(identity * curve_add_separation_challenge)
+        q_variable_group_add_poly
+            * &(identity * *curve_add_separation_challenge)
     }
 }

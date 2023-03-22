@@ -9,12 +9,16 @@
 use alloc::vec::Vec;
 use core::cmp;
 use core::ops::{Index, Neg};
+use zero_jubjub::compute_windowed_naf;
 
 use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
-use zero_crypto::behave::{Curve, CurveExtend, Group, PrimeField};
-use zero_jubjub::{Fp as JubJubScalar, JubjubAffine, JubjubExtend};
+use zero_crypto::behave::{
+    Curve, CurveExtend, Extended, FftField, Group, PrimeField, Ring,
+    TwistedEdwardsAffine,
+};
+use zero_crypto::common::Pairing;
 
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
@@ -39,7 +43,9 @@ pub use prover::Prover;
 pub use verifier::Verifier;
 
 /// Circuit builder tool
-pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
+pub trait Composer<PR: Pairing>:
+    Sized + Index<Witness, Output = PR::ScalarField>
+{
     /// Zero representation inside the constraint system.
     ///
     /// A turbo composer expects the first witness to be always present and to
@@ -64,22 +70,26 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     fn constraints(&self) -> usize;
 
     /// Allocate a witness value into the composer and return its index.
-    fn append_witness_internal(&mut self, witness: BlsScalar) -> Witness;
+    fn append_witness_internal(&mut self, witness: PR::ScalarField) -> Witness;
 
     /// Append a new width-4 poly gate/constraint.
-    fn append_custom_gate_internal(&mut self, constraint: Constraint);
+    fn append_custom_gate_internal(&mut self, constraint: Constraint<PR>);
 
     /// PLONK runtime controller
-    fn runtime(&mut self) -> &mut Runtime;
+    fn runtime(&mut self) -> &mut Runtime<PR>;
 
     /// Allocate a witness value into the composer and return its index.
-    fn append_witness<W: Into<BlsScalar>>(&mut self, witness: W) -> Witness {
+    fn append_witness<W: Into<PR::ScalarField>>(
+        &mut self,
+        witness: W,
+    ) -> Witness {
         let witness = witness.into();
 
         #[allow(deprecated)]
         let witness = self.append_witness_internal(witness);
 
         let v = self[witness];
+
         self.runtime()
             .event(RuntimeEvent::WitnessAppended { w: witness, v });
 
@@ -87,9 +97,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     }
 
     /// Append a new width-4 poly gate/constraint.
-    fn append_custom_gate(&mut self, constraint: Constraint) {
-        self.runtime()
-            .event(RuntimeEvent::ConstraintAppended { c: constraint });
+    fn append_custom_gate(&mut self, constraint: Constraint<PR>) {
+        self.runtime().event(RuntimeEvent::ConstraintAppended {
+            c: constraint.clone(),
+        });
 
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
@@ -120,10 +131,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let num_bits = cmp::min(num_bits, 256);
         let num_quads = num_bits >> 1;
 
-        let bls_four = BlsScalar::from(4u64);
-        let mut left_acc = BlsScalar::zero();
-        let mut right_acc = BlsScalar::zero();
-        let mut out_acc = BlsScalar::zero();
+        let bls_four = PR::ScalarField::from(4u64);
+        let mut left_acc = PR::ScalarField::zero();
+        let mut right_acc = PR::ScalarField::zero();
+        let mut out_acc = PR::ScalarField::zero();
 
         // skip bits outside of argument `num_bits`
         let a_bit_iter = BitIterator8::new(self[a].to_bytes());
@@ -161,23 +172,23 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
             let l = (a_bits[idx] as u8) << 1;
             let r = a_bits[idx + 1] as u8;
             let left_quad = l + r;
-            let left_quad_bls = BlsScalar::from(left_quad as u64);
+            let left_quad_bls = PR::ScalarField::from(left_quad as u64);
 
             let l = (b_bits[idx] as u8) << 1;
             let r = b_bits[idx + 1] as u8;
             let right_quad = l + r;
-            let right_quad_bls = BlsScalar::from(right_quad as u64);
+            let right_quad_bls = PR::ScalarField::from(right_quad as u64);
 
             let out_quad_bls = if is_component_xor {
                 left_quad ^ right_quad
             } else {
                 left_quad & right_quad
             } as u64;
-            let out_quad_bls = BlsScalar::from(out_quad_bls);
+            let out_quad_bls = PR::ScalarField::from(out_quad_bls);
 
             // `w` argument to safeguard the quotient polynomial
             let prod_quad_bls = (left_quad * right_quad) as u64;
-            let prod_quad_bls = BlsScalar::from(prod_quad_bls);
+            let prod_quad_bls = PR::ScalarField::from(prod_quad_bls);
 
             // Now that we've computed this round results, we need to apply the
             // logic transition constraint that will check that
@@ -198,7 +209,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
             constraint = constraint.o(wit_c);
 
-            self.append_custom_gate(constraint);
+            self.append_custom_gate(constraint.clone());
 
             constraint = constraint.a(wit_a).b(wit_b).d(wit_d);
         }
@@ -221,7 +232,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// `generator` will be appended to the circuit description as constant
     ///
     /// Will error if `jubjub` doesn't fit `Fr`
-    fn component_mul_generator<P: Into<JubjubExtend>>(
+    fn component_mul_generator<P: Into<PR::JubjubExtend>>(
         &mut self,
         jubjub: Witness,
         generator: P,
@@ -237,7 +248,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
         // compute 2^iG
         let mut wnaf_point_multiples: Vec<_> = {
-            let mut multiples = vec![JubjubExtend::ADDITIVE_IDENTITY; bits];
+            let mut multiples = vec![PR::JubjubExtend::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
 
@@ -245,7 +256,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
                 multiples[i] = multiples[i - 1].double();
             }
 
-            JubjubExtend::batch_normalize(&mut multiples).collect()
+            PR::JubjubExtend::batch_normalize(&mut multiples).collect()
         };
 
         wnaf_point_multiples.reverse();
@@ -254,28 +265,41 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
         let scalar =
-            JubJubScalar::from_bytes(&self[jubjub].to_bytes()).unwrap();
+            match PR::JubjubScalar::from_bytes(&self[jubjub].to_bytes()) {
+                Ok(scalar) => scalar,
+                Err(_) => panic!("Failed to deserialize jubjub scalar"),
+            };
 
         let width = 2;
-        let wnaf_entries = scalar.compute_windowed_naf(width);
+        let wnaf_entries = compute_windowed_naf(scalar, width);
 
         debug_assert_eq!(wnaf_entries.len(), bits);
 
         // initialize the accumulators
-        let mut scalar_acc = vec![BlsScalar::zero()];
-        let mut point_acc = vec![JubjubAffine::ADDITIVE_IDENTITY];
+        let mut scalar_acc = vec![PR::ScalarField::zero()];
+        let mut point_acc =
+            vec![PR::JubjubAffine::from(PR::JubjubExtend::ADDITIVE_IDENTITY)];
 
         // auxillary point to help with checks on the backend
-        let two = BlsScalar::from(2u64);
+        let two = PR::ScalarField::from(2u64);
         let xy_alphas: Vec<_> = wnaf_entries
             .iter()
             .rev()
             .enumerate()
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
-                    0 => (BlsScalar::zero(), JubjubAffine::ADDITIVE_IDENTITY),
-                    -1 => (BlsScalar::one().neg(), -wnaf_point_multiples[i]),
-                    1 => (BlsScalar::one(), wnaf_point_multiples[i]),
+                    0 => (
+                        PR::ScalarField::zero(),
+                        PR::JubjubExtend::ADDITIVE_IDENTITY,
+                    ),
+                    -1 => (
+                        PR::ScalarField::one().neg(),
+                        -PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                    ),
+                    1 => (
+                        PR::ScalarField::one(),
+                        PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                    ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
 
@@ -283,10 +307,12 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let a = JubjubExtend::from(point_acc[i]);
-                let b = JubjubExtend::from(point_to_add);
-                let point = a + b;
+                // let a = PR::JubjubExtend::from(point_acc[i]);
+                // let b = PR::JubjubExtend::from(point_to_add);
+                let point = PR::JubjubExtend::from(point_acc[i]) + point_to_add;
                 point_acc.push(point.into());
+
+                let point_to_add: PR::JubjubAffine = point_to_add.into();
 
                 let x_alpha = point_to_add.get_x();
                 let y_alpha = point_to_add.get_y();
@@ -303,11 +329,15 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
             // the point accumulator must start from identity and its scalar
             // from zero
             if i == 0 {
-                self.assert_equal_constant(acc_x, BlsScalar::zero(), None);
-                self.assert_equal_constant(acc_y, BlsScalar::one(), None);
+                self.assert_equal_constant(
+                    acc_x,
+                    PR::ScalarField::zero(),
+                    None,
+                );
+                self.assert_equal_constant(acc_y, PR::ScalarField::one(), None);
                 self.assert_equal_constant(
                     accumulated_bit,
-                    BlsScalar::zero(),
+                    PR::ScalarField::zero(),
                     None,
                 );
             }
@@ -318,14 +348,14 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound {
+            let wnaf_round = WnafRound::<Witness, PR> {
                 acc_x,
                 acc_y,
                 accumulated_bit,
                 xy_alpha,
-                x_beta,
-                y_beta,
-                xy_beta,
+                x_beta: x_beta.into(),
+                y_beta: y_beta.into(),
+                xy_beta: xy_beta.into(),
             };
 
             let constraint =
@@ -387,7 +417,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     ///
     /// The constraint added will enforce the following:
     /// `q_m · a · b  + q_l · a + q_r · b + q_o · o + q_4 · d + q_c + PI = 0`.
-    fn append_gate(&mut self, constraint: Constraint) {
+    fn append_gate(&mut self, constraint: Constraint<PR>) {
         let constraint = Constraint::arithmetic(&constraint);
 
         self.append_custom_gate(constraint)
@@ -396,7 +426,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Evaluate the polynomial and append an output that satisfies the equation
     ///
     /// Return `None` if the output selector is zero
-    fn append_evaluated_output(&mut self, s: Constraint) -> Option<Witness> {
+    fn append_evaluated_output(
+        &mut self,
+        s: Constraint<PR>,
+    ) -> Option<Witness> {
         let a = s.witness(WiredWitness::A);
         let b = s.witness(WiredWitness::B);
         let d = s.witness(WiredWitness::D);
@@ -412,7 +445,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let qc = s.coeff(Selector::Constant);
         let pi = s.coeff(Selector::PublicInput);
 
-        let x = qm * a * b + ql * a + qr * b + qd * d + qc + pi;
+        let x = *qm * a * b + *ql * a + *qr * b + *qd * d + qc + pi;
 
         let y = s.coeff(Selector::Output);
 
@@ -430,9 +463,9 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
             // Can't use a match pattern here since `BlsScalar` doesn't derive
             // `PartialEq`
-            if y == &ONE {
+            if y == &PR::ScalarField::one() {
                 Some(-x)
-            } else if y == &MINUS_ONE {
+            } else if y == &-*&PR::ScalarField::one() {
                 Some(x)
             } else {
                 y.invert().map(|y| x * (-y))
@@ -445,10 +478,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Adds blinding factors to the witness polynomials with two dummy
     /// arithmetic constraints
     fn append_dummy_gates(&mut self) {
-        let six = self.append_witness(BlsScalar::from(6));
-        let one = self.append_witness(BlsScalar::from(1));
-        let seven = self.append_witness(BlsScalar::from(7));
-        let min_twenty = self.append_witness(-BlsScalar::from(20));
+        let six = self.append_witness(PR::ScalarField::from(6));
+        let one = self.append_witness(PR::ScalarField::from(1));
+        let seven = self.append_witness(PR::ScalarField::from(7));
+        let min_twenty = self.append_witness(-PR::ScalarField::from(20));
 
         // Add a dummy constraint so that we do not have zero polynomials
         let constraint = Constraint::new()
@@ -482,7 +515,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
     /// Constrain a scalar into the circuit description and return an allocated
     /// [`Witness`] with its value
-    fn append_constant<C: Into<BlsScalar>>(&mut self, constant: C) -> Witness {
+    fn append_constant<C: Into<PR::ScalarField>>(
+        &mut self,
+        constant: C,
+    ) -> Witness {
         let constant = constant.into();
         let witness = self.append_witness(constant);
 
@@ -492,7 +528,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     }
 
     /// Appends a point in affine form as [`WitnessPoint`]
-    fn append_point<P: Into<JubjubAffine>>(
+    fn append_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -506,7 +542,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
     /// Constrain a point into the circuit description and return an allocated
     /// [`WitnessPoint`] with its coordinates
-    fn append_constant_point<P: Into<JubjubAffine>>(
+    fn append_constant_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -521,7 +557,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Appends a point in affine form as [`WitnessPoint`]
     ///
     /// Creates two public inputs as `(x, y)`
-    fn append_public_point<P: Into<JubjubAffine>>(
+    fn append_public_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -530,14 +566,14 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
         self.assert_equal_constant(
             *point.x(),
-            BlsScalar::zero(),
-            Some(-affine.get_x()),
+            PR::ScalarField::zero(),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            BlsScalar::zero(),
-            Some(-affine.get_y()),
+            PR::ScalarField::zero(),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_y())),
         );
 
         point
@@ -546,7 +582,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Allocate a witness value into the composer and return its index.
     ///
     /// Create a public input with the scalar
-    fn append_public<P: Into<BlsScalar>>(&mut self, public: P) -> Witness {
+    fn append_public<P: Into<PR::ScalarField>>(
+        &mut self,
+        public: P,
+    ) -> Witness {
         let public = public.into();
         let witness = self.append_witness(public);
 
@@ -557,8 +596,11 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
     /// Asserts `a == b` by appending a gate
     fn assert_equal(&mut self, a: Witness, b: Witness) {
-        let constraint =
-            Constraint::new().left(1).right(-BlsScalar::one()).a(a).b(b);
+        let constraint = Constraint::new()
+            .left(1)
+            .right(-PR::ScalarField::one())
+            .a(a)
+            .b(b);
 
         self.append_gate(constraint);
     }
@@ -598,16 +640,17 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Constrain `a` to be equal to `constant + pi`.
     ///
     /// `constant` will be defined as part of the public circuit description.
-    fn assert_equal_constant<C: Into<BlsScalar>>(
+    fn assert_equal_constant<C: Into<PR::ScalarField>>(
         &mut self,
         a: Witness,
         constant: C,
-        public: Option<BlsScalar>,
+        public: Option<PR::ScalarField>,
     ) {
         let constant = constant.into();
         let constraint = Constraint::new().left(1).constant(-constant).a(a);
-        let constraint =
-            public.map(|p| constraint.public(p)).unwrap_or(constraint);
+        let constraint = public
+            .map(|p| constraint.clone().public(p))
+            .unwrap_or(constraint);
 
         self.append_gate(constraint);
     }
@@ -621,7 +664,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Asserts `point == public`.
     ///
     /// Will add `public` affine coordinates `(x,y)` as public inputs
-    fn assert_equal_public_point<P: Into<JubjubAffine>>(
+    fn assert_equal_public_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         point: WitnessPoint,
         public: P,
@@ -630,14 +673,14 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
 
         self.assert_equal_constant(
             *point.x(),
-            BlsScalar::zero(),
-            Some(-public.get_x()),
+            PR::ScalarField::zero(),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            BlsScalar::zero(),
-            Some(-public.get_y()),
+            PR::ScalarField::zero(),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_y())),
         );
     }
 
@@ -657,13 +700,19 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = JubjubAffine::from_raw_unchecked(self[x_1], self[y_1]);
-        let p2 = JubjubAffine::from_raw_unchecked(self[x_2], self[y_2]);
+        let p1 = PR::JubjubAffine::from_raw_unchecked(
+            self[x_1].into(),
+            self[y_1].into(),
+        );
+        let p2 = PR::JubjubAffine::from_raw_unchecked(
+            self[x_2].into(),
+            self[y_2].into(),
+        );
 
-        let point: JubjubAffine = (JubjubExtend::from(p1) + p2).into();
+        let point = PR::JubjubAffine::from(p1 + p2);
 
-        let x_3 = point.get_x();
-        let y_3 = point.get_y();
+        let x_3: PR::ScalarField = point.get_x().into();
+        let y_3: PR::ScalarField = point.get_y().into();
 
         let x1_y2 = self[x_1] * self[y_2];
 
@@ -695,7 +744,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let zero = Self::ZERO;
         let constraint = Constraint::new()
             .mult(1)
-            .output(-BlsScalar::one())
+            .output(-PR::ScalarField::one())
             .a(a)
             .b(a)
             .o(a)
@@ -726,12 +775,12 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
             .enumerate()
             .zip(decomposition.iter_mut())
             .fold(acc, |acc, ((i, w), d)| {
-                *d = self.append_witness(BlsScalar::from(*w as u64));
+                *d = self.append_witness(PR::ScalarField::from(*w as u64));
 
                 self.component_boolean(*d);
 
                 let constraint = Constraint::new()
-                    .left(BlsScalar::pow_of_2(i as u64))
+                    .left(PR::ScalarField::pow_of_2(i as u64))
                     .right(1)
                     .a(*d)
                     .b(acc);
@@ -802,8 +851,10 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let bit_times_a = self.gate_mul(constraint);
 
         // 1 - bit
-        let constraint =
-            Constraint::new().left(-BlsScalar::one()).constant(1).a(bit);
+        let constraint = Constraint::new()
+            .left(-PR::ScalarField::one())
+            .constant(1)
+            .a(bit);
         let one_min_bit = self.gate_add(constraint);
 
         // (1 - bit) * b
@@ -834,13 +885,13 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         let b = self[bit];
         let v = self[value];
 
-        let f_x = BlsScalar::one() - b + (b * v);
+        let f_x = PR::ScalarField::one() - b + (b * v);
         let f_x = self.append_witness(f_x);
 
         let constraint = Constraint::new()
             .mult(1)
-            .left(-BlsScalar::one())
-            .output(-BlsScalar::one())
+            .left(-PR::ScalarField::one())
+            .output(-PR::ScalarField::one())
             .constant(1)
             .a(bit)
             .b(value)
@@ -931,8 +982,8 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
         // We collect the set of accumulators to return back to the user
         // and keep a running count of the current accumulator
         let mut accumulators: Vec<Witness> = Vec::new();
-        let mut accumulator = BlsScalar::zero();
-        let four = BlsScalar::from(4);
+        let mut accumulator = PR::ScalarField::zero();
+        let four = PR::ScalarField::from(4);
 
         for i in pad..=num_quads {
             // convert each pair of bits to quads
@@ -942,7 +993,7 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
             let quad = q_0 + (2 * q_1);
 
             accumulator = four * accumulator;
-            accumulator += BlsScalar::from(quad);
+            accumulator += PR::ScalarField::from(quad);
 
             let accumulator_var = self.append_witness(accumulator);
 
@@ -991,11 +1042,11 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_l · a + q_r · b + q_4 · d + q_c + PI`
-    fn gate_add(&mut self, s: Constraint) -> Witness {
-        let s = Constraint::arithmetic(&s).output(-BlsScalar::one());
+    fn gate_add(&mut self, s: Constraint<PR>) -> Witness {
+        let s = Constraint::arithmetic(&s).output(-PR::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s)
+            .append_evaluated_output(s.clone())
             .expect("output selector is -1");
         let s = s.o(o);
 
@@ -1008,11 +1059,11 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_m · a · b + q_4 · d + q_c + PI`
-    fn gate_mul(&mut self, s: Constraint) -> Witness {
-        let s = Constraint::arithmetic(&s).output(-BlsScalar::one());
+    fn gate_mul(&mut self, s: Constraint<PR>) -> Witness {
+        let s = Constraint::arithmetic(&s).output(-PR::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s)
+            .append_evaluated_output(s.clone())
             .expect("output selector is -1");
         let s = s.o(o);
 
@@ -1024,13 +1075,13 @@ pub trait Composer: Sized + Index<Witness, Output = BlsScalar> {
     /// Prove a circuit with a builder initialized with `constraints` capacity.
     fn prove<C>(constraints: usize, circuit: &C) -> Result<Self, Error>
     where
-        C: Circuit,
+        C: Circuit<PR>,
     {
         let mut builder = Self::initialized(constraints);
 
         circuit.circuit(&mut builder)?;
 
-        builder.runtime().event(RuntimeEvent::ProofFinished);
+        builder.runtime().event(RuntimeEvent::<PR>::ProofFinished);
 
         Ok(builder)
     }

@@ -11,51 +11,50 @@ use core::ops::{
     Add, AddAssign, DivAssign, Index, Mul, MulAssign, Sub, SubAssign,
 };
 use sp_std::vec::Vec;
-use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::*;
 
 /// Stores a polynomial in evaluation form.
 #[derive(PartialEq, Eq, Debug, Clone)]
-pub(crate) struct Evaluations {
+pub(crate) struct Evaluations<P: Pairing> {
     /// The evaluations of a polynomial over the domain `D`
-    pub(crate) evals: Vec<BlsScalar>,
+    pub(crate) evals: Vec<P::ScalarField>,
     // FIXME: We should probably remove this and make it an external object.
     #[doc(hidden)]
-    domain: EvaluationDomain,
+    domain: EvaluationDomain<P>,
 }
 
-impl Evaluations {
+impl<P: Pairing> Evaluations<P> {
     /// Construct `Self` from evaluations and a domain.
     pub(crate) const fn from_vec_and_domain(
-        evals: Vec<BlsScalar>,
-        domain: EvaluationDomain,
+        evals: Vec<P::ScalarField>,
+        domain: EvaluationDomain<P>,
     ) -> Self {
         Self { evals, domain }
     }
 }
 
-impl Index<usize> for Evaluations {
-    type Output = BlsScalar;
+impl<P: Pairing> Index<usize> for Evaluations<P> {
+    type Output = P::ScalarField;
 
-    fn index(&self, index: usize) -> &BlsScalar {
+    fn index(&self, index: usize) -> &P::ScalarField {
         &self.evals[index]
     }
 }
 
-impl<'a, 'b> Mul<&'a Evaluations> for &'b Evaluations {
-    type Output = Evaluations;
+impl<'a, 'b, P: Pairing> Mul<&'a Evaluations<P>> for &'b Evaluations<P> {
+    type Output = Evaluations<P>;
 
     #[inline]
-    fn mul(self, other: &'a Evaluations) -> Evaluations {
+    fn mul(self, other: &'a Evaluations<P>) -> Evaluations<P> {
         let mut result = self.clone();
         result *= other;
         result
     }
 }
 
-impl<'a> MulAssign<&'a Evaluations> for Evaluations {
+impl<'a, P: Pairing> MulAssign<&'a Evaluations<P>> for Evaluations<P> {
     #[inline]
-    fn mul_assign(&mut self, other: &'a Evaluations) {
+    fn mul_assign(&mut self, other: &'a Evaluations<P>) {
         assert_eq!(self.domain, other.domain, "domains are unequal");
         self.evals
             .iter_mut()
@@ -64,20 +63,20 @@ impl<'a> MulAssign<&'a Evaluations> for Evaluations {
     }
 }
 
-impl<'a, 'b> Add<&'a Evaluations> for &'b Evaluations {
-    type Output = Evaluations;
+impl<'a, 'b, P: Pairing> Add<&'a Evaluations<P>> for &'b Evaluations<P> {
+    type Output = Evaluations<P>;
 
     #[inline]
-    fn add(self, other: &'a Evaluations) -> Evaluations {
+    fn add(self, other: &'a Evaluations<P>) -> Evaluations<P> {
         let mut result = self.clone();
         result += other;
         result
     }
 }
 
-impl<'a> AddAssign<&'a Evaluations> for Evaluations {
+impl<'a, P: Pairing> AddAssign<&'a Evaluations<P>> for Evaluations<P> {
     #[inline]
-    fn add_assign(&mut self, other: &'a Evaluations) {
+    fn add_assign(&mut self, other: &'a Evaluations<P>) {
         assert_eq!(self.domain, other.domain, "domains are unequal");
         self.evals
             .iter_mut()
@@ -86,20 +85,20 @@ impl<'a> AddAssign<&'a Evaluations> for Evaluations {
     }
 }
 
-impl<'a, 'b> Sub<&'a Evaluations> for &'b Evaluations {
-    type Output = Evaluations;
+impl<'a, 'b, P: Pairing> Sub<&'a Evaluations<P>> for &'b Evaluations<P> {
+    type Output = Evaluations<P>;
 
     #[inline]
-    fn sub(self, other: &'a Evaluations) -> Evaluations {
+    fn sub(self, other: &'a Evaluations<P>) -> Evaluations<P> {
         let mut result = self.clone();
         result -= other;
         result
     }
 }
 
-impl<'a> SubAssign<&'a Evaluations> for Evaluations {
+impl<'a, P: Pairing> SubAssign<&'a Evaluations<P>> for Evaluations<P> {
     #[inline]
-    fn sub_assign(&mut self, other: &'a Evaluations) {
+    fn sub_assign(&mut self, other: &'a Evaluations<P>) {
         assert_eq!(self.domain, other.domain, "domains are unequal");
         self.evals
             .iter_mut()
@@ -108,9 +107,9 @@ impl<'a> SubAssign<&'a Evaluations> for Evaluations {
     }
 }
 
-impl<'a> DivAssign<&'a Evaluations> for Evaluations {
+impl<'a, P: Pairing> DivAssign<&'a Evaluations<P>> for Evaluations<P> {
     #[inline]
-    fn div_assign(&mut self, other: &'a Evaluations) {
+    fn div_assign(&mut self, other: &'a Evaluations<P>) {
         assert_eq!(self.domain, other.domain, "domains are unequal");
         self.evals
             .iter_mut()

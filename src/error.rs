@@ -7,6 +7,7 @@
 //! A collection of all possible errors encountered in PLONK.
 
 use dusk_bytes::Error as DuskBytesError;
+use zero_kzg::KzgError;
 
 /// Defines all possible errors that can be encountered in PLONK.
 #[derive(Debug, Clone, Copy)]
@@ -158,6 +159,17 @@ impl core::fmt::Display for Error {
 impl From<DuskBytesError> for Error {
     fn from(bytes_err: DuskBytesError) -> Self {
         Self::BytesError(bytes_err)
+    }
+}
+
+impl From<KzgError> for Error {
+    fn from(err: KzgError) -> Self {
+        match err {
+            KzgError::PolynomialDegreeIsZero => Self::PolynomialDegreeIsZero,
+            KzgError::PolynomialDegreeTooLarge => {
+                Self::PolynomialDegreeTooLarge
+            }
+        }
     }
 }
 

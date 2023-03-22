@@ -4,40 +4,40 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::commitment_scheme::Commitment;
-
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub(crate) struct VerifierKey {
-    pub(crate) q_range: Commitment,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub(crate) struct VerifierKey<P: Pairing> {
+    pub(crate) q_range: Commitment<P>,
 }
 
 use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::range::proverkey::delta;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_bls12_381::{Fr as BlsScalar, G1Affine};
-use zero_crypto::behave::PrimeField;
+use zero_crypto::{behave::PrimeField, common::Pairing};
+use zero_kzg::Commitment;
 
-impl VerifierKey {
+impl<P: Pairing> VerifierKey<P> {
     pub(crate) fn compute_linearization_commitment(
         &self,
-        range_separation_challenge: &BlsScalar,
-        scalars: &mut Vec<BlsScalar>,
-        points: &mut Vec<G1Affine>,
-        evaluations: &ProofEvaluations,
+        range_separation_challenge: &P::ScalarField,
+        scalars: &mut Vec<P::ScalarField>,
+        points: &mut Vec<P::G1Affine>,
+        evaluations: &ProofEvaluations<P>,
     ) {
-        let four = BlsScalar::from(4);
+        let four = P::ScalarField::from(4);
 
         let kappa = range_separation_challenge.square();
         let kappa_sq = kappa.square();
         let kappa_cu = kappa_sq * kappa;
 
-        let b_1 = delta(evaluations.c_eval - (four * evaluations.d_eval));
-        let b_2 = delta(evaluations.b_eval - four * evaluations.c_eval) * kappa;
-        let b_3 =
-            delta(evaluations.a_eval - four * evaluations.b_eval) * kappa_sq;
-        let b_4 = delta(evaluations.d_next_eval - (four * evaluations.a_eval))
-            * kappa_cu;
+        let b_1 = delta::<P>(evaluations.c_eval - (four * evaluations.d_eval));
+        let b_2 =
+            delta::<P>(evaluations.b_eval - four * evaluations.c_eval) * kappa;
+        let b_3 = delta::<P>(evaluations.a_eval - four * evaluations.b_eval)
+            * kappa_sq;
+        let b_4 =
+            delta::<P>(evaluations.d_next_eval - (four * evaluations.a_eval))
+                * kappa_cu;
 
         scalars.push((b_1 + b_2 + b_3 + b_4) * range_separation_challenge);
         points.push(self.q_range.0);

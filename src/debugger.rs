@@ -14,19 +14,19 @@ use dusk_cdf::{
     BaseConfig, Config, EncodableConstraint, EncodableSource, EncodableWitness,
     Encoder, EncoderContextFileProvider, Polynomial, Selectors, WiredWitnesses,
 };
-use zero_bls12_381::Fr as BlsScalar;
+use zero_crypto::behave::{Group, Pairing};
 
 use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
 use crate::runtime::RuntimeEvent;
 
 /// PLONK debugger
 #[derive(Debug, Clone)]
-pub(crate) struct Debugger {
-    witnesses: Vec<(EncodableSource, Witness, BlsScalar)>,
-    constraints: Vec<(EncodableSource, Constraint)>,
+pub(crate) struct Debugger<P: Pairing> {
+    witnesses: Vec<(EncodableSource, Witness, P::ScalarField)>,
+    constraints: Vec<(EncodableSource, Constraint<P>)>,
 }
 
-impl Debugger {
+impl<P: Pairing> Debugger<P> {
     /// Resolver the caller function
     fn resolve_caller() -> EncodableSource {
         let mut source = None;
@@ -134,15 +134,15 @@ impl Debugger {
                         .unwrap_or_default();
 
                     // TODO check arith, range, logic & ecc wires
-                    let evaluation = qm * wa * wb
-                        + ql * wa
-                        + qr * wb
-                        + qd * wd
-                        + qo * wo
+                    let evaluation = *qm * &wa * wb
+                        + *ql * wa
+                        + *qr * wb
+                        + *qd * wd
+                        + *qo * wo
                         + qc
                         + pi;
 
-                    let evaluation = evaluation == BlsScalar::zero();
+                    let evaluation = evaluation == P::ScalarField::zero();
 
                     let selectors = Selectors {
                         qm: qm.to_bytes().into(),
@@ -188,7 +188,7 @@ impl Debugger {
         }
     }
 
-    pub(crate) fn event(&mut self, event: RuntimeEvent) {
+    pub(crate) fn event(&mut self, event: RuntimeEvent<P>) {
         match event {
             RuntimeEvent::WitnessAppended { w, v } => {
                 self.witnesses.push((Self::resolve_caller(), w, v));

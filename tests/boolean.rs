@@ -6,37 +6,40 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_crypto::common::Group;
+use zero_crypto::common::{Group, Pairing};
+use zero_kzg::KeyPair;
+use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[test]
 fn boolean_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 4;
+    let n = 4;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
 
-    pub struct DummyCircuit {
-        a: BlsScalar,
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::ScalarField,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: BlsScalar) -> Self {
             Self { a }
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(1u64.into())
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
 
@@ -46,8 +49,11 @@ fn boolean_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
@@ -86,36 +92,36 @@ fn boolean_works() {
 fn select_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 6;
+    let n = 6;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
 
-    #[derive(Clone)]
-    pub struct DummyCircuit {
-        bit: BlsScalar,
-        a: BlsScalar,
-        b: BlsScalar,
-        res: BlsScalar,
+    #[derive(Clone, Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        bit: P::ScalarField,
+        a: P::ScalarField,
+        b: P::ScalarField,
+        res: P::ScalarField,
 
-        zero_bit: BlsScalar,
-        zero_a: BlsScalar,
-        zero_res: BlsScalar,
+        zero_bit: P::ScalarField,
+        zero_a: P::ScalarField,
+        zero_res: P::ScalarField,
 
-        one_bit: BlsScalar,
-        one_a: BlsScalar,
-        one_res: BlsScalar,
+        one_bit: P::ScalarField,
+        one_a: P::ScalarField,
+        one_res: P::ScalarField,
 
-        point_bit: BlsScalar,
-        point_a: JubjubExtend,
-        point_b: JubjubExtend,
-        point_res: JubjubExtend,
+        point_bit: P::ScalarField,
+        point_a: P::JubjubExtend,
+        point_b: P::JubjubExtend,
+        point_res: P::JubjubExtend,
 
-        identity_bit: BlsScalar,
-        identity_a: JubjubExtend,
-        identity_res: JubjubExtend,
+        identity_bit: P::ScalarField,
+        identity_a: P::JubjubExtend,
+        identity_res: P::JubjubExtend,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(
             bit: BlsScalar,
             a: BlsScalar,
@@ -178,7 +184,7 @@ fn select_works() {
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             let bit = BlsScalar::one();
             let a = BlsScalar::from(3u64);
@@ -213,10 +219,10 @@ fn select_works() {
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_bit = composer.append_witness(self.bit);
             let w_a = composer.append_witness(self.a);
@@ -260,8 +266,11 @@ fn select_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
