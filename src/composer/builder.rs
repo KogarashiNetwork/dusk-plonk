@@ -33,7 +33,7 @@ pub struct Builder<P: Pairing> {
     pub(crate) perm: Permutation<P>,
 
     /// PLONK runtime controller
-    pub(crate) runtime: Runtime,
+    pub(crate) runtime: Runtime<P>,
 }
 
 impl<P: Pairing> Builder<P> {
@@ -155,7 +155,7 @@ impl<P: Pairing> Composer<P> for Builder<P> {
         self.perm.add_witnesses_to_map(w_a, w_b, w_o, w_d, n);
     }
 
-    fn runtime(&mut self) -> &mut Runtime {
+    fn runtime(&mut self) -> &mut Runtime<P> {
         &mut self.runtime
     }
 }

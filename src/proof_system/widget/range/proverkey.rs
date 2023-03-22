@@ -67,7 +67,7 @@ impl<P: Pairing> ProverKey<P> {
 
         let t = (b_1 + b_2 + b_3 + b_4) * range_separation_challenge;
 
-        *q_range_poly * t
+        q_range_poly * &t
     }
 }
 

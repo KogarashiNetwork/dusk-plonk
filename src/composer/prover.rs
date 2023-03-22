@@ -29,7 +29,7 @@ use super::{Builder, Circuit, Composer};
 #[derive(Clone)]
 pub struct Prover<C, P>
 where
-    C: Circuit,
+    C: Circuit<P>,
     P: Pairing,
 {
     pub(crate) prover_key: ProverKey<P>,
@@ -43,7 +43,7 @@ where
 
 impl<C, P> ops::Deref for Prover<C, P>
 where
-    C: Circuit,
+    C: Circuit<P>,
     P: Pairing,
 {
     type Target = ProverKey<P>;
@@ -55,7 +55,7 @@ where
 
 impl<C, P> Prover<C, P>
 where
-    C: Circuit,
+    C: Circuit<P>,
     P: Pairing,
 {
     pub(crate) fn new(
@@ -100,7 +100,6 @@ where
 
         for i in 0..hiding_degree + 1 {
             let blinding_scalar = util::random_scalar::<R, P>(rng);
-
             w_vec_inverse.0[i] = w_vec_inverse.0[i] - blinding_scalar;
             w_vec_inverse.0.push(blinding_scalar);
         }
@@ -115,7 +114,7 @@ where
         circuit: &C,
     ) -> Result<(Proof<P>, Vec<P::ScalarField>), Error>
     where
-        C: Circuit,
+        C: Circuit<P>,
         R: RngCore,
     {
         let prover = Builder::<P>::prove(self.constraints, circuit)?;
@@ -163,17 +162,21 @@ where
         let o_w_poly = Self::blind_poly(rng, &o_w_scalar, 1, &fft);
         let d_w_poly = Self::blind_poly(rng, &d_w_scalar, 1, &fft);
 
-        let a_w_poly_commit = Polynomial::new(a_w_poly.0.clone());
-        let b_w_poly_commit = Polynomial::new(b_w_poly.0.clone());
-        let o_w_poly_commit = Polynomial::new(o_w_poly.0.clone());
-        let d_w_poly_commit = Polynomial::new(d_w_poly.0.clone());
+        let a_w_poly_commit =
+            Polynomial::from_coefficients_vec(a_w_poly.0.clone());
+        let b_w_poly_commit =
+            Polynomial::from_coefficients_vec(b_w_poly.0.clone());
+        let o_w_poly_commit =
+            Polynomial::from_coefficients_vec(o_w_poly.0.clone());
+        let d_w_poly_commit =
+            Polynomial::from_coefficients_vec(d_w_poly.0.clone());
 
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
-        let a_w_poly_commit = self.keypair.commit(&a_w_poly_commit);
-        let b_w_poly_commit = self.keypair.commit(&b_w_poly_commit);
-        let o_w_poly_commit = self.keypair.commit(&o_w_poly_commit);
-        let d_w_poly_commit = self.keypair.commit(&d_w_poly_commit);
+        let a_w_poly_commit = self.keypair.commit(&a_w_poly_commit)?;
+        let b_w_poly_commit = self.keypair.commit(&b_w_poly_commit)?;
+        let o_w_poly_commit = self.keypair.commit(&o_w_poly_commit)?;
+        let d_w_poly_commit = self.keypair.commit(&d_w_poly_commit)?;
 
         // Add wire polynomial commitments to transcript
         transcript.append_commitment(b"a_w", &a_w_poly_commit);
@@ -214,8 +217,8 @@ where
             .compute_permutation_vec(&fft, wires, &beta, &gamma, sigma);
 
         let z_poly = Self::blind_poly(rng, &permutation, 2, &fft);
-        let z_poly = Polynomial::new(z_poly.0);
-        let z_poly_commit = self.keypair.commit(&z_poly);
+        let z_poly = Polynomial::from_coefficients_vec(z_poly.0);
+        let z_poly_commit = self.keypair.commit(&z_poly)?;
         transcript.append_commitment(b"z", &z_poly_commit);
 
         // round 3
@@ -247,7 +250,7 @@ where
 
         // compute public inputs polynomial
         fft.idft(&mut dense_public_inputs);
-        let pi_poly = Polynomial::new(dense_public_inputs.0);
+        let pi_poly = Polynomial::from_coefficients_vec(dense_public_inputs.0);
 
         // compute quotient polynomial
         let wires = (&a_w_poly, &b_w_poly, &o_w_poly, &d_w_poly);
@@ -271,18 +274,23 @@ where
 
         // split quotient polynomial into 4 degree `n` polynomials
         let domain_size = fft.size();
-        let t_low_poly = Polynomial::new(t_poly[0..domain_size].to_vec());
-        let t_mid_poly =
-            Polynomial::new(t_poly[domain_size..2 * domain_size].to_vec());
-        let t_high_poly =
-            Polynomial::new(t_poly[2 * domain_size..3 * domain_size].to_vec());
-        let t_4_poly = Polynomial::new(t_poly[3 * domain_size..].to_vec());
+        let t_low_poly =
+            Polynomial::from_coefficients_vec(t_poly[0..domain_size].to_vec());
+        let t_mid_poly = Polynomial::from_coefficients_vec(
+            t_poly[domain_size..2 * domain_size].to_vec(),
+        );
+        let t_high_poly = Polynomial::from_coefficients_vec(
+            t_poly[2 * domain_size..3 * domain_size].to_vec(),
+        );
+        let t_4_poly = Polynomial::from_coefficients_vec(
+            t_poly[3 * domain_size..].to_vec(),
+        );
 
         // commit to split quotient polynomial
-        let t_low_commit = self.keypair.commit(&t_low_poly);
-        let t_mid_commit = self.keypair.commit(&t_mid_poly);
-        let t_high_commit = self.keypair.commit(&t_high_poly);
-        let t_4_commit = self.keypair.commit(&t_4_poly);
+        let t_low_commit = self.keypair.commit(&t_low_poly)?;
+        let t_mid_commit = self.keypair.commit(&t_mid_poly)?;
+        let t_high_commit = self.keypair.commit(&t_high_poly)?;
+        let t_4_commit = self.keypair.commit(&t_4_poly)?;
 
         // add quotient polynomial commitments to transcript
         transcript.append_commitment(b"t_low", &t_low_commit);
@@ -416,19 +424,19 @@ where
         let z_three_n = z_challenge.pow(3 * domain_size as u64);
 
         let a = &t_low_poly;
-        let b = t_mid_poly * z_n;
-        let c = t_high_poly * z_two_n;
-        let d = t_4_poly * z_three_n;
-        let abc = (*a + b) + c;
+        let b = &t_mid_poly * &z_n;
+        let c = &t_high_poly * &z_two_n;
+        let d = &t_4_poly * &z_three_n;
+        let abc = (a + &b) + c;
 
-        let quot = abc + d;
+        let quot = &abc + &d;
 
         // compute aggregate witness to polynomials evaluated at the evaluation
         // challenge z. The challenge v is selected inside
-        let a_w_poly = Polynomial::new(a_w_poly.0);
-        let b_w_poly = Polynomial::new(b_w_poly.0);
-        let o_w_poly = Polynomial::new(o_w_poly.0);
-        let d_w_poly = Polynomial::new(d_w_poly.0);
+        let a_w_poly = Polynomial::from_coefficients_vec(a_w_poly.0);
+        let b_w_poly = Polynomial::from_coefficients_vec(b_w_poly.0);
+        let o_w_poly = Polynomial::from_coefficients_vec(o_w_poly.0);
+        let d_w_poly = Polynomial::from_coefficients_vec(d_w_poly.0);
 
         let aggregate_witness = self.keypair.compute_aggregate_witness(
             &[
@@ -448,7 +456,7 @@ where
                 b"v_challenge",
             ),
         );
-        let w_z_chall_comm = self.keypair.commit(&aggregate_witness);
+        let w_z_chall_comm = self.keypair.commit(&aggregate_witness)?;
 
         // compute aggregate witness to polynomials evaluated at the shifted
         // evaluation challenge
@@ -460,7 +468,8 @@ where
                 b"v_challenge",
             ),
         );
-        let w_z_chall_w_comm = self.keypair.commit(&shifted_aggregate_witness);
+        let w_z_chall_w_comm =
+            self.keypair.commit(&shifted_aggregate_witness)?;
 
         let proof = Proof {
             a_comm: a_w_poly_commit,

@@ -23,11 +23,11 @@ impl Compiler {
     ///
     /// Use the default implementation of the circuit
     pub fn compile<C, P>(
-        keypair: &KeyPair<P>,
+        keypair: &mut KeyPair<P>,
         label: &[u8],
     ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
-        C: Circuit,
+        C: Circuit<P>,
         P: Pairing,
     {
         Self::compile_with_circuit::<C, P>(keypair, label, &Default::default())
@@ -37,12 +37,12 @@ impl Compiler {
     ///
     /// Use the provided circuit instead of the default implementation
     pub fn compile_with_circuit<C, P>(
-        keypair: &KeyPair<P>,
+        keypair: &mut KeyPair<P>,
         label: &[u8],
         circuit: &C,
     ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
-        C: Circuit,
+        C: Circuit<P>,
         P: Pairing,
     {
         let max_size = (keypair.commit_key().len() - 1) >> 1;
@@ -52,10 +52,10 @@ impl Compiler {
 
         let n = (prover.constraints() + 6).next_power_of_two();
 
-        keypair.trim(n);
+        let keypair = keypair.trim(n);
 
         let (prover, verifier) =
-            Self::preprocess::<C, P>(label, keypair, &prover)?;
+            Self::preprocess::<C, P>(label, &keypair, &prover)?;
 
         Ok((prover, verifier))
     }
@@ -66,7 +66,7 @@ impl Compiler {
         prover: &Builder<P>,
     ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
     where
-        C: Circuit,
+        C: Circuit<P>,
         P: Pairing,
     {
         let mut perm = prover.perm.clone();
@@ -129,54 +129,63 @@ impl Compiler {
         fft.idft(&mut q_fixed_group_add);
         fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = Polynomial(q_m.0.clone());
-        let q_l_poly = Polynomial(q_l.0.clone());
-        let q_r_poly = Polynomial(q_r.0.clone());
-        let q_o_poly = Polynomial(q_o.0.clone());
-        let q_c_poly = Polynomial(q_c.0.clone());
-        let q_d_poly = Polynomial(q_d.0.clone());
-        let q_arith_poly = Polynomial(q_arith.0.clone());
-        let q_range_poly = Polynomial(q_range.0.clone());
-        let q_logic_poly = Polynomial(q_logic.0.clone());
-        let q_fixed_group_add_poly = Polynomial(q_fixed_group_add.0.clone());
+        let q_m_poly = Polynomial::from_coefficients_vec(q_m.0.clone());
+        let q_l_poly = Polynomial::from_coefficients_vec(q_l.0.clone());
+        let q_r_poly = Polynomial::from_coefficients_vec(q_r.0.clone());
+        let q_o_poly = Polynomial::from_coefficients_vec(q_o.0.clone());
+        let q_c_poly = Polynomial::from_coefficients_vec(q_c.0.clone());
+        let q_d_poly = Polynomial::from_coefficients_vec(q_d.0.clone());
+        let q_arith_poly = Polynomial::from_coefficients_vec(q_arith.0.clone());
+        let q_range_poly = Polynomial::from_coefficients_vec(q_range.0.clone());
+        let q_logic_poly = Polynomial::from_coefficients_vec(q_logic.0.clone());
+        let q_fixed_group_add_poly =
+            Polynomial::from_coefficients_vec(q_fixed_group_add.0.clone());
         let q_variable_group_add_poly =
-            Polynomial(q_variable_group_add.0.clone());
+            Polynomial::from_coefficients_vec(q_variable_group_add.0.clone());
 
         // 2. compute the sigma polynomials
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
             perm.compute_sigma_polynomials(size, &fft);
 
-        let q_m_poly_commit = keypair.commit(&q_m_poly);
-        let q_l_poly_commit = keypair.commit(&q_l_poly);
-        let q_r_poly_commit = keypair.commit(&q_r_poly);
-        let q_o_poly_commit = keypair.commit(&q_o_poly);
-        let q_c_poly_commit = keypair.commit(&q_c_poly);
-        let q_d_poly_commit = keypair.commit(&q_d_poly);
-        let q_arith_poly_commit = keypair.commit(&q_arith_poly);
-        let q_range_poly_commit = keypair.commit(&q_range_poly);
-        let q_logic_poly_commit = keypair.commit(&q_logic_poly);
+        let q_m_poly_commit = keypair.commit(&q_m_poly).unwrap_or_default();
+        let q_l_poly_commit = keypair.commit(&q_l_poly).unwrap_or_default();
+        let q_r_poly_commit = keypair.commit(&q_r_poly).unwrap_or_default();
+        let q_o_poly_commit = keypair.commit(&q_o_poly).unwrap_or_default();
+        let q_c_poly_commit = keypair.commit(&q_c_poly).unwrap_or_default();
+        let q_d_poly_commit = keypair.commit(&q_d_poly).unwrap_or_default();
+        let q_arith_poly_commit =
+            keypair.commit(&q_arith_poly).unwrap_or_default();
+        let q_range_poly_commit =
+            keypair.commit(&q_range_poly).unwrap_or_default();
+        let q_logic_poly_commit =
+            keypair.commit(&q_logic_poly).unwrap_or_default();
         let q_fixed_group_add_poly_commit =
-            keypair.commit(&q_fixed_group_add_poly);
-        let q_variable_group_add_poly_commit =
-            keypair.commit(&q_variable_group_add_poly);
+            keypair.commit(&q_fixed_group_add_poly).unwrap_or_default();
+        let q_variable_group_add_poly_commit = keypair
+            .commit(&q_variable_group_add_poly)
+            .unwrap_or_default();
 
-        let s_sigma_1_poly_commit = Polynomial(s_sigma_1_poly.0.clone());
-        let s_sigma_2_poly_commit = Polynomial(s_sigma_2_poly.0.clone());
-        let s_sigma_3_poly_commit = Polynomial(s_sigma_3_poly.0.clone());
-        let s_sigma_4_poly_commit = Polynomial(s_sigma_4_poly.0.clone());
+        let s_sigma_1_poly_commit =
+            Polynomial::from_coefficients_vec(s_sigma_1_poly.0.clone());
+        let s_sigma_2_poly_commit =
+            Polynomial::from_coefficients_vec(s_sigma_2_poly.0.clone());
+        let s_sigma_3_poly_commit =
+            Polynomial::from_coefficients_vec(s_sigma_3_poly.0.clone());
+        let s_sigma_4_poly_commit =
+            Polynomial::from_coefficients_vec(s_sigma_4_poly.0.clone());
 
-        let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit);
-        let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit);
-        let s_sigma_3_poly_commit = keypair.commit(&s_sigma_3_poly_commit);
-        let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly_commit);
+        let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit)?;
+        let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit)?;
+        let s_sigma_3_poly_commit = keypair.commit(&s_sigma_3_poly_commit)?;
+        let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly_commit)?;
 
         // verifier Key for arithmetic circuits
         let arithmetic_verifier_key = widget::arithmetic::VerifierKey {
             q_m: q_m_poly_commit,
-            q_l: q_l_poly_commit,
-            q_r: q_r_poly_commit,
+            q_l: q_l_poly_commit.clone(),
+            q_r: q_r_poly_commit.clone(),
             q_o: q_o_poly_commit,
-            q_c: q_c_poly_commit,
+            q_c: q_c_poly_commit.clone(),
             q_4: q_d_poly_commit,
             q_arith: q_arith_poly_commit,
         };
@@ -259,48 +268,58 @@ impl Compiler {
         fft_8n.coset_dft(&mut min_p);
 
         let q_m_eval_8n =
-            Evaluations::from_vec_and_domain(q_m.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_m.0.clone(), domain_8n.clone());
         let q_l_eval_8n =
-            Evaluations::from_vec_and_domain(q_l.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_l.0.clone(), domain_8n.clone());
         let q_r_eval_8n =
-            Evaluations::from_vec_and_domain(q_r.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_r.0.clone(), domain_8n.clone());
         let q_o_eval_8n =
-            Evaluations::from_vec_and_domain(q_o.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_o.0.clone(), domain_8n.clone());
         let q_c_eval_8n =
-            Evaluations::from_vec_and_domain(q_c.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_c.0.clone(), domain_8n.clone());
         let q_4_eval_8n =
-            Evaluations::from_vec_and_domain(q_d.0.clone(), domain_8n);
-        let q_arith_eval_8n =
-            Evaluations::from_vec_and_domain(q_arith.0.clone(), domain_8n);
-        let q_range_eval_8n =
-            Evaluations::from_vec_and_domain(q_range.0.clone(), domain_8n);
-        let q_logic_eval_8n =
-            Evaluations::from_vec_and_domain(q_logic.0.clone(), domain_8n);
+            Evaluations::from_vec_and_domain(q_d.0.clone(), domain_8n.clone());
+        let q_arith_eval_8n = Evaluations::from_vec_and_domain(
+            q_arith.0.clone(),
+            domain_8n.clone(),
+        );
+        let q_range_eval_8n = Evaluations::from_vec_and_domain(
+            q_range.0.clone(),
+            domain_8n.clone(),
+        );
+        let q_logic_eval_8n = Evaluations::from_vec_and_domain(
+            q_logic.0.clone(),
+            domain_8n.clone(),
+        );
         let q_fixed_group_add_eval_8n = Evaluations::from_vec_and_domain(
             q_fixed_group_add.0.clone(),
-            domain_8n,
+            domain_8n.clone(),
         );
         let q_variable_group_add_eval_8n = Evaluations::from_vec_and_domain(
             q_variable_group_add.0.clone(),
-            domain_8n,
+            domain_8n.clone(),
         );
 
         let s_sigma_1_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_1.0, domain_8n);
+            Evaluations::from_vec_and_domain(s_sigma_1.0, domain_8n.clone());
         let s_sigma_2_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_2.0, domain_8n);
+            Evaluations::from_vec_and_domain(s_sigma_2.0, domain_8n.clone());
         let s_sigma_3_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_3.0, domain_8n);
+            Evaluations::from_vec_and_domain(s_sigma_3.0, domain_8n.clone());
         let s_sigma_4_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_4.0, domain_8n);
+            Evaluations::from_vec_and_domain(s_sigma_4.0, domain_8n.clone());
 
         let linear_eval_8n =
-            Evaluations::from_vec_and_domain(min_p.0, domain_8n);
+            Evaluations::from_vec_and_domain(min_p.0, domain_8n.clone());
 
-        let s_sigma_1_poly = Polynomial(s_sigma_1_poly.0);
-        let s_sigma_2_poly = Polynomial(s_sigma_2_poly.0);
-        let s_sigma_3_poly = Polynomial(s_sigma_3_poly.0);
-        let s_sigma_4_poly = Polynomial(s_sigma_4_poly.0);
+        let s_sigma_1_poly =
+            Polynomial::from_coefficients_vec(s_sigma_1_poly.0);
+        let s_sigma_2_poly =
+            Polynomial::from_coefficients_vec(s_sigma_2_poly.0);
+        let s_sigma_3_poly =
+            Polynomial::from_coefficients_vec(s_sigma_3_poly.0);
+        let s_sigma_4_poly =
+            Polynomial::from_coefficients_vec(s_sigma_4_poly.0);
 
         let selectors = Polynomials::<P> {
             q_m: q_m_poly,
@@ -385,9 +404,9 @@ impl Compiler {
 
         let prover = Prover::new(
             label.clone(),
-            *keypair,
+            keypair.clone(),
             prover_key,
-            verifier_key,
+            verifier_key.clone(),
             size,
             constraints,
         );
@@ -395,11 +414,10 @@ impl Compiler {
         let verifier = Verifier::new(
             label,
             verifier_key,
-            // TODO FIX
             OpeningKey::new(
                 keypair.commit_key()[0],
                 keypair.opening_key(),
-                keypair.opening_key(),
+                keypair.beta_h(),
             ),
             public_input_indexes,
             size,

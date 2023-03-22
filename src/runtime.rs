@@ -6,6 +6,7 @@
 
 //! PLONK runtime controller
 
+use core::marker::PhantomData;
 use zero_crypto::common::Pairing;
 
 use crate::constraint_system::{Constraint, Witness};
@@ -36,23 +37,25 @@ pub enum RuntimeEvent<P: Pairing> {
 
 /// Runtime structure with debugger
 #[derive(Debug, Clone)]
-pub struct Runtime {
+pub struct Runtime<P: Pairing> {
     #[cfg(feature = "debug")]
-    debugger: Debugger,
+    debugger: Debugger<P>,
+    _marker: PhantomData<P>,
 }
 
-impl Runtime {
+impl<P: Pairing> Runtime<P> {
     /// Create a new PLONK runtime with the provided capacity
     #[allow(unused_variables)]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             #[cfg(feature = "debug")]
             debugger: Debugger::with_capacity(capacity),
+            _marker: PhantomData,
         }
     }
 
     #[allow(unused_variables)]
-    pub(crate) fn event<P: Pairing>(&mut self, event: RuntimeEvent<P>) {
+    pub(crate) fn event(&mut self, event: RuntimeEvent<P>) {
         #[cfg(feature = "debug")]
         self.debugger.event(event);
     }

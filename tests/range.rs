@@ -6,39 +6,43 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
+use zero_crypto::behave::{FftField, Group};
+use zero_crypto::common::Pairing;
+use zero_kzg::KeyPair;
+use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[test]
 fn range_works() {
-    let rng = &mut StdRng::seed_from_u64(8349u64);
+    let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 5;
+    let n = 5;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, rng).expect("failed to create pp");
+    let mut pp = KeyPair::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
 
     const DEFAULT_BITS: usize = 76;
-
-    pub struct DummyCircuit {
-        a: BlsScalar,
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::ScalarField,
         bits: usize,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: BlsScalar, bits: usize) -> Self {
             Self { a, bits }
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(7u64.into(), DEFAULT_BITS)
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
 
@@ -48,15 +52,18 @@ fn range_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
         let a = BlsScalar::from(u64::MAX);
 
         let (proof, public_inputs) = prover
-            .prove(rng, &DummyCircuit::new(a, DEFAULT_BITS))
+            .prove(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
             .expect("failed to prove");
 
         verifier
@@ -69,7 +76,7 @@ fn range_works() {
         let a = -BlsScalar::pow_of_2(DEFAULT_BITS as u64 + 1);
 
         prover
-            .prove(rng, &DummyCircuit::new(a, DEFAULT_BITS))
+            .prove(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
             .expect_err("bits aren't in range");
     }
 
@@ -77,8 +84,8 @@ fn range_works() {
     {
         let a = BlsScalar::one();
 
-        Compiler::compile_with_circuit::<DummyCircuit>(
-            &pp,
+        Compiler::compile_with_circuit::<DummyCircuit<TatePairing>,
+    TatePairing>(         &mut pp,
             label,
             &DummyCircuit::new(a, DEFAULT_BITS + 1),
         )

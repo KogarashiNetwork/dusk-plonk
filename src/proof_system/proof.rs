@@ -67,11 +67,11 @@ use crate::{
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zero_bls12_381::msm_variable_base;
 use zero_crypto::{
     behave::{FftField, Group, PrimeField},
     common::Pairing,
 };
+use zero_pairing::msm_variable_base;
 
 impl<P: Pairing> Proof<P> {
     /// Performs the verification of a [`Proof`] returning a boolean result.
@@ -102,17 +102,13 @@ impl<P: Pairing> Proof<P> {
 
         // Compute beta and gamma challenges
         let beta = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-            &mut transcript,
-            b"beta",
+            transcript, b"beta",
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
-            b"beta",
-            &beta,
+            transcript, b"beta", &beta,
         );
         let gamma = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-            &mut transcript,
-            b"gamma",
+            transcript, b"gamma",
         );
 
         // Add commitment to permutation polynomial to transcript
@@ -120,27 +116,26 @@ impl<P: Pairing> Proof<P> {
 
         // Compute quotient challenge
         let alpha = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-            &mut transcript,
-            b"alpha",
+            transcript, b"alpha",
         );
         let range_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-                &mut transcript,
+                transcript,
                 b"range separation challenge",
             );
         let logic_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-                &mut transcript,
+                transcript,
                 b"logic separation challenge",
             );
         let fixed_base_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-                &mut transcript,
+                transcript,
                 b"fixed base separation challenge",
             );
         let var_base_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-                &mut transcript,
+                transcript,
                 b"variable base separation challenge",
             );
 
@@ -153,7 +148,7 @@ impl<P: Pairing> Proof<P> {
         // Compute evaluation challenge z
         let z_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
-                &mut transcript,
+                transcript,
                 b"z_challenge",
             );
 
@@ -184,87 +179,85 @@ impl<P: Pairing> Proof<P> {
 
         // Add evaluations to transcript
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"a_eval",
             &self.evaluations.a_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"b_eval",
             &self.evaluations.b_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"c_eval",
             &self.evaluations.c_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"d_eval",
             &self.evaluations.d_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"a_next_eval",
             &self.evaluations.a_next_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"b_next_eval",
             &self.evaluations.b_next_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"d_next_eval",
             &self.evaluations.d_next_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"s_sigma_1_eval",
             &self.evaluations.s_sigma_1_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"s_sigma_2_eval",
             &self.evaluations.s_sigma_2_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"s_sigma_3_eval",
             &self.evaluations.s_sigma_3_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"q_arith_eval",
             &self.evaluations.q_arith_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"q_c_eval",
             &self.evaluations.q_c_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"q_l_eval",
             &self.evaluations.q_l_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"q_r_eval",
             &self.evaluations.q_r_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"perm_eval",
             &self.evaluations.perm_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
-            b"t_eval",
-            &t_eval,
+            transcript, b"t_eval", &t_eval,
         );
         <Transcript as TranscriptProtocol<P>>::append_scalar(
-            &mut transcript,
+            transcript,
             b"r_eval",
             &self.evaluations.r_poly_eval,
         );
@@ -296,39 +289,43 @@ impl<P: Pairing> Proof<P> {
         // Compose the Aggregated Proof
         //
         let mut aggregate_proof =
-            AggregateProof::with_witness(self.w_z_chall_comm);
+            AggregateProof::with_witness(self.w_z_chall_comm.clone());
         aggregate_proof.add_part((t_eval, t_comm));
         aggregate_proof.add_part((self.evaluations.r_poly_eval, r_comm));
-        aggregate_proof.add_part((self.evaluations.a_eval, self.a_comm));
-        aggregate_proof.add_part((self.evaluations.b_eval, self.b_comm));
-        aggregate_proof.add_part((self.evaluations.c_eval, self.c_comm));
-        aggregate_proof.add_part((self.evaluations.d_eval, self.d_comm));
+        aggregate_proof
+            .add_part((self.evaluations.a_eval, self.a_comm.clone()));
+        aggregate_proof
+            .add_part((self.evaluations.b_eval, self.b_comm.clone()));
+        aggregate_proof
+            .add_part((self.evaluations.c_eval, self.c_comm.clone()));
+        aggregate_proof
+            .add_part((self.evaluations.d_eval, self.d_comm.clone()));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_1_eval,
-            verifier_key.permutation.s_sigma_1,
+            verifier_key.permutation.s_sigma_1.clone(),
         ));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_2_eval,
-            verifier_key.permutation.s_sigma_2,
+            verifier_key.permutation.s_sigma_2.clone(),
         ));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_3_eval,
-            verifier_key.permutation.s_sigma_3,
+            verifier_key.permutation.s_sigma_3.clone(),
         ));
         // Flatten proof with opening challenge
         let flattened_proof_a = aggregate_proof.flatten(transcript);
 
         // Compose the shifted aggregate proof
         let mut shifted_aggregate_proof =
-            AggregateProof::with_witness(self.w_z_chall_w_comm);
+            AggregateProof::with_witness(self.w_z_chall_w_comm.clone());
         shifted_aggregate_proof
-            .add_part((self.evaluations.perm_eval, self.z_comm));
+            .add_part((self.evaluations.perm_eval, self.z_comm.clone()));
         shifted_aggregate_proof
-            .add_part((self.evaluations.a_next_eval, self.a_comm));
+            .add_part((self.evaluations.a_next_eval, self.a_comm.clone()));
         shifted_aggregate_proof
-            .add_part((self.evaluations.b_next_eval, self.b_comm));
+            .add_part((self.evaluations.b_next_eval, self.b_comm.clone()));
         shifted_aggregate_proof
-            .add_part((self.evaluations.d_next_eval, self.d_comm));
+            .add_part((self.evaluations.d_next_eval, self.d_comm.clone()));
 
         let flattened_proof_b = shifted_aggregate_proof.flatten(transcript);
         // Add commitment to openings to transcript
@@ -482,7 +479,7 @@ impl<P: Pairing> Proof<P> {
             self.z_comm.0,
         );
 
-        Commitment::from(msm_variable_base(&points, &scalars))
+        Commitment::new(msm_variable_base::<P>(&points, &scalars))
     }
 }
 

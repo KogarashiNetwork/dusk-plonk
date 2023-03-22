@@ -147,6 +147,6 @@ impl<P: Pairing> EvaluationDomain<P> {
                     - P::ScalarField::one()
             })
             .collect();
-        Evaluations::from_vec_and_domain(v_h, *self)
+        Evaluations::from_vec_and_domain(v_h, self.clone())
     }
 }

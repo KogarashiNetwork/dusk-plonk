@@ -6,25 +6,29 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_crypto::behave::Group;
+use zero_crypto::behave::{FftField, Group};
+use zero_crypto::common::Pairing;
+use zero_kzg::KeyPair;
+use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[test]
 fn logic_and_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 8;
+    let n = 8;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
 
-    pub struct DummyCircuit {
-        a: BlsScalar,
-        b: BlsScalar,
-        c: BlsScalar,
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::ScalarField,
+        b: P::ScalarField,
+        c: P::ScalarField,
         bits: usize,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: BlsScalar, b: BlsScalar, bits: usize) -> Self {
             let x = BlsScalar::pow_of_2(bits as u64) - BlsScalar::one();
 
@@ -36,16 +40,16 @@ fn logic_and_works() {
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(7u64.into(), 8u64.into(), 256)
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
@@ -59,8 +63,11 @@ fn logic_and_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
@@ -109,7 +116,7 @@ fn logic_and_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)
+            Compiler::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -134,7 +141,7 @@ fn logic_and_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)
+            Compiler::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -158,7 +165,7 @@ fn logic_and_works() {
 
         let circuit = DummyCircuit::new(a, b, bits);
 
-        Compiler::compile_with_circuit(&pp, label, &circuit)
+        Compiler::compile_with_circuit(&mut pp, label, &circuit)
             .expect("failed to compile circuit");
     }
 }
@@ -167,18 +174,19 @@ fn logic_and_works() {
 fn logic_xor_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 8;
+    let n = 8;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
 
-    pub struct DummyCircuit {
-        a: BlsScalar,
-        b: BlsScalar,
-        c: BlsScalar,
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::ScalarField,
+        b: P::ScalarField,
+        c: P::ScalarField,
         bits: usize,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: BlsScalar, b: BlsScalar, bits: usize) -> Self {
             let x = BlsScalar::pow_of_2(bits as u64) - BlsScalar::one();
 
@@ -190,16 +198,16 @@ fn logic_xor_works() {
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(7u64.into(), 8u64.into(), 256)
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
@@ -213,8 +221,11 @@ fn logic_xor_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
@@ -263,7 +274,7 @@ fn logic_xor_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)
+            Compiler::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -288,7 +299,7 @@ fn logic_xor_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&pp, label, &circuit)
+            Compiler::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -312,7 +323,7 @@ fn logic_xor_works() {
 
         let circuit = DummyCircuit::new(a, b, bits);
 
-        Compiler::compile_with_circuit(&pp, label, &circuit)
+        Compiler::compile_with_circuit(&mut pp, label, &circuit)
             .expect("failed to compile circuit");
     }
 }

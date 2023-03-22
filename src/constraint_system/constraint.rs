@@ -95,7 +95,7 @@ impl<P: Pairing> AsRef<[P::ScalarField]> for Constraint<P> {
 
 impl<P: Pairing> Constraint<P> {
     /// Initiate the composition of a new selector description of a circuit.
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             coefficients: [P::ScalarField::zero(); 13],
             witnesses: [Builder::<P>::ZERO; 4],

@@ -13,6 +13,7 @@ use sp_std::vec;
 use zero_crypto::behave::*;
 use zero_kzg::{Fft, Polynomial};
 
+#[cfg(test)]
 pub(crate) mod constants;
 
 /// Permutation provides the necessary state information and functions
@@ -26,9 +27,9 @@ pub(crate) struct Permutation<P: Pairing> {
 }
 
 impl<P: Pairing> Permutation<P> {
-    const K1: P::ScalarField = P::ScalarField::from(7);
-    const K2: P::ScalarField = P::ScalarField::from(13);
-    const K3: P::ScalarField = P::ScalarField::from(17);
+    const K1: u64 = 7;
+    const K2: u64 = 13;
+    const K3: u64 = 17;
 
     /// Creates a Permutation struct with an expected capacity of zero.
     pub(crate) fn new() -> Permutation<P> {
@@ -159,15 +160,15 @@ impl<P: Pairing> Permutation<P> {
                 }
                 WireData::Right(index) => {
                     let root = &roots[*index];
-                    Self::K1 * root
+                    P::ScalarField::from(Self::K1) * root
                 }
                 WireData::Output(index) => {
                     let root = &roots[*index];
-                    Self::K2 * root
+                    P::ScalarField::from(Self::K2) * root
                 }
                 WireData::Fourth(index) => {
                     let root = &roots[*index];
-                    Self::K3 * root
+                    P::ScalarField::from(Self::K3) * root
                 }
             })
             .collect();
@@ -222,7 +223,12 @@ impl<P: Pairing> Permutation<P> {
         let n = fft.size();
 
         // Constants defining cosets H, k1H, k2H, etc
-        let ks = vec![P::ScalarField::one(), Self::K1, Self::K2, Self::K3];
+        let ks = vec![
+            P::ScalarField::one(),
+            P::ScalarField::from(Self::K1),
+            P::ScalarField::from(Self::K2),
+            P::ScalarField::from(Self::K3),
+        ];
 
         // Transpose wires and sigma values to get "rows" in the form [a_w_i,
         // b_w_i, c_w_i, ... ] where each row contains the wire and sigma
@@ -1107,7 +1113,7 @@ mod test {
         // permutation polynomial (z)
         let mut z_vec = ZeroPoly::new(z_vec);
         fft.idft(&mut z_vec);
-        let z_poly = ZeroPoly::new(z_vec.0);
+        let z_poly = ZeroPoly::from_coefficients_vec(z_vec.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1157,7 +1163,7 @@ mod test {
         // Test that the shifted polynomial is correct
         let mut shifted_z = ZeroPoly::new(shift_poly_by_one(fast_z_vec));
         fft.idft(&mut shifted_z);
-        let shifted_z_poly = ZeroPoly::new(shifted_z.0);
+        let shifted_z_poly = ZeroPoly::from_coefficients_vec(shifted_z.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.group_gen));
             let shifted_z_eval = shifted_z_poly.evaluate(&element);

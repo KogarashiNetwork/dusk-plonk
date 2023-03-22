@@ -9,15 +9,16 @@
 use alloc::vec::Vec;
 use core::cmp;
 use core::ops::{Index, Neg};
+use zero_jubjub::compute_windowed_naf;
 
 use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::{
-    Curve, CurveExtend, FftField, Group, PrimeField, Ring,
+    Curve, CurveExtend, Extended, FftField, Group, PrimeField, Ring,
+    TwistedEdwardsAffine,
 };
 use zero_crypto::common::Pairing;
-use zero_jubjub::{Fp as JubJubScalar, JubjubAffine, JubjubExtend};
 
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
@@ -75,7 +76,7 @@ pub trait Composer<PR: Pairing>:
     fn append_custom_gate_internal(&mut self, constraint: Constraint<PR>);
 
     /// PLONK runtime controller
-    fn runtime(&mut self) -> &mut Runtime;
+    fn runtime(&mut self) -> &mut Runtime<PR>;
 
     /// Allocate a witness value into the composer and return its index.
     fn append_witness<W: Into<PR::ScalarField>>(
@@ -88,16 +89,18 @@ pub trait Composer<PR: Pairing>:
         let witness = self.append_witness_internal(witness);
 
         let v = self[witness];
+
         self.runtime()
-            .event::<PR>(RuntimeEvent::WitnessAppended { w: witness, v });
+            .event(RuntimeEvent::WitnessAppended { w: witness, v });
 
         witness
     }
 
     /// Append a new width-4 poly gate/constraint.
     fn append_custom_gate(&mut self, constraint: Constraint<PR>) {
-        self.runtime()
-            .event(RuntimeEvent::ConstraintAppended { c: constraint });
+        self.runtime().event(RuntimeEvent::ConstraintAppended {
+            c: constraint.clone(),
+        });
 
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
@@ -206,7 +209,7 @@ pub trait Composer<PR: Pairing>:
 
             constraint = constraint.o(wit_c);
 
-            self.append_custom_gate(constraint);
+            self.append_custom_gate(constraint.clone());
 
             constraint = constraint.a(wit_a).b(wit_b).d(wit_d);
         }
@@ -229,7 +232,7 @@ pub trait Composer<PR: Pairing>:
     /// `generator` will be appended to the circuit description as constant
     ///
     /// Will error if `jubjub` doesn't fit `Fr`
-    fn component_mul_generator<P: Into<JubjubExtend>>(
+    fn component_mul_generator<P: Into<PR::JubjubExtend>>(
         &mut self,
         jubjub: Witness,
         generator: P,
@@ -245,7 +248,7 @@ pub trait Composer<PR: Pairing>:
 
         // compute 2^iG
         let mut wnaf_point_multiples: Vec<_> = {
-            let mut multiples = vec![JubjubExtend::ADDITIVE_IDENTITY; bits];
+            let mut multiples = vec![PR::JubjubExtend::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
 
@@ -253,7 +256,7 @@ pub trait Composer<PR: Pairing>:
                 multiples[i] = multiples[i - 1].double();
             }
 
-            JubjubExtend::batch_normalize(&mut multiples).collect()
+            PR::JubjubExtend::batch_normalize(&mut multiples).collect()
         };
 
         wnaf_point_multiples.reverse();
@@ -262,16 +265,20 @@ pub trait Composer<PR: Pairing>:
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
         let scalar =
-            JubJubScalar::from_bytes(&self[jubjub].to_bytes()).unwrap();
+            match PR::JubjubScalar::from_bytes(&self[jubjub].to_bytes()) {
+                Ok(scalar) => scalar,
+                Err(_) => panic!("Failed to deserialize jubjub scalar"),
+            };
 
         let width = 2;
-        let wnaf_entries = scalar.compute_windowed_naf(width);
+        let wnaf_entries = compute_windowed_naf(scalar, width);
 
         debug_assert_eq!(wnaf_entries.len(), bits);
 
         // initialize the accumulators
         let mut scalar_acc = vec![PR::ScalarField::zero()];
-        let mut point_acc = vec![JubjubAffine::ADDITIVE_IDENTITY];
+        let mut point_acc =
+            vec![PR::JubjubAffine::from(PR::JubjubExtend::ADDITIVE_IDENTITY)];
 
         // auxillary point to help with checks on the backend
         let two = PR::ScalarField::from(2u64);
@@ -283,12 +290,16 @@ pub trait Composer<PR: Pairing>:
                 let (scalar_to_add, point_to_add) = match entry {
                     0 => (
                         PR::ScalarField::zero(),
-                        JubjubAffine::ADDITIVE_IDENTITY,
+                        PR::JubjubExtend::ADDITIVE_IDENTITY,
                     ),
-                    -1 => {
-                        (PR::ScalarField::one().neg(), -wnaf_point_multiples[i])
-                    }
-                    1 => (PR::ScalarField::one(), wnaf_point_multiples[i]),
+                    -1 => (
+                        PR::ScalarField::one().neg(),
+                        -PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                    ),
+                    1 => (
+                        PR::ScalarField::one(),
+                        PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                    ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
 
@@ -296,10 +307,12 @@ pub trait Composer<PR: Pairing>:
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let a = JubjubExtend::from(point_acc[i]);
-                let b = JubjubExtend::from(point_to_add);
-                let point = a + b;
+                // let a = PR::JubjubExtend::from(point_acc[i]);
+                // let b = PR::JubjubExtend::from(point_to_add);
+                let point = PR::JubjubExtend::from(point_acc[i]) + point_to_add;
                 point_acc.push(point.into());
+
+                let point_to_add: PR::JubjubAffine = point_to_add.into();
 
                 let x_alpha = point_to_add.get_x();
                 let y_alpha = point_to_add.get_y();
@@ -335,14 +348,14 @@ pub trait Composer<PR: Pairing>:
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound {
+            let wnaf_round = WnafRound::<Witness, PR> {
                 acc_x,
                 acc_y,
                 accumulated_bit,
                 xy_alpha,
-                x_beta,
-                y_beta,
-                xy_beta,
+                x_beta: x_beta.into(),
+                y_beta: y_beta.into(),
+                xy_beta: xy_beta.into(),
             };
 
             let constraint =
@@ -515,7 +528,7 @@ pub trait Composer<PR: Pairing>:
     }
 
     /// Appends a point in affine form as [`WitnessPoint`]
-    fn append_point<P: Into<JubjubAffine>>(
+    fn append_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -529,7 +542,7 @@ pub trait Composer<PR: Pairing>:
 
     /// Constrain a point into the circuit description and return an allocated
     /// [`WitnessPoint`] with its coordinates
-    fn append_constant_point<P: Into<JubjubAffine>>(
+    fn append_constant_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -544,7 +557,7 @@ pub trait Composer<PR: Pairing>:
     /// Appends a point in affine form as [`WitnessPoint`]
     ///
     /// Creates two public inputs as `(x, y)`
-    fn append_public_point<P: Into<JubjubAffine>>(
+    fn append_public_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         affine: P,
     ) -> WitnessPoint {
@@ -554,13 +567,13 @@ pub trait Composer<PR: Pairing>:
         self.assert_equal_constant(
             *point.x(),
             PR::ScalarField::zero(),
-            Some(-affine.get_x()),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
             PR::ScalarField::zero(),
-            Some(-affine.get_y()),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_y())),
         );
 
         point
@@ -635,8 +648,9 @@ pub trait Composer<PR: Pairing>:
     ) {
         let constant = constant.into();
         let constraint = Constraint::new().left(1).constant(-constant).a(a);
-        let constraint =
-            public.map(|p| constraint.public(p)).unwrap_or(constraint);
+        let constraint = public
+            .map(|p| constraint.clone().public(p))
+            .unwrap_or(constraint);
 
         self.append_gate(constraint);
     }
@@ -650,7 +664,7 @@ pub trait Composer<PR: Pairing>:
     /// Asserts `point == public`.
     ///
     /// Will add `public` affine coordinates `(x,y)` as public inputs
-    fn assert_equal_public_point<P: Into<JubjubAffine>>(
+    fn assert_equal_public_point<P: Into<PR::JubjubAffine>>(
         &mut self,
         point: WitnessPoint,
         public: P,
@@ -660,13 +674,13 @@ pub trait Composer<PR: Pairing>:
         self.assert_equal_constant(
             *point.x(),
             PR::ScalarField::zero(),
-            Some(-public.get_x()),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
             PR::ScalarField::zero(),
-            Some(-public.get_y()),
+            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_y())),
         );
     }
 
@@ -686,13 +700,19 @@ pub trait Composer<PR: Pairing>:
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = JubjubAffine::from_raw_unchecked(self[x_1], self[y_1]);
-        let p2 = JubjubAffine::from_raw_unchecked(self[x_2], self[y_2]);
+        let p1 = PR::JubjubAffine::from_raw_unchecked(
+            self[x_1].into(),
+            self[y_1].into(),
+        );
+        let p2 = PR::JubjubAffine::from_raw_unchecked(
+            self[x_2].into(),
+            self[y_2].into(),
+        );
 
-        let point: JubjubAffine = (JubjubExtend::from(p1) + p2).into();
+        let point = PR::JubjubAffine::from(p1 + p2);
 
-        let x_3 = point.get_x();
-        let y_3 = point.get_y();
+        let x_3: PR::ScalarField = point.get_x().into();
+        let y_3: PR::ScalarField = point.get_y().into();
 
         let x1_y2 = self[x_1] * self[y_2];
 
@@ -1026,7 +1046,7 @@ pub trait Composer<PR: Pairing>:
         let s = Constraint::arithmetic(&s).output(-PR::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s)
+            .append_evaluated_output(s.clone())
             .expect("output selector is -1");
         let s = s.o(o);
 
@@ -1043,7 +1063,7 @@ pub trait Composer<PR: Pairing>:
         let s = Constraint::arithmetic(&s).output(-PR::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s)
+            .append_evaluated_output(s.clone())
             .expect("output selector is -1");
         let s = s.o(o);
 
@@ -1055,7 +1075,7 @@ pub trait Composer<PR: Pairing>:
     /// Prove a circuit with a builder initialized with `constraints` capacity.
     fn prove<C>(constraints: usize, circuit: &C) -> Result<Self, Error>
     where
-        C: Circuit,
+        C: Circuit<PR>,
     {
         let mut builder = Self::initialized(constraints);
 

@@ -7,22 +7,25 @@
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_crypto::common::*;
+use zero_kzg::KeyPair;
+use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[test]
 fn decomposition_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 10;
+    let n = 10;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect("failed to create pp");
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
 
-    pub struct DummyCircuit<const N: usize> {
-        a: BlsScalar,
-        bits: [BlsScalar; N],
+    #[derive(Debug)]
+    pub struct DummyCircuit<const N: usize, P: Pairing> {
+        a: P::ScalarField,
+        bits: [P::ScalarField; N],
     }
 
-    impl<const N: usize> DummyCircuit<N> {
+    impl<const N: usize> DummyCircuit<N, TatePairing> {
         pub fn new(a: BlsScalar) -> Self {
             let mut bits = [BlsScalar::zero(); N];
 
@@ -34,16 +37,16 @@ fn decomposition_works() {
         }
     }
 
-    impl<const N: usize> Default for DummyCircuit<N> {
+    impl<const N: usize> Default for DummyCircuit<N, TatePairing> {
         fn default() -> Self {
             Self::new(BlsScalar::from(23u64))
         }
     }
 
-    impl<const N: usize> Circuit for DummyCircuit<N> {
+    impl<const N: usize> Circuit<TatePairing> for DummyCircuit<N, TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
             let mut w_bits: [Witness; N] = [C::ZERO; N];
@@ -63,15 +66,18 @@ fn decomposition_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit<256>>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<256, TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
         let a = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::<256>::new(a))
+            .prove(&mut rng, &DummyCircuit::<256, TatePairing>::new(a))
             .expect("failed to prove");
 
         verifier
@@ -83,7 +89,7 @@ fn decomposition_works() {
     {
         let a = BlsScalar::random(&mut rng);
 
-        let mut circuit = DummyCircuit::<256>::new(a);
+        let mut circuit = DummyCircuit::<256, TatePairing>::new(a);
 
         circuit.bits[10] = circuit.bits[10] ^ BlsScalar::one();
 

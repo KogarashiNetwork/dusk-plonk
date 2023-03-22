@@ -6,7 +6,6 @@
 
 use alloc::vec::Vec;
 use rand_core::RngCore;
-use zero_bls12_381::{Fr as BlsScalar, G1Projective};
 use zero_crypto::common::{Group, Pairing, Ring};
 
 #[cfg(feature = "rkyv-impl")]
@@ -46,29 +45,6 @@ pub(crate) fn random_scalar<R: RngCore, P: Pairing>(
     rng: &mut R,
 ) -> P::ScalarField {
     P::ScalarField::random(rng)
-}
-
-/// Generates a random G1 Point using an RNG seed.
-pub(crate) fn random_g1_point<R: RngCore, P: Pairing>(
-    rng: &mut R,
-) -> P::G1Projective {
-    P::G1Projective::ADDITIVE_GENERATOR * random_scalar::<R, P>(rng)
-}
-/// Generates a random G2 point using an RNG seed.
-pub(crate) fn random_g2_point<R: RngCore, P: Pairing>(
-    rng: &mut R,
-) -> P::G2Projective {
-    P::G2Projective::ADDITIVE_GENERATOR * random_scalar::<R, P>(rng)
-}
-
-/// This function is only used to generate the SRS.
-/// The intention is just to compute the resulting points
-/// of the operation `a*P, b*P, c*P ... (n-1)*P` into a `Vec`.
-pub(crate) fn slow_multiscalar_mul_single_base(
-    scalars: &[BlsScalar],
-    base: G1Projective,
-) -> Vec<G1Projective> {
-    scalars.iter().map(|s| base * *s).collect()
 }
 
 // while we do not have batch inversion for scalars
@@ -113,6 +89,7 @@ pub fn batch_inversion<P: Pairing>(v: &mut [P::ScalarField]) {
 }
 #[cfg(test)]
 mod test {
+    use zero_bls12_381::Fr as BlsScalar;
     use zero_pairing::TatePairing;
 
     use super::*;

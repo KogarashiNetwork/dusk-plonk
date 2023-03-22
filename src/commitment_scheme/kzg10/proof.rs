@@ -68,7 +68,7 @@ impl<P: Pairing> AggregateProof<P> {
         let v_challenge: P::ScalarField = <Transcript as TranscriptProtocol<
             P,
         >>::challenge_scalar(
-            &mut transcript, b"v_challenge"
+            transcript, b"v_challenge"
         );
         let powers: Vec<P::ScalarField> = powers_of::<P>(
             &v_challenge,
@@ -105,7 +105,7 @@ impl<P: Pairing> AggregateProof<P> {
                 .sum();
 
         Proof {
-            commitment_to_witness: self.commitment_to_witness,
+            commitment_to_witness: self.commitment_to_witness.clone(),
             evaluated_point: flattened_poly_evaluations,
             commitment_to_polynomial: Commitment::new(
                 flattened_poly_commitments,

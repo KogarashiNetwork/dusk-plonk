@@ -65,15 +65,23 @@ impl<P: Pairing> ProverKey<P> {
 
         // x accumulator consistency check
         let x_3 = acc_x_next;
-        let lhs = *x_3
-            + (*x_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+        let lhs: P::ScalarField = *x_3
+            + (*x_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (*acc_x * y_alpha) + (*acc_y * x_alpha);
         let x_acc_consistency = (lhs - rhs) * kappa_sq;
 
         // y accumulator consistency check
         let y_3 = acc_y_next;
-        let lhs = *y_3
-            - (*y_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+        let lhs: P::ScalarField = *y_3
+            - (*y_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (*acc_y * y_alpha) + (*acc_x * x_alpha);
         let y_acc_consistency = (lhs - rhs) * kappa_cu;
 
@@ -133,14 +141,22 @@ impl<P: Pairing> ProverKey<P> {
         // x accumulator consistency check
         let x_3 = acc_x_next;
         let lhs = *x_3
-            + (*x_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+            + (*x_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (x_alpha * acc_y) + (y_alpha * acc_x);
         let x_acc_consistency = (lhs - rhs) * kappa_sq;
 
         // y accumulator consistency check
         let y_3 = acc_y_next;
         let lhs = *y_3
-            - (*y_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+            - (*y_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (x_alpha * acc_x) + (y_alpha * acc_y);
         let y_acc_consistency = (lhs - rhs) * kappa_cu;
 
@@ -149,7 +165,7 @@ impl<P: Pairing> ProverKey<P> {
             + y_acc_consistency
             + xy_consistency;
 
-        *q_fixed_group_add_poly * (a * ecc_separation_challenge)
+        q_fixed_group_add_poly * &(a * ecc_separation_challenge)
     }
 }
 

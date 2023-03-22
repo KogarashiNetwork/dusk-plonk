@@ -17,9 +17,9 @@ use crate::proof_system::widget::ecc::scalar_mul::fixed_base::proverkey::{
 };
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_crypto::behave::FftField;
 use zero_crypto::behave::PrimeField;
 use zero_crypto::behave::Ring;
+use zero_crypto::behave::TwistedEdwardsCurve;
 use zero_crypto::common::Pairing;
 use zero_kzg::Commitment;
 
@@ -62,15 +62,23 @@ impl<P: Pairing> VerifierKey<P> {
 
         // x accumulator consistency check
         let x_3 = acc_x_next;
-        let lhs =
-            x_3 + (x_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+        let lhs = x_3
+            + (x_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (x_alpha * acc_y) + (y_alpha * acc_x);
         let x_acc_consistency = (lhs - rhs) * kappa_sq;
 
         // y accumulator consistency check
         let y_3 = acc_y_next;
-        let lhs =
-            y_3 - (y_3 * xy_alpha * acc_x * acc_y * P::ScalarField::EDWARDS_D);
+        let lhs = y_3
+            - (y_3
+                * xy_alpha
+                * acc_x
+                * acc_y
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D));
         let rhs = (x_alpha * acc_x) + (y_alpha * acc_y);
         let y_acc_consistency = (lhs - rhs) * kappa_cu;
 

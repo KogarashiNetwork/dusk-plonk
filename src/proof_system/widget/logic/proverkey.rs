@@ -91,7 +91,7 @@ impl<P: Pairing> ProverKey<P> {
 
         let t = (c_0 + c_1 + c_2 + c_3 + c_4) * logic_separation_challenge;
 
-        *q_logic_poly * t
+        q_logic_poly * &t
     }
 }
 

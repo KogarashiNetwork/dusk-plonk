@@ -70,11 +70,11 @@ pub(crate) fn compute<P: Pairing>(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = ZeroPoly::new(z_poly.0);
-    let a_w_eval_8n = ZeroPoly::new(a_w_poly.0);
-    let b_w_eval_8n = ZeroPoly::new(b_w_poly.0);
-    let c_w_eval_8n = ZeroPoly::new(c_w_poly.0);
-    let d_w_eval_8n = ZeroPoly::new(d_w_poly.0);
+    let z_eval_8n = ZeroPoly::from_coefficients_vec(z_poly.0);
+    let a_w_eval_8n = ZeroPoly::from_coefficients_vec(a_w_poly.0);
+    let b_w_eval_8n = ZeroPoly::from_coefficients_vec(b_w_poly.0);
+    let c_w_eval_8n = ZeroPoly::from_coefficients_vec(c_w_poly.0);
+    let d_w_eval_8n = ZeroPoly::from_coefficients_vec(d_w_poly.0);
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -108,7 +108,7 @@ pub(crate) fn compute<P: Pairing>(
     let mut quotient = ZeroPoly::new(quotient);
     fft_8n.coset_idft(&mut quotient);
 
-    Ok(ZeroPoly::new(quotient.0))
+    Ok(ZeroPoly::from_coefficients_vec(quotient.0))
 }
 
 // Ensures that the circuit is satisfied
@@ -143,7 +143,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
     let range = (0..fft.size()).into_iter();
 
     #[cfg(feature = "std")]
-    let range = (0..fft.size()).into_par_iter();
+    let range = (0..fft.size()).into_iter();
 
     let t: Vec<_> = range
         .map(|i| {
@@ -263,5 +263,5 @@ fn compute_first_lagrange_poly_scaled<P: Pairing>(
     let mut x_evals = ZeroPoly::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
     fft.idft(&mut x_evals);
-    ZeroPoly(x_evals.0)
+    ZeroPoly::from_coefficients_vec(x_evals.0)
 }

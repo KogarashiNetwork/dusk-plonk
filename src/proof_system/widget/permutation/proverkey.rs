@@ -24,9 +24,9 @@ pub(crate) struct ProverKey<P: Pairing> {
 }
 
 impl<P: Pairing> ProverKey<P> {
-    const K1: P::ScalarField = P::ScalarField::from(7);
-    const K2: P::ScalarField = P::ScalarField::from(13);
-    const K3: P::ScalarField = P::ScalarField::from(17);
+    const K1: u64 = 7;
+    const K2: u64 = 13;
+    const K3: u64 = 17;
 
     pub(crate) fn compute_quotient_i(
         &self,
@@ -68,9 +68,9 @@ impl<P: Pairing> ProverKey<P> {
         let x = self.linear_evaluations[index];
 
         (*a_w_i + (*beta * x) + gamma)
-            * (*b_w_i + (*beta * Self::K1 * x) + gamma)
-            * (*c_w_i + (*beta * Self::K2 * x) + gamma)
-            * (*d_w_i + (*beta * Self::K3 * x) + gamma)
+            * (*b_w_i + (*beta * P::ScalarField::from(Self::K1) * x) + gamma)
+            * (*c_w_i + (*beta * P::ScalarField::from(Self::K2) * x) + gamma)
+            * (*d_w_i + (*beta * P::ScalarField::from(Self::K3) * x) + gamma)
             * z_i
             * alpha
     }
@@ -185,17 +185,17 @@ impl<P: Pairing> ProverKey<P> {
         a_0 += gamma;
 
         // b_eval + beta * K1 * z_challenge + gamma
-        let beta_z_k1 = Self::K1 * beta_z;
+        let beta_z_k1 = P::ScalarField::from(Self::K1) * beta_z;
         let mut a_1 = *b_eval + beta_z_k1;
         a_1 += gamma;
 
         // c_eval + beta * K2 * z_challenge + gamma
-        let beta_z_k2 = Self::K2 * beta_z;
+        let beta_z_k2 = P::ScalarField::from(Self::K2) * beta_z;
         let mut a_2 = *c_eval + beta_z_k2;
         a_2 += gamma;
 
         // d_eval + beta * K3 * z_challenge + gamma
-        let beta_z_k3 = Self::K3 * beta_z;
+        let beta_z_k3 = P::ScalarField::from(Self::K3) * beta_z;
         let mut a_3 = *d_eval + beta_z_k3;
         a_3 += gamma;
 
@@ -205,7 +205,7 @@ impl<P: Pairing> ProverKey<P> {
         a *= alpha; // (a_eval + beta * z_challenge + gamma)(b_eval + beta * K1 *
                     // z_challenge + gamma)(c_eval + beta * K2 * z_challenge + gamma)(d_eval
                     // + beta * K3 * z_challenge + gamma) * alpha
-        *z_poly * a // (a_eval + beta * z_challenge + gamma)(b_eval + beta * K1
+        z_poly * &a // (a_eval + beta * z_challenge + gamma)(b_eval + beta * K1
                     // * z_challenge + gamma)(c_eval + beta * K2 * z_challenge +
                     // gamma) * alpha z(X)
     }
@@ -251,7 +251,7 @@ impl<P: Pairing> ProverKey<P> {
         a *= alpha; // (a_eval + beta * sigma_1 + gamma)(b_eval + beta * sigma_2 +
                     // gamma)(c_eval + beta * sigma_3 + gamma) * beta * z_eval * alpha
 
-        *s_sigma_4_poly * -a // -(a_eval + beta * sigma_1 + gamma)(b_eval +
+        s_sigma_4_poly * &-a // -(a_eval + beta * sigma_1 + gamma)(b_eval +
                              // beta * sigma_2 + gamma) (c_eval + beta *
                              // sigma_3 + gamma) * beta * z_eval * alpha^2 *
                              // Sigma_4(X)
@@ -267,6 +267,6 @@ impl<P: Pairing> ProverKey<P> {
         // Evaluate l_1(z)
         let l_1_z = domain.evaluate_all_lagrange_coefficients(*z_challenge)[0];
 
-        *z_coeffs * (l_1_z * alpha_sq)
+        z_coeffs * &(l_1_z * alpha_sq)
     }
 }

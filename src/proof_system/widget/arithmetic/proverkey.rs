@@ -68,26 +68,26 @@ impl<P: Pairing> ProverKey<P> {
         //
         // a_eval * b_eval * q_m_poly
         let ab = *a_eval * b_eval;
-        let a_0 = *q_m_poly * ab;
+        let a_0 = q_m_poly * &ab;
 
         // a_eval * q_l
-        let a_1 = *q_l_poly * *a_eval;
+        let a_1 = q_l_poly * &a_eval;
 
         // b_eval * q_r
-        let a_2 = *q_r_poly * *b_eval;
+        let a_2 = q_r_poly * &b_eval;
 
         //c_eval * q_o
-        let a_3 = *q_o_poly * *c_eval;
+        let a_3 = q_o_poly * &c_eval;
 
         // d_eval * q_4
-        let a_4 = *q_4_poly * *d_eval;
+        let a_4 = q_4_poly * &d_eval;
 
         let mut a = a_0 + a_1;
         a = a + a_2;
         a = a + a_3;
         a = a + a_4;
-        a = a + *q_c_poly;
-        a = a * *q_arith_eval;
+        a = &a + q_c_poly;
+        a = &a * &q_arith_eval;
 
         a
     }

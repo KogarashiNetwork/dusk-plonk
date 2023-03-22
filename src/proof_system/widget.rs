@@ -65,7 +65,7 @@ impl<P: Pairing> VerifierKey<P> {
 
         // Append circuit size to transcript
         <Transcript as TranscriptProtocol<P>>::circuit_domain_sep(
-            &mut transcript,
+            transcript,
             self.n as u64,
         );
     }

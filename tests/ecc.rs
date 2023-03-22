@@ -7,25 +7,25 @@
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_crypto::behave::Group;
+use zero_crypto::common::Pairing;
+use zero_kzg::KeyPair;
+use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[test]
 fn mul_generator_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 9;
+    let n = 9;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect(
-        "failed to create
-pp",
-    );
-
-    pub struct DummyCircuit {
-        a: JubjubScalar,
-        b: JubjubExtend,
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::JubjubScalar,
+        b: P::JubjubExtend,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: JubjubScalar) -> Self {
             Self {
                 a,
@@ -34,20 +34,19 @@ pp",
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(JubjubScalar::from(7u64))
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
-
             let w_x = composer.component_mul_generator(
                 w_a,
                 JubjubExtend::ADDITIVE_GENERATOR,
@@ -59,8 +58,11 @@ pp",
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
@@ -107,20 +109,17 @@ pp",
 fn add_point_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 4;
+    let n = 4;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect(
-        "failed to create
-pp",
-    );
-
-    pub struct DummyCircuit {
-        a: JubjubExtend,
-        b: JubjubExtend,
-        c: JubjubExtend,
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::JubjubExtend,
+        b: P::JubjubExtend,
+        c: P::JubjubExtend,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: &JubjubScalar, b: &JubjubScalar) -> Self {
             let a = JubjubExtend::ADDITIVE_GENERATOR * *a;
             let b = JubjubExtend::ADDITIVE_GENERATOR * *b;
@@ -130,16 +129,16 @@ pp",
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             Self::new(&JubjubScalar::from(7u64), &JubjubScalar::from(8u64))
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_point(self.a);
             let w_b = composer.append_point(self.b);
@@ -153,8 +152,11 @@ pp",
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {
@@ -232,20 +234,17 @@ pp",
 fn mul_point_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
-    let n = 1 << 13;
+    let n = 13;
     let label = b"demo";
-    let pp = PublicParameters::setup(n, &mut rng).expect(
-        "failed to create
-pp",
-    );
-
-    pub struct DummyCircuit {
-        a: JubjubScalar,
-        b: JubjubExtend,
-        c: JubjubExtend,
+    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    #[derive(Debug)]
+    pub struct DummyCircuit<P: Pairing> {
+        a: P::JubjubScalar,
+        b: P::JubjubExtend,
+        c: P::JubjubExtend,
     }
 
-    impl DummyCircuit {
+    impl DummyCircuit<TatePairing> {
         pub fn new(a: JubjubScalar, b: JubjubExtend) -> Self {
             let c = b * a;
 
@@ -253,7 +252,7 @@ pp",
         }
     }
 
-    impl Default for DummyCircuit {
+    impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             let b = JubjubScalar::from(8u64);
             let b = JubjubExtend::ADDITIVE_GENERATOR * b;
@@ -262,10 +261,10 @@ pp",
         }
     }
 
-    impl Circuit for DummyCircuit {
+    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
         where
-            C: Composer,
+            C: Composer<TatePairing>,
         {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
@@ -279,8 +278,11 @@ pp",
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<DummyCircuit>(&pp, label)
-        .expect("failed to compile circuit");
+    let (prover, verifier) = Compiler::compile::<
+        DummyCircuit<TatePairing>,
+        TatePairing,
+    >(&mut pp, label)
+    .expect("failed to compile circuit");
 
     // default works
     {

@@ -49,12 +49,20 @@ impl<P: Pairing> ProverKey<P> {
 
         // Check x_3 is correct
         let x3_lhs = *x1_y2 + y1_x2;
-        let x3_rhs = *x_3 + (*x_3 * P::ScalarField::EDWARDS_D * x1_y2 * y1_x2);
+        let x3_rhs = *x_3
+            + (*x_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2);
         let x3_consistency = (x3_lhs - x3_rhs) * kappa;
 
         // // Check y_3 is correct
         let y3_lhs = y1_y2 + x1_x2;
-        let y3_rhs = *y_3 - *y_3 * P::ScalarField::EDWARDS_D * x1_y2 * y1_x2;
+        let y3_rhs: P::ScalarField = *y_3
+            - *y_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2;
         let y3_consistency = (y3_lhs - y3_rhs) * kappa.square();
 
         let identity = xy_consistency + x3_consistency + y3_consistency;
@@ -96,18 +104,25 @@ impl<P: Pairing> ProverKey<P> {
 
         // Check x_3 is correct
         let x3_lhs = *x1_y2 + y1_x2;
-        let x3_rhs =
-            *x_3 + (*x_3 * (P::ScalarField::EDWARDS_D * x1_y2 * y1_x2));
+        let x3_rhs = *x_3
+            + (*x_3
+                * (Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                    * x1_y2
+                    * y1_x2));
         let x3_consistency = (x3_lhs - x3_rhs) * kappa;
 
         // Check y_3 is correct
         let y3_lhs = y1_y2 + x1_x2;
-        let y3_rhs = *y_3 - *y_3 * P::ScalarField::EDWARDS_D * x1_y2 * y1_x2;
+        let y3_rhs = *y_3
+            - *y_3
+                * Into::<P::ScalarField>::into(P::JubjubAffine::PARAM_D)
+                * x1_y2
+                * y1_x2;
         let y3_consistency = (y3_lhs - y3_rhs) * kappa.square();
 
         let identity = xy_consistency + x3_consistency + y3_consistency;
 
-        *q_variable_group_add_poly
-            * (identity * *curve_add_separation_challenge)
+        q_variable_group_add_poly
+            * &(identity * *curve_add_separation_challenge)
     }
 }
