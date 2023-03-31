@@ -9,10 +9,7 @@
 //! the operations that the `Composer` needs to peform with them.
 
 pub(crate) mod evaluations;
-pub(crate) mod polynomial;
-
 pub(crate) use evaluations::Evaluations;
-pub use polynomial::Polynomial;
 
 pub(crate) mod domain;
 

@@ -111,7 +111,6 @@ impl<P: Pairing> PartialEq for OpeningKey<P> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::fft::Polynomial;
     use rand_core::OsRng;
     use zero_bls12_381::Fr as BlsScalar;
     use zero_kzg::{KeyPair, Polynomial as ZeroPoly};
@@ -124,8 +123,7 @@ mod test {
         let keypair = KeyPair::<TatePairing>::setup(degree as u64, r);
         let point = BlsScalar::from(10);
 
-        let poly = Polynomial::rand(degree, &mut OsRng);
-        let z_poly = ZeroPoly(poly.coeffs.clone());
+        let z_poly = ZeroPoly::rand(degree, &mut OsRng);
 
         let witness = keypair.create_witness(&z_poly, point);
 
