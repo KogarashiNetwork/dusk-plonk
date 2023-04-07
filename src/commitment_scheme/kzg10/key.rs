@@ -11,7 +11,7 @@ use super::proof::Proof;
 use crate::{error::Error, transcript::TranscriptProtocol, util};
 use codec::{Decode, Encode};
 use merlin::Transcript;
-use zero_crypto::behave::{Group, Pairing, PairingRange};
+use zero_crypto::behave::{CurveGroup, Group, Pairing, PairingRange};
 
 /// Opening Key is used to verify opening proofs made about a committed
 /// polynomial.

@@ -7,6 +7,7 @@
 //! Module containing the representation of a Commitment to a Polynomial.
 use codec::{Decode, Encode};
 use zero_bls12_381::{G1Affine, G1Projective};
+use zero_crypto::common::CurveGroup;
 
 /// Holds a commitment to a polynomial in a form of a [`G1Affine`]-bls12_381
 /// point.
