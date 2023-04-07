@@ -15,8 +15,8 @@ use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::{
-    Curve, CurveExtend, Extended, FftField, Group, PrimeField, Ring,
-    TwistedEdwardsAffine,
+    Curve, CurveExtend, CurveGroup, Extended, FftField, Group, PrimeField,
+    Ring, TwistedEdwardsAffine,
 };
 use zero_crypto::common::Pairing;
 
@@ -307,10 +307,8 @@ pub trait Composer<PR: Pairing>:
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                // let a = PR::JubjubExtend::from(point_acc[i]);
-                // let b = PR::JubjubExtend::from(point_to_add);
                 let point = PR::JubjubExtend::from(point_acc[i]) + point_to_add;
-                point_acc.push(point.into());
+                point_acc.push(PR::JubjubAffine::from(point));
 
                 let point_to_add: PR::JubjubAffine = point_to_add.into();
 
