@@ -7,7 +7,7 @@
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_crypto::behave::Group;
-use zero_crypto::common::Pairing;
+use zero_crypto::common::{CurveGroup, Pairing};
 use zero_kzg::KeyPair;
 use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
