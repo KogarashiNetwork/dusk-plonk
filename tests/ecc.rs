@@ -22,14 +22,14 @@ fn mul_generator_works() {
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubScalar,
-        b: P::JubjubExtend,
+        b: P::JubjubExtended,
     }
 
     impl DummyCircuit<TatePairing> {
         pub fn new(a: JubjubScalar) -> Self {
             Self {
                 a,
-                b: JubjubExtend::ADDITIVE_GENERATOR * a,
+                b: JubjubExtended::ADDITIVE_GENERATOR * a,
             }
         }
     }
@@ -49,7 +49,7 @@ fn mul_generator_works() {
             let w_b = composer.append_point(self.b);
             let w_x = composer.component_mul_generator(
                 w_a,
-                JubjubExtend::ADDITIVE_GENERATOR,
+                JubjubExtended::ADDITIVE_GENERATOR,
             )?;
 
             composer.assert_equal_point(w_b, w_x);
@@ -79,10 +79,10 @@ fn mul_generator_works() {
     // negative check
     {
         let a = JubjubScalar::from(7u64);
-        let b = JubjubExtend::ADDITIVE_GENERATOR * a;
+        let b = JubjubExtended::ADDITIVE_GENERATOR * a;
 
         let x = JubjubScalar::from(8u64);
-        let y = JubjubExtend::ADDITIVE_GENERATOR * x;
+        let y = JubjubExtended::ADDITIVE_GENERATOR * x;
 
         assert_ne!(b, y);
 
@@ -97,7 +97,7 @@ fn mul_generator_works() {
         let a = JubjubScalar::to_mont_form(a.0);
 
         let x = JubjubScalar::from(8u64);
-        let y = JubjubExtend::ADDITIVE_GENERATOR * x;
+        let y = JubjubExtended::ADDITIVE_GENERATOR * x;
 
         prover
             .prove(&mut rng, &DummyCircuit { a, b: y })
@@ -114,15 +114,15 @@ fn add_point_works() {
     let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
-        a: P::JubjubExtend,
-        b: P::JubjubExtend,
-        c: P::JubjubExtend,
+        a: P::JubjubExtended,
+        b: P::JubjubExtended,
+        c: P::JubjubExtended,
     }
 
     impl DummyCircuit<TatePairing> {
         pub fn new(a: &JubjubScalar, b: &JubjubScalar) -> Self {
-            let a = JubjubExtend::ADDITIVE_GENERATOR * *a;
-            let b = JubjubExtend::ADDITIVE_GENERATOR * *b;
+            let a = JubjubExtended::ADDITIVE_GENERATOR * *a;
+            let b = JubjubExtended::ADDITIVE_GENERATOR * *b;
             let c = a + b;
 
             Self { a, b, c }
@@ -175,14 +175,14 @@ fn add_point_works() {
     // identity works
     {
         let a = JubjubScalar::random(&mut rng);
-        let a = JubjubExtend::ADDITIVE_GENERATOR * a;
+        let a = JubjubExtended::ADDITIVE_GENERATOR * a;
 
         let (proof, public_inputs) = prover
             .prove(
                 &mut rng,
                 &DummyCircuit {
                     a,
-                    b: JubjubExtend::ADDITIVE_IDENTITY,
+                    b: JubjubExtended::ADDITIVE_IDENTITY,
                     c: a,
                 },
             )
@@ -199,9 +199,9 @@ fn add_point_works() {
             .prove(
                 &mut rng,
                 &DummyCircuit {
-                    a: JubjubExtend::ADDITIVE_IDENTITY,
-                    b: JubjubExtend::ADDITIVE_IDENTITY,
-                    c: JubjubExtend::ADDITIVE_IDENTITY,
+                    a: JubjubExtended::ADDITIVE_IDENTITY,
+                    b: JubjubExtended::ADDITIVE_IDENTITY,
+                    c: JubjubExtended::ADDITIVE_IDENTITY,
                 },
             )
             .expect("failed to prove");
@@ -214,13 +214,13 @@ fn add_point_works() {
     // negative check
     {
         let a = JubjubScalar::from(7u64);
-        let a = JubjubExtend::ADDITIVE_GENERATOR * a;
+        let a = JubjubExtended::ADDITIVE_GENERATOR * a;
 
         let b = JubjubScalar::from(8u64);
-        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
+        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
 
         let c = JubjubScalar::from(9u64);
-        let c = JubjubExtend::ADDITIVE_GENERATOR * c;
+        let c = JubjubExtended::ADDITIVE_GENERATOR * c;
 
         assert_ne!(c, a + b);
 
@@ -240,12 +240,12 @@ fn mul_point_works() {
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubScalar,
-        b: P::JubjubExtend,
-        c: P::JubjubExtend,
+        b: P::JubjubExtended,
+        c: P::JubjubExtended,
     }
 
     impl DummyCircuit<TatePairing> {
-        pub fn new(a: JubjubScalar, b: JubjubExtend) -> Self {
+        pub fn new(a: JubjubScalar, b: JubjubExtended) -> Self {
             let c = b * a;
 
             Self { a, b, c }
@@ -255,7 +255,7 @@ fn mul_point_works() {
     impl Default for DummyCircuit<TatePairing> {
         fn default() -> Self {
             let b = JubjubScalar::from(8u64);
-            let b = JubjubExtend::ADDITIVE_GENERATOR * b;
+            let b = JubjubExtended::ADDITIVE_GENERATOR * b;
 
             Self::new(JubjubScalar::from(7u64), b)
         }
@@ -288,7 +288,7 @@ fn mul_point_works() {
     {
         let a = JubjubScalar::random(&mut rng);
         let b = JubjubScalar::random(&mut rng);
-        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
+        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
 
         let (proof, public_inputs) = prover
             .prove(&mut rng, &DummyCircuit::new(a, b))
@@ -303,11 +303,11 @@ fn mul_point_works() {
     {
         let a = JubjubScalar::random(&mut rng);
         let b = JubjubScalar::random(&mut rng);
-        let b = JubjubExtend::ADDITIVE_GENERATOR * b;
+        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
         let c = b * a;
 
         let x = JubjubScalar::random(&mut rng);
-        let x = JubjubExtend::ADDITIVE_GENERATOR * x;
+        let x = JubjubExtended::ADDITIVE_GENERATOR * x;
 
         assert_ne!(c, x);
 
