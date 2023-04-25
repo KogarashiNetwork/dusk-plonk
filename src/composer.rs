@@ -15,8 +15,8 @@ use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::{
-    Curve, CurveExtend, CurveGroup, Extended, FftField, Group, PrimeField,
-    Ring, TwistedEdwardsAffine,
+    Curve, CurveGroup, FftField, Group, PrimeField, Ring, TwistedEdwardsAffine,
+    TwistedEdwardsExtended,
 };
 use zero_crypto::common::Pairing;
 
@@ -232,7 +232,7 @@ pub trait Composer<PR: Pairing>:
     /// `generator` will be appended to the circuit description as constant
     ///
     /// Will error if `jubjub` doesn't fit `Fr`
-    fn component_mul_generator<P: Into<PR::JubjubExtend>>(
+    fn component_mul_generator<P: Into<PR::JubjubExtended>>(
         &mut self,
         jubjub: Witness,
         generator: P,
@@ -248,7 +248,8 @@ pub trait Composer<PR: Pairing>:
 
         // compute 2^iG
         let mut wnaf_point_multiples: Vec<_> = {
-            let mut multiples = vec![PR::JubjubExtend::ADDITIVE_IDENTITY; bits];
+            let mut multiples =
+                vec![PR::JubjubExtended::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
 
@@ -256,7 +257,7 @@ pub trait Composer<PR: Pairing>:
                 multiples[i] = multiples[i - 1].double();
             }
 
-            PR::JubjubExtend::batch_normalize(&mut multiples).collect()
+            PR::JubjubExtended::batch_normalize(&mut multiples).collect()
         };
 
         wnaf_point_multiples.reverse();
@@ -277,8 +278,9 @@ pub trait Composer<PR: Pairing>:
 
         // initialize the accumulators
         let mut scalar_acc = vec![PR::ScalarField::zero()];
-        let mut point_acc =
-            vec![PR::JubjubAffine::from(PR::JubjubExtend::ADDITIVE_IDENTITY)];
+        let mut point_acc = vec![PR::JubjubAffine::from(
+            PR::JubjubExtended::ADDITIVE_IDENTITY,
+        )];
 
         // auxillary point to help with checks on the backend
         let two = PR::ScalarField::from(2u64);
@@ -290,15 +292,15 @@ pub trait Composer<PR: Pairing>:
                 let (scalar_to_add, point_to_add) = match entry {
                     0 => (
                         PR::ScalarField::zero(),
-                        PR::JubjubExtend::ADDITIVE_IDENTITY,
+                        PR::JubjubExtended::ADDITIVE_IDENTITY,
                     ),
                     -1 => (
                         PR::ScalarField::one().neg(),
-                        -PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                        -PR::JubjubExtended::from(wnaf_point_multiples[i]),
                     ),
                     1 => (
                         PR::ScalarField::one(),
-                        PR::JubjubExtend::from(wnaf_point_multiples[i]),
+                        PR::JubjubExtended::from(wnaf_point_multiples[i]),
                     ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
@@ -307,7 +309,8 @@ pub trait Composer<PR: Pairing>:
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let point = PR::JubjubExtend::from(point_acc[i]) + point_to_add;
+                let point =
+                    PR::JubjubExtended::from(point_acc[i]) + point_to_add;
                 point_acc.push(PR::JubjubAffine::from(point));
 
                 let point_to_add: PR::JubjubAffine = point_to_add.into();

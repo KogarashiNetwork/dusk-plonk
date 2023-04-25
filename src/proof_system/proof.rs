@@ -403,12 +403,11 @@ impl<P: Pairing> Proof<P> {
         let z_n = z_challenge.pow(n as u64);
         let z_two_n = z_challenge.pow(2 * n as u64);
         let z_three_n = z_challenge.pow(3 * n as u64);
-        let t_comm = P::G1Projective::from(
-            self.t_low_comm.0
-                + self.t_mid_comm.0 * z_n
-                + self.t_high_comm.0 * z_two_n,
-        ) + P::G1Projective::from(self.t_4_comm.0 * z_three_n);
-        Commitment::new(P::G1Projective::from(t_comm))
+        let t_comm = self.t_low_comm.0
+            + self.t_mid_comm.0 * z_n
+            + self.t_high_comm.0 * z_two_n
+            + self.t_4_comm.0 * z_three_n;
+        Commitment::new(t_comm)
     }
 
     // Commitment to [r]_1
