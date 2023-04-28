@@ -18,6 +18,8 @@ use sp_std::vec;
 /// Generate the arguments to prove and verify a circuit
 pub struct Compiler;
 
+type CompilerResult<C, P> = Result<(Prover<C, P>, Verifier<C, P>), Error>;
+
 impl Compiler {
     /// Create a new arguments set from a given circuit instance
     ///
@@ -25,7 +27,7 @@ impl Compiler {
     pub fn compile<C, P>(
         keypair: &mut KeyPair<P>,
         label: &[u8],
-    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
+    ) -> CompilerResult<C, P>
     where
         C: Circuit<P>,
         P: Pairing,
@@ -40,7 +42,7 @@ impl Compiler {
         keypair: &mut KeyPair<P>,
         label: &[u8],
         circuit: &C,
-    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
+    ) -> CompilerResult<C, P>
     where
         C: Circuit<P>,
         P: Pairing,
@@ -64,7 +66,7 @@ impl Compiler {
         label: &[u8],
         keypair: &KeyPair<P>,
         prover: &Builder<P>,
-    ) -> Result<(Prover<C, P>, Verifier<C, P>), Error>
+    ) -> CompilerResult<C, P>
     where
         C: Circuit<P>,
         P: Pairing,

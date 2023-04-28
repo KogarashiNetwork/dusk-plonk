@@ -66,10 +66,10 @@ impl<P: Pairing> Debugger<P> {
     fn write_output(&self) {
         let path = match env::var("CDF_OUTPUT") {
             Ok(path) => PathBuf::from(path),
-            Err(env::VarError::NotPresent) => return (),
+            Err(env::VarError::NotPresent) => return,
             Err(env::VarError::NotUnicode(_)) => {
                 eprintln!("the provided `CDF_OUTPUT` isn't valid unicode");
-                return ();
+                return;
             }
         };
 
@@ -134,7 +134,7 @@ impl<P: Pairing> Debugger<P> {
                         .unwrap_or_default();
 
                     // TODO check arith, range, logic & ecc wires
-                    let evaluation = *qm * &wa * wb
+                    let evaluation = *qm * wa * wb
                         + *ql * wa
                         + *qr * wb
                         + *qd * wd

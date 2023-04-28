@@ -122,6 +122,7 @@ fn select_works() {
     }
 
     impl DummyCircuit<TatePairing> {
+        #[allow(clippy::too_many_arguments)]
         pub fn new(
             bit: BlsScalar,
             a: BlsScalar,
@@ -418,18 +419,18 @@ fn select_works() {
 
         let x = JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::one();
 
-        circuit.point_res = circuit.point_res + x;
+        circuit.point_res += x;
 
         prover.prove(&mut rng, &circuit).expect_err("invalid proof");
     }
 
     // negative select identity works
     {
-        let mut circuit = base.clone();
+        let mut circuit = base;
 
         let x = JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::one();
 
-        circuit.identity_res = circuit.identity_res + x;
+        circuit.identity_res += x;
 
         prover.prove(&mut rng, &circuit).expect_err("invalid proof");
     }

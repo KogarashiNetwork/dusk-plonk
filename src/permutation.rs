@@ -1166,7 +1166,7 @@ mod test {
         let shifted_z_poly = ZeroPoly::from_coefficients_vec(shifted_z.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.group_gen));
-            let shifted_z_eval = shifted_z_poly.evaluate(&element);
+            let shifted_z_eval = shifted_z_poly.evaluate(element);
 
             assert_eq!(z_eval, shifted_z_eval)
         }

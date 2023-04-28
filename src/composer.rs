@@ -466,7 +466,7 @@ pub trait Composer<PR: Pairing>:
             // `PartialEq`
             if y == &PR::ScalarField::one() {
                 Some(-x)
-            } else if y == &-*&PR::ScalarField::one() {
+            } else if y == &-PR::ScalarField::one() {
                 Some(x)
             } else {
                 y.invert().map(|y| x * (-y))
@@ -1014,16 +1014,18 @@ pub trait Composer<PR: Pairing>:
 
         // last constraint is zeroed as it is reserved for the genesis quad or
         // padding
-        constraints.last_mut().map(|c| *c = Constraint::new());
+        if let Some(c) = constraints.last_mut() {
+            *c = Constraint::new()
+        }
 
         // the accumulators count is a function to the number of quads. hence,
         // this optional gate will not cause different circuits depending on the
         // witness because this computation is bound to the constant bits count
         // alone.
         if let Some(accumulator) = accumulators.last() {
-            constraints
-                .last_mut()
-                .map(|c| c.set_witness(WiredWitness::D, *accumulator));
+            if let Some(c) = constraints.last_mut() {
+                c.set_witness(WiredWitness::D, *accumulator)
+            }
         }
 
         constraints

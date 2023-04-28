@@ -100,7 +100,7 @@ where
 
         for i in 0..hiding_degree + 1 {
             let blinding_scalar = util::random_scalar::<R, P>(rng);
-            w_vec_inverse.0[i] = w_vec_inverse.0[i] - blinding_scalar;
+            w_vec_inverse.0[i] -= blinding_scalar;
             w_vec_inverse.0.push(blinding_scalar);
         }
 
