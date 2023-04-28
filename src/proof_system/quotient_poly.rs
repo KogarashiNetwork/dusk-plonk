@@ -4,6 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+#![allow(clippy::type_complexity)]
 use crate::{error::Error, proof_system::ProverKey};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
@@ -140,10 +141,10 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
     let public_eval_8n = pi_poly.0;
 
     #[cfg(not(feature = "std"))]
-    let range = (0..fft.size()).into_iter();
+    let range = 0..fft.size();
 
     #[cfg(feature = "std")]
-    let range = (0..fft.size()).into_iter();
+    let range = 0..fft.size();
 
     let t: Vec<_> = range
         .map(|i| {
@@ -231,7 +232,7 @@ fn compute_permutation_checks<P: Pairing>(
     let l1_alpha_sq_evals = l1_poly_alpha.0;
 
     #[cfg(not(feature = "std"))]
-    let range = (0..fft_n8.size()).into_iter();
+    let range = 0..fft_n8.size();
 
     #[cfg(feature = "std")]
     let range = (0..fft_n8.size()).into_par_iter();
