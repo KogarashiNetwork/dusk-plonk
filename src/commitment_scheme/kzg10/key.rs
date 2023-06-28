@@ -113,7 +113,7 @@ mod test {
     use super::*;
     use rand_core::OsRng;
     use zero_bls12_381::Fr as BlsScalar;
-    use zero_kzg::{KeyPair, Polynomial as ZeroPoly};
+    use zero_kzg::{KeyPair, Polynomial};
     use zero_pairing::TatePairing;
 
     #[test]
@@ -123,7 +123,7 @@ mod test {
         let keypair = KeyPair::<TatePairing>::setup(degree as u64, r);
         let point = BlsScalar::from(10);
 
-        let z_poly = ZeroPoly::rand(degree, &mut OsRng);
+        let z_poly = Polynomial::rand(degree, &mut OsRng);
 
         let witness = keypair.create_witness(&z_poly, point);
 

@@ -6,14 +6,14 @@
 
 use crate::fft::Evaluations;
 use zero_crypto::behave::*;
-use zero_kzg::Polynomial as ZeroPoly;
+use zero_kzg::Polynomial;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {
-    pub(crate) q_l: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) q_r: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) q_c: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) q_fixed_group_add: (ZeroPoly<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_l: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_r: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_c: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_fixed_group_add: (Polynomial<P::ScalarField>, Evaluations<P>),
 }
 
 impl<P: Pairing> ProverKey<P> {
@@ -106,7 +106,7 @@ impl<P: Pairing> ProverKey<P> {
         q_l_eval: &P::ScalarField,
         q_r_eval: &P::ScalarField,
         q_c_eval: &P::ScalarField,
-    ) -> ZeroPoly<P::ScalarField> {
+    ) -> Polynomial<P::ScalarField> {
         let q_fixed_group_add_poly = &self.q_fixed_group_add.0;
 
         let kappa = ecc_separation_challenge.square();

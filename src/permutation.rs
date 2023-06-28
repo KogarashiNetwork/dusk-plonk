@@ -318,7 +318,7 @@ mod test {
     use crate::permutation::constants::*;
     use rand_core::OsRng;
     use zero_bls12_381::Fr as BlsScalar;
-    use zero_kzg::Polynomial as ZeroPoly;
+    use zero_kzg::Polynomial;
     use zero_pairing::TatePairing;
 
     #[allow(dead_code)]
@@ -331,10 +331,10 @@ mod test {
         beta: &BlsScalar,
         gamma: &BlsScalar,
         (s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly): (
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
         ),
     ) -> Vec<BlsScalar> {
         let n = domain.size();
@@ -512,10 +512,10 @@ mod test {
         beta: &BlsScalar,
         gamma: &BlsScalar,
         (s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly): (
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
-            &ZeroPoly<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
+            &Polynomial<BlsScalar>,
         ),
     ) -> (Vec<BlsScalar>, Vec<BlsScalar>, Vec<BlsScalar>)
     where
@@ -1111,9 +1111,9 @@ mod test {
 
         //3. Now we perform the two checks that need to be done on the
         // permutation polynomial (z)
-        let mut z_vec = ZeroPoly::new(z_vec);
+        let mut z_vec = Polynomial::new(z_vec);
         fft.idft(&mut z_vec);
-        let z_poly = ZeroPoly::from_coefficients_vec(z_vec.0);
+        let z_poly = Polynomial::from_coefficients_vec(z_vec.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1161,9 +1161,9 @@ mod test {
         }
 
         // Test that the shifted polynomial is correct
-        let mut shifted_z = ZeroPoly::new(shift_poly_by_one(fast_z_vec));
+        let mut shifted_z = Polynomial::new(shift_poly_by_one(fast_z_vec));
         fft.idft(&mut shifted_z);
-        let shifted_z_poly = ZeroPoly::from_coefficients_vec(shifted_z.0);
+        let shifted_z_poly = Polynomial::from_coefficients_vec(shifted_z.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.group_gen));
             let shifted_z_eval = shifted_z_poly.evaluate(element);

@@ -7,12 +7,12 @@
 use crate::fft::Evaluations;
 use zero_crypto::behave::Ring;
 use zero_crypto::common::{Pairing, PrimeField};
-use zero_kzg::Polynomial as ZeroPoly;
+use zero_kzg::Polynomial;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {
-    pub(crate) q_c: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) q_logic: (ZeroPoly<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_c: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_logic: (Polynomial<P::ScalarField>, Evaluations<P>),
 }
 
 impl<P: Pairing> ProverKey<P> {
@@ -66,7 +66,7 @@ impl<P: Pairing> ProverKey<P> {
         d_eval: &P::ScalarField,
         d_next_eval: &P::ScalarField,
         q_c_eval: &P::ScalarField,
-    ) -> ZeroPoly<P::ScalarField> {
+    ) -> Polynomial<P::ScalarField> {
         let four = P::ScalarField::from(4);
         let q_logic_poly = &self.q_logic.0;
 

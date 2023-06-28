@@ -8,7 +8,7 @@ use crate::proof_system::ProverKey;
 
 use codec::{Decode, Encode};
 use zero_crypto::common::Pairing;
-use zero_kzg::Polynomial as ZeroPoly;
+use zero_kzg::Polynomial;
 
 /// Evaluations at points `z` or and `z * root of unity`
 #[allow(dead_code)]
@@ -86,13 +86,13 @@ pub(crate) fn compute<P: Pairing>(
         P::ScalarField,
         P::ScalarField,
     ),
-    a_w_poly: &ZeroPoly<P::ScalarField>,
-    b_w_poly: &ZeroPoly<P::ScalarField>,
-    c_w_poly: &ZeroPoly<P::ScalarField>,
-    d_w_poly: &ZeroPoly<P::ScalarField>,
-    t_x_poly: &ZeroPoly<P::ScalarField>,
-    z_poly: &ZeroPoly<P::ScalarField>,
-) -> (ZeroPoly<P::ScalarField>, Evaluations<P>) {
+    a_w_poly: &Polynomial<P::ScalarField>,
+    b_w_poly: &Polynomial<P::ScalarField>,
+    c_w_poly: &Polynomial<P::ScalarField>,
+    d_w_poly: &Polynomial<P::ScalarField>,
+    t_x_poly: &Polynomial<P::ScalarField>,
+    z_poly: &Polynomial<P::ScalarField>,
+) -> (Polynomial<P::ScalarField>, Evaluations<P>) {
     // Compute evaluations
     let t_eval = t_x_poly.evaluate(z_challenge);
     let a_eval = a_w_poly.evaluate(z_challenge);
@@ -202,7 +202,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
     q_l_eval: &P::ScalarField,
     q_r_eval: &P::ScalarField,
     prover_key: &ProverKey<P>,
-) -> ZeroPoly<P::ScalarField> {
+) -> Polynomial<P::ScalarField> {
     let a = prover_key.arithmetic.compute_linearization(
         a_eval,
         b_eval,

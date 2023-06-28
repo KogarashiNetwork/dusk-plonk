@@ -12,21 +12,21 @@ use sp_std::vec;
 use sp_std::vec::Vec;
 
 use zero_crypto::behave::*;
-use zero_kzg::{Fft, Polynomial as ZeroPoly};
+use zero_kzg::{Fft, Polynomial};
 
 /// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
 /// [`ProverKey`] and some other info.
 pub(crate) fn compute<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     prover_key: &ProverKey<P>,
-    z_poly: &ZeroPoly<P::ScalarField>,
+    z_poly: &Polynomial<P::ScalarField>,
     (a_w_poly, b_w_poly, c_w_poly, d_w_poly): (
-        &ZeroPoly<P::ScalarField>,
-        &ZeroPoly<P::ScalarField>,
-        &ZeroPoly<P::ScalarField>,
-        &ZeroPoly<P::ScalarField>,
+        &Polynomial<P::ScalarField>,
+        &Polynomial<P::ScalarField>,
+        &Polynomial<P::ScalarField>,
+        &Polynomial<P::ScalarField>,
     ),
-    public_inputs_poly: &ZeroPoly<P::ScalarField>,
+    public_inputs_poly: &Polynomial<P::ScalarField>,
     (
         alpha,
         beta,
@@ -44,13 +44,13 @@ pub(crate) fn compute<P: Pairing>(
         P::ScalarField,
         P::ScalarField,
     ),
-) -> Result<ZeroPoly<P::ScalarField>, Error> {
+) -> Result<Polynomial<P::ScalarField>, Error> {
     // Compute 8n evals
     let n = (8 * fft.size()).next_power_of_two();
     let k = n.trailing_zeros();
     let fft_8n = Fft::<P::ScalarField>::new(k as usize);
 
-    let mut z_poly = ZeroPoly::new(z_poly.0.clone());
+    let mut z_poly = Polynomial::new(z_poly.0.clone());
     let mut a_w_poly = a_w_poly.clone();
     let mut b_w_poly = b_w_poly.clone();
     let mut c_w_poly = c_w_poly.clone();
@@ -71,11 +71,11 @@ pub(crate) fn compute<P: Pairing>(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = ZeroPoly::from_coefficients_vec(z_poly.0);
-    let a_w_eval_8n = ZeroPoly::from_coefficients_vec(a_w_poly.0);
-    let b_w_eval_8n = ZeroPoly::from_coefficients_vec(b_w_poly.0);
-    let c_w_eval_8n = ZeroPoly::from_coefficients_vec(c_w_poly.0);
-    let d_w_eval_8n = ZeroPoly::from_coefficients_vec(d_w_poly.0);
+    let z_eval_8n = Polynomial::from_coefficients_vec(z_poly.0);
+    let a_w_eval_8n = Polynomial::from_coefficients_vec(a_w_poly.0);
+    let b_w_eval_8n = Polynomial::from_coefficients_vec(b_w_poly.0);
+    let c_w_eval_8n = Polynomial::from_coefficients_vec(c_w_poly.0);
+    let d_w_eval_8n = Polynomial::from_coefficients_vec(d_w_poly.0);
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -106,10 +106,10 @@ pub(crate) fn compute<P: Pairing>(
             numerator * denominator.invert().unwrap()
         })
         .collect();
-    let mut quotient = ZeroPoly::new(quotient);
+    let mut quotient = Polynomial::new(quotient);
     fft_8n.coset_idft(&mut quotient);
 
-    Ok(ZeroPoly::from_coefficients_vec(quotient.0))
+    Ok(Polynomial::from_coefficients_vec(quotient.0))
 }
 
 // Ensures that the circuit is satisfied
@@ -134,9 +134,9 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
         &[P::ScalarField],
         &[P::ScalarField],
     ),
-    pi_poly: &ZeroPoly<P::ScalarField>,
+    pi_poly: &Polynomial<P::ScalarField>,
 ) -> Vec<P::ScalarField> {
-    let mut pi_poly = ZeroPoly::new(pi_poly.0.clone());
+    let mut pi_poly = Polynomial::new(pi_poly.0.clone());
     fft.coset_dft(&mut pi_poly);
     let public_eval_8n = pi_poly.0;
 
@@ -260,9 +260,9 @@ fn compute_permutation_checks<P: Pairing>(
 fn compute_first_lagrange_poly_scaled<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     scale: P::ScalarField,
-) -> ZeroPoly<P::ScalarField> {
-    let mut x_evals = ZeroPoly::new(vec![P::ScalarField::zero(); fft.size()]);
+) -> Polynomial<P::ScalarField> {
+    let mut x_evals = Polynomial::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
     fft.idft(&mut x_evals);
-    ZeroPoly::from_coefficients_vec(x_evals.0)
+    Polynomial::from_coefficients_vec(x_evals.0)
 }

@@ -6,14 +6,14 @@
 
 use crate::fft::{EvaluationDomain, Evaluations};
 use zero_crypto::behave::*;
-use zero_kzg::Polynomial as ZeroPoly;
+use zero_kzg::Polynomial;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {
-    pub(crate) s_sigma_1: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) s_sigma_2: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) s_sigma_3: (ZeroPoly<P::ScalarField>, Evaluations<P>),
-    pub(crate) s_sigma_4: (ZeroPoly<P::ScalarField>, Evaluations<P>),
+    pub(crate) s_sigma_1: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) s_sigma_2: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) s_sigma_3: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) s_sigma_4: (Polynomial<P::ScalarField>, Evaluations<P>),
     pub(crate) linear_evaluations: Evaluations<P>,
     /* Evaluations of f(x) = X
      * [XXX: Remove this and
@@ -132,8 +132,8 @@ impl<P: Pairing> ProverKey<P> {
             &P::ScalarField,
         ),
         z_eval: &P::ScalarField,
-        z_poly: &ZeroPoly<P::ScalarField>,
-    ) -> ZeroPoly<P::ScalarField> {
+        z_poly: &Polynomial<P::ScalarField>,
+    ) -> Polynomial<P::ScalarField> {
         let a = self.compute_linearizer_identity_range_check(
             (a_eval, b_eval, c_eval, d_eval),
             z_challenge,
@@ -176,8 +176,8 @@ impl<P: Pairing> ProverKey<P> {
             &P::ScalarField,
             &P::ScalarField,
         ),
-        z_poly: &ZeroPoly<P::ScalarField>,
-    ) -> ZeroPoly<P::ScalarField> {
+        z_poly: &Polynomial<P::ScalarField>,
+    ) -> Polynomial<P::ScalarField> {
         let beta_z = *beta * z_challenge;
 
         // a_eval + beta * z_challenge + gamma
@@ -227,8 +227,8 @@ impl<P: Pairing> ProverKey<P> {
             &P::ScalarField,
             &P::ScalarField,
         ),
-        s_sigma_4_poly: &ZeroPoly<P::ScalarField>,
-    ) -> ZeroPoly<P::ScalarField> {
+        s_sigma_4_poly: &Polynomial<P::ScalarField>,
+    ) -> Polynomial<P::ScalarField> {
         // a_eval + beta * sigma_1 + gamma
         let beta_sigma_1 = *beta * sigma_1_eval;
         let mut a_0 = *a_eval + beta_sigma_1;
@@ -262,8 +262,8 @@ impl<P: Pairing> ProverKey<P> {
         domain: &EvaluationDomain<P>,
         z_challenge: &P::ScalarField,
         alpha_sq: &P::ScalarField,
-        z_coeffs: &ZeroPoly<P::ScalarField>,
-    ) -> ZeroPoly<P::ScalarField> {
+        z_coeffs: &Polynomial<P::ScalarField>,
+    ) -> Polynomial<P::ScalarField> {
         // Evaluate l_1(z)
         let l_1_z = domain.evaluate_all_lagrange_coefficients(*z_challenge)[0];
 
