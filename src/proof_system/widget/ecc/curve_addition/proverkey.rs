@@ -10,7 +10,8 @@ use zero_kzg::Polynomial;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {
-    pub(crate) q_variable_group_add: (Polynomial<P::ScalarField>, Evaluations<P>),
+    pub(crate) q_variable_group_add:
+        (Polynomial<P::ScalarField>, Evaluations<P>),
 }
 
 impl<P: Pairing> ProverKey<P> {
