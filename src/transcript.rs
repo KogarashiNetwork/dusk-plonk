@@ -11,7 +11,7 @@ use core::mem;
 
 use dusk_bytes::Serializable;
 use merlin::Transcript;
-use zero_crypto::behave::FftField;
+use zero_crypto::behave::{FftField, SigUtils};
 use zero_crypto::common::Pairing;
 use zero_kzg::Commitment;
 
