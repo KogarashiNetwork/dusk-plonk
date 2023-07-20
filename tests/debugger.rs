@@ -4,10 +4,6 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use std::{env, io};
-
-use dusk_cdf::CircuitDescription;
-use zero_crypto::behave::Group;
 use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
