@@ -11,7 +11,6 @@ use core::cmp;
 use core::ops::{Index, Neg};
 use zero_jubjub::compute_windowed_naf;
 
-use dusk_bytes::Serializable;
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
 use zero_crypto::behave::{
@@ -265,11 +264,11 @@ pub trait Composer<PR: Pairing>:
         // we should error instead of producing invalid proofs - otherwise this
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
-        let scalar =
-            match PR::JubjubScalar::from_bytes(&self[jubjub].to_bytes()) {
-                Ok(scalar) => scalar,
-                Err(_) => panic!("Failed to deserialize jubjub scalar"),
-            };
+        let scalar = match PR::JubjubScalar::from_bytes(self[jubjub].to_bytes())
+        {
+            Some(scalar) => scalar,
+            None => panic!("Failed to deserialize jubjub scalar"),
+        };
 
         let width = 2;
         let wnaf_entries = compute_windowed_naf(scalar, width);
