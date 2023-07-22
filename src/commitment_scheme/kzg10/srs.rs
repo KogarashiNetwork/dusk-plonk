@@ -11,8 +11,8 @@
 #[cfg(test)]
 mod test {
     use zero_bls12_381::Fr as BlsScalar;
-    use zero_crypto::behave::FftField;
     use zero_pairing::TatePairing;
+    use zkstd::behave::FftField;
 
     use crate::util;
 

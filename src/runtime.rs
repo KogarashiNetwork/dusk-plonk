@@ -7,7 +7,7 @@
 //! PLONK runtime controller
 
 use core::marker::PhantomData;
-use zero_crypto::common::Pairing;
+use zkstd::common::Pairing;
 
 use crate::constraint_system::{Constraint, Witness};
 

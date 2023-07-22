@@ -4,11 +4,11 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_crypto::{
+use zero_kzg::Commitment;
+use zkstd::{
     behave::{PrimeField, TwistedEdwardsCurve},
     common::Pairing,
 };
-use zero_kzg::Commitment;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct VerifierKey<P: Pairing> {

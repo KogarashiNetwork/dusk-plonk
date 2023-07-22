@@ -5,8 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::fft::{EvaluationDomain, Evaluations};
-use zero_crypto::behave::*;
 use zero_kzg::Polynomial;
+use zkstd::behave::*;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {

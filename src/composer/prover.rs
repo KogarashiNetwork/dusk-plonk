@@ -7,13 +7,13 @@
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use core::ops;
-use zero_crypto::common::Pairing;
+use zkstd::common::Pairing;
 
 use merlin::Transcript;
 use rand_core::RngCore;
 use sp_std::vec;
-use zero_crypto::behave::{FftField, Group};
 use zero_kzg::{Fft, KeyPair, Polynomial};
+use zkstd::behave::{FftField, Group};
 
 use crate::error::Error;
 use crate::proof_system::proof::Proof;

@@ -14,9 +14,9 @@ use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::logic::proverkey::{delta, delta_xor_and};
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_crypto::behave::PrimeField;
-use zero_crypto::common::Pairing;
 use zero_kzg::Commitment;
+use zkstd::behave::PrimeField;
+use zkstd::common::Pairing;
 
 impl<P: Pairing> VerifierKey<P> {
     pub(crate) fn compute_linearization_commitment(

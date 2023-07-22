@@ -11,7 +11,7 @@ use super::proof::Proof;
 use crate::{error::Error, transcript::TranscriptProtocol, util};
 use codec::{Decode, Encode};
 use merlin::Transcript;
-use zero_crypto::behave::{CurveGroup, Group, Pairing, PairingRange};
+use zkstd::behave::{CurveGroup, Group, Pairing, PairingRange};
 
 /// Opening Key is used to verify opening proofs made about a committed
 /// polynomial.
@@ -90,7 +90,7 @@ impl<P: Pairing> OpeningKey<P> {
         ])
         .final_exp();
 
-        if pairing != <<P as zero_crypto::behave::Pairing>::PairingRange as PairingRange>::Gt::ADDITIVE_IDENTITY {
+        if pairing != <<P as zkstd::behave::Pairing>::PairingRange as PairingRange>::Gt::ADDITIVE_IDENTITY {
             return Err(Error::PairingCheckFailure);
         };
         Ok(())

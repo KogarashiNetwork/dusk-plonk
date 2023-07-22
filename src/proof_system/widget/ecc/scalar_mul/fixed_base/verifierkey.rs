@@ -17,11 +17,11 @@ use crate::proof_system::widget::ecc::scalar_mul::fixed_base::proverkey::{
 };
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_crypto::behave::PrimeField;
-use zero_crypto::behave::Ring;
-use zero_crypto::behave::TwistedEdwardsCurve;
-use zero_crypto::common::Pairing;
 use zero_kzg::Commitment;
+use zkstd::behave::PrimeField;
+use zkstd::behave::Ring;
+use zkstd::behave::TwistedEdwardsCurve;
+use zkstd::common::Pairing;
 
 impl<P: Pairing> VerifierKey<P> {
     pub(crate) fn compute_linearization_commitment(

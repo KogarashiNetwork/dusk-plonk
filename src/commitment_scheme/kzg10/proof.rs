@@ -5,8 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use codec::{Decode, Encode};
-use zero_crypto::common::Pairing;
 use zero_kzg::Commitment;
+use zkstd::common::Pairing;
 
 /// Proof that a polynomial `p` was correctly evaluated at a point `z`
 /// producing the evaluated point p(z).

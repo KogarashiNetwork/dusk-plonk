@@ -9,8 +9,8 @@
 
 use super::linearization_poly::ProofEvaluations;
 use codec::{Decode, Encode};
-use zero_crypto::behave::Ring;
 use zero_kzg::{Commitment, Polynomial};
+use zkstd::behave::Ring;
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
 /// Quotient, Shifted and Opening polynomials as well as the
@@ -67,11 +67,11 @@ use crate::{
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zero_crypto::{
+use zero_pairing::msm_variable_base;
+use zkstd::{
     behave::{FftField, Group, PrimeField},
     common::Pairing,
 };
-use zero_pairing::msm_variable_base;
 
 impl<P: Pairing> Proof<P> {
     /// Performs the verification of a [`Proof`] returning a boolean result.

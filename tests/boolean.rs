@@ -6,10 +6,10 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_crypto::common::{CurveGroup, Group, Pairing};
 use zero_kzg::KeyPair;
 use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
+use zkstd::common::{CurveGroup, Group, Pairing};
 
 #[test]
 fn boolean_works() {

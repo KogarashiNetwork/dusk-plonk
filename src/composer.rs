@@ -13,11 +13,11 @@ use zero_jubjub::compute_windowed_naf;
 
 use sp_std::vec;
 use zero_bls12_381::Fr as BlsScalar;
-use zero_crypto::behave::{
+use zkstd::behave::{
     Curve, CurveGroup, FftField, Group, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, TwistedEdwardsExtended,
 };
-use zero_crypto::common::Pairing;
+use zkstd::common::Pairing;
 
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
@@ -567,13 +567,13 @@ pub trait Composer<PR: Pairing>:
         self.assert_equal_constant(
             *point.x(),
             PR::ScalarField::zero(),
-            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_x())),
+            Some(<<<PR as zkstd::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
             PR::ScalarField::zero(),
-            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_y())),
+            Some(<<<PR as zkstd::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-affine.get_y())),
         );
 
         point
@@ -674,13 +674,13 @@ pub trait Composer<PR: Pairing>:
         self.assert_equal_constant(
             *point.x(),
             PR::ScalarField::zero(),
-            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_x())),
+            Some(<<<PR as zkstd::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
             PR::ScalarField::zero(),
-            Some(<<<PR as zero_crypto::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_y())),
+            Some(<<<PR as zkstd::behave::Pairing>::JubjubAffine as Curve>::Range>::into(-public.get_y())),
         );
     }
 

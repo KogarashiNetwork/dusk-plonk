@@ -5,9 +5,9 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::fft::Evaluations;
-use zero_crypto::behave::Ring;
-use zero_crypto::common::{Pairing, PrimeField};
 use zero_kzg::Polynomial;
+use zkstd::behave::Ring;
+use zkstd::common::{Pairing, PrimeField};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub(crate) struct ProverKey<P: Pairing> {

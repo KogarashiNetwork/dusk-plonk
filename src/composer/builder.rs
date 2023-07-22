@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use core::ops;
 use hashbrown::HashMap;
 use sp_std::vec;
-use zero_crypto::{behave::Group, common::Pairing};
+use zkstd::{behave::Group, common::Pairing};
 
 use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
 use crate::permutation::Permutation;

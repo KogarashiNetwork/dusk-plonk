@@ -7,8 +7,8 @@
 use crate::proof_system::ProverKey;
 
 use codec::{Decode, Encode};
-use zero_crypto::common::Pairing;
 use zero_kzg::Polynomial;
+use zkstd::common::Pairing;
 
 /// Evaluations at points `z` or and `z * root of unity`
 #[allow(dead_code)]

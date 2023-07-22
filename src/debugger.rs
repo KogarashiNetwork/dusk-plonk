@@ -13,7 +13,7 @@ use dusk_cdf::{
     BaseConfig, Config, EncodableConstraint, EncodableSource, EncodableWitness,
     Encoder, EncoderContextFileProvider, Polynomial, Selectors, WiredWitnesses,
 };
-use zero_crypto::behave::{Group, Pairing, SigUtils};
+use zkstd::behave::{Group, Pairing, SigUtils};
 
 use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
 use crate::runtime::RuntimeEvent;

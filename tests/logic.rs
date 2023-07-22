@@ -6,11 +6,11 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_crypto::behave::{FftField, Group};
-use zero_crypto::common::Pairing;
 use zero_kzg::KeyPair;
 use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
+use zkstd::behave::{FftField, Group};
+use zkstd::common::Pairing;
 
 #[test]
 fn logic_and_works() {

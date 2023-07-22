@@ -4,8 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_crypto::common::{Group, Pairing, Ring};
 use zero_kzg::{Fft, KeyPair, Polynomial};
+use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Composer, Prover, Verifier};
 use crate::commitment_scheme::OpeningKey;

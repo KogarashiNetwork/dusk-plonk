@@ -10,8 +10,8 @@ use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
 use sp_std::vec;
-use zero_crypto::behave::*;
 use zero_kzg::{Fft, Polynomial};
+use zkstd::behave::*;
 
 #[cfg(test)]
 pub(crate) mod constants;

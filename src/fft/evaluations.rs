@@ -11,7 +11,7 @@ use core::ops::{
     Add, AddAssign, DivAssign, Index, Mul, MulAssign, Sub, SubAssign,
 };
 use sp_std::vec::Vec;
-use zero_crypto::behave::*;
+use zkstd::behave::*;
 
 /// Stores a polynomial in evaluation form.
 #[derive(PartialEq, Eq, Debug, Clone)]

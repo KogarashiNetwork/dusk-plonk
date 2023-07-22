@@ -35,7 +35,7 @@ pub struct VerifierKey<P: Pairing> {
 
 use crate::{fft::Evaluations, transcript::TranscriptProtocol};
 use merlin::Transcript;
-use zero_crypto::common::Pairing;
+use zkstd::common::Pairing;
 
 impl<P: Pairing> VerifierKey<P> {
     /// Adds the circuit description to the transcript

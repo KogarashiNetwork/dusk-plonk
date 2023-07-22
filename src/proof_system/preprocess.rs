@@ -6,8 +6,8 @@
 
 //! Methods to preprocess the constraint system for use in a proof
 
-use zero_crypto::common::Pairing;
 use zero_kzg::Polynomial;
+use zkstd::common::Pairing;
 
 /// Struct that contains all selector and permutation [`Polynomials`]s
 pub(crate) struct Polynomials<P: Pairing> {

@@ -6,7 +6,7 @@
 
 use alloc::vec::Vec;
 use rand_core::RngCore;
-use zero_crypto::common::{Group, Pairing, Ring};
+use zkstd::common::{Group, Pairing, Ring};
 
 #[cfg(feature = "rkyv-impl")]
 #[inline(always)]

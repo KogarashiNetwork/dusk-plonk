@@ -6,10 +6,10 @@
 
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_crypto::common::*;
 use zero_kzg::KeyPair;
 use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
+use zkstd::common::*;
 
 #[test]
 fn decomposition_works() {

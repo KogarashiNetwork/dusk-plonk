@@ -6,7 +6,7 @@
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use zero_crypto::common::Pairing;
+use zkstd::common::Pairing;
 
 use merlin::Transcript;
 

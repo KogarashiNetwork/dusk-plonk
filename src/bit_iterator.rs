@@ -63,7 +63,7 @@ mod test {
     use super::*;
     use alloc::vec::Vec;
     use zero_bls12_381::Fr as BlsScalar;
-    use zero_crypto::behave::SigUtils;
+    use zkstd::behave::SigUtils;
 
     #[test]
     fn test_bit_iterator8() {

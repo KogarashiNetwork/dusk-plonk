@@ -6,8 +6,8 @@
 
 use crate::composer::{Builder, Composer};
 use crate::constraint_system::Witness;
-use zero_crypto::behave::{Group, Ring};
-use zero_crypto::common::Pairing;
+use zkstd::behave::{Group, Ring};
+use zkstd::common::Pairing;
 
 /// Selectors used to address a coefficient inside of a [`Constraint`]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

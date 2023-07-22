@@ -40,7 +40,7 @@ use crate::fft::Evaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 use zero_bls12_381::TWO_ADACITY;
-use zero_crypto::behave::*;
+use zkstd::behave::*;
 
 impl<P: Pairing> EvaluationDomain<P> {
     /// Construct a domain that is large enough for evaluations of a
