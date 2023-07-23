@@ -9,7 +9,6 @@
 
 use core::mem;
 
-use dusk_bytes::Serializable;
 use merlin::Transcript;
 use zero_kzg::Commitment;
 use zkstd::behave::{FftField, SigUtils};
