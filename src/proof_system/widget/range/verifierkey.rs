@@ -13,7 +13,7 @@ use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::range::proverkey::delta;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::{behave::PrimeField, common::Pairing};
 
 impl<P: Pairing> VerifierKey<P> {

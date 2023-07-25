@@ -10,7 +10,7 @@
 use core::mem;
 
 use merlin::Transcript;
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::behave::{FftField, SigUtils};
 use zkstd::common::Pairing;
 

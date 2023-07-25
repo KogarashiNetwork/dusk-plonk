@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_bls12_381::Fr as BlsScalar;
+use bls_12_381::Fr as BlsScalar;
 
 /// Constants used in the permutation argument to ensure that the wire subsets
 /// are disjoint.

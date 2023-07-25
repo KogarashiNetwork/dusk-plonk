@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::common::Pairing;
 
 #[derive(Debug, PartialEq, Eq, Clone)]

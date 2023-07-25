@@ -7,7 +7,7 @@
 use crate::proof_system::ProverKey;
 
 use codec::{Decode, Encode};
-use zero_kzg::Polynomial;
+use poly_commit::Polynomial;
 use zkstd::common::Pairing;
 
 /// Evaluations at points `z` or and `z * root of unity`

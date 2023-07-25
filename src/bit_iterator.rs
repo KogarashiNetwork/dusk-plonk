@@ -62,7 +62,7 @@ bit_iterator!(u8, BitIterator8);
 mod test {
     use super::*;
     use alloc::vec::Vec;
-    use zero_bls12_381::Fr as BlsScalar;
+    use bls_12_381::Fr as BlsScalar;
     use zkstd::behave::SigUtils;
 
     #[test]

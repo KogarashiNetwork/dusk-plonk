@@ -17,7 +17,7 @@ use crate::proof_system::widget::ecc::scalar_mul::fixed_base::proverkey::{
 };
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::behave::PrimeField;
 use zkstd::behave::Ring;
 use zkstd::behave::TwistedEdwardsCurve;

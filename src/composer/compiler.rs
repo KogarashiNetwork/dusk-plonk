@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_kzg::{Fft, KeyPair, Polynomial};
+use poly_commit::{Fft, KeyPair, Polynomial};
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Composer, Prover, Verifier};

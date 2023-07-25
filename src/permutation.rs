@@ -9,8 +9,8 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
+use poly_commit::{Fft, Polynomial};
 use sp_std::vec;
-use zero_kzg::{Fft, Polynomial};
 use zkstd::behave::*;
 
 #[cfg(test)]
@@ -316,10 +316,10 @@ mod test {
     use super::*;
     use crate::fft::EvaluationDomain;
     use crate::permutation::constants::*;
+    use bls_12_381::Fr as BlsScalar;
+    use ec_pairing::TatePairing;
+    use poly_commit::Polynomial;
     use rand_core::OsRng;
-    use zero_bls12_381::Fr as BlsScalar;
-    use zero_kzg::Polynomial;
-    use zero_pairing::TatePairing;
 
     #[allow(dead_code)]
     fn compute_fast_permutation_poly(

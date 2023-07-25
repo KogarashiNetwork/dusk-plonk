@@ -34,10 +34,10 @@ codec = { default-features = false, features = ['derive'], package = 'parity-sca
 sp-std = { version = '3.0.0', default-features = false }
 
 zkstd = {path = "../zkstd", default-features = false}
-zero-kzg = {path = "../kzg", default-features = false}
-zero-jubjub = {path = "../jubjub", default-features = false}
-zero-pairing = {path = "../pairing", default-features = false}
-zero-bls12-381 = {path = "../bls12_381", default-features = false}
+poly-commit = {path = "../poly", default-features = false}
+jub-jub = {path = "../jubjub", default-features = false}
+ec-pairing = {path = "../pairing", default-features = false}
+bls-12-381 = {path = "../bls12_381", default-features = false}
 
 [dev-dependencies]
 criterion = "0.3"

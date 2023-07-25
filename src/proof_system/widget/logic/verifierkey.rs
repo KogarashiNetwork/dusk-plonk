@@ -14,7 +14,7 @@ use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::logic::proverkey::{delta, delta_xor_and};
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::behave::PrimeField;
 use zkstd::common::Pairing;
 

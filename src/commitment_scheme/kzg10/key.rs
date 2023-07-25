@@ -111,10 +111,10 @@ impl<P: Pairing> PartialEq for OpeningKey<P> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use bls_12_381::Fr as BlsScalar;
+    use ec_pairing::TatePairing;
+    use poly_commit::{KeyPair, Polynomial};
     use rand_core::OsRng;
-    use zero_bls12_381::Fr as BlsScalar;
-    use zero_kzg::{KeyPair, Polynomial};
-    use zero_pairing::TatePairing;
 
     #[test]
     fn test_basic_commit() -> Result<(), Error> {

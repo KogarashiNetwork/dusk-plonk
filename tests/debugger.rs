@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zero_pairing::TatePairing;
+use ec_pairing::TatePairing;
 use zero_plonk::prelude::*;
 
 #[derive(Debug, Default)]
@@ -22,7 +22,7 @@ impl Circuit<TatePairing> for EmptyCircuit {
 #[test]
 #[cfg(debug_assertions)]
 fn generate_cdf_works() -> io::Result<()> {
-    use zero_kzg::KeyPair;
+    use poly_commit::KeyPair;
 
     let mut rng = rand::thread_rng();
 

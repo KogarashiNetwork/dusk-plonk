@@ -10,8 +10,8 @@
 #[cfg(feature = "std")]
 #[cfg(test)]
 mod test {
-    use zero_bls12_381::Fr as BlsScalar;
-    use zero_pairing::TatePairing;
+    use bls_12_381::Fr as BlsScalar;
+    use ec_pairing::TatePairing;
     use zkstd::behave::FftField;
 
     use crate::util;

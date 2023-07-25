@@ -4,10 +4,10 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use ec_pairing::TatePairing;
+use poly_commit::KeyPair;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_kzg::KeyPair;
-use zero_pairing::TatePairing;
 use zero_plonk::prelude::*;
 use zkstd::behave::{FftField, Group};
 use zkstd::common::Pairing;

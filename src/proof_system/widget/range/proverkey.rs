@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::fft::Evaluations;
-use zero_kzg::Polynomial;
+use poly_commit::Polynomial;
 use zkstd::behave::*;
 
 #[derive(Debug, Eq, PartialEq, Clone)]

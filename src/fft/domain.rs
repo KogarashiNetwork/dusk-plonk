@@ -39,7 +39,7 @@ use crate::error::Error;
 use crate::fft::Evaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_bls12_381::TWO_ADACITY;
+use bls_12_381::TWO_ADACITY;
 use zkstd::behave::*;
 
 impl<P: Pairing> EvaluationDomain<P> {

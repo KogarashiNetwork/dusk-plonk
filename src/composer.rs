@@ -9,10 +9,10 @@
 use alloc::vec::Vec;
 use core::cmp;
 use core::ops::{Index, Neg};
-use zero_jubjub::compute_windowed_naf;
+use jub_jub::compute_windowed_naf;
 
+use bls_12_381::Fr as BlsScalar;
 use sp_std::vec;
-use zero_bls12_381::Fr as BlsScalar;
 use zkstd::behave::{
     Curve, CurveGroup, FftField, Group, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, TwistedEdwardsExtended,

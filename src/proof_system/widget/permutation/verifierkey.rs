@@ -15,7 +15,7 @@ pub(crate) struct VerifierKey<P: Pairing> {
 use crate::proof_system::linearization_poly::ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
-use zero_kzg::Commitment;
+use poly_commit::Commitment;
 use zkstd::behave::PrimeField;
 use zkstd::common::Pairing;
 

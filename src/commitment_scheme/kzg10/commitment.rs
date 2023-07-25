@@ -5,8 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 //! Module containing the representation of a Commitment to a Polynomial.
+use bls_12_381::{G1Affine, G1Projective};
 use codec::{Decode, Encode};
-use zero_bls12_381::{G1Affine, G1Projective};
 use zkstd::common::CurveGroup;
 
 /// Holds a commitment to a polynomial in a form of a [`G1Affine`]-bls12_381

@@ -13,9 +13,9 @@ use crate::proof_system::{Proof, Prover, ProverKey, Verifier, VerifierKey};
 use alloc::vec::Vec;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
-use zero_bls12_381::{Fr as BlsScalar};
+use bls_12_381::{Fr as BlsScalar};
 use dusk_bytes::{DeserializableSlice, Serializable, Write};
-use zero_jubjub::{JubJubAffine, JubJubExtended, JubJubScalar};
+use jub_jub::{JubJubAffine, JubJubExtended, JubJubScalar};
 use rand_core::RngCore;
 
 /// Structure that represents a PLONK Circuit Public Input converted into it's
@@ -184,7 +184,7 @@ impl VerifierData {
 ///         let e = composer.append_witness(self.e);
 ///         let scalar_mul_result =
 ///             composer.component_mul_generator(
-///                 e, zero_jubjub::GENERATOR_EXTENDED,
+///                 e, jub_jub::GENERATOR_EXTENDED,
 ///             );
 ///         // Apply the constraint
 ///         composer
@@ -216,7 +216,7 @@ impl VerifierData {
 ///         d: BlsScalar::from(100u64),
 ///         e: JubJubScalar::from(2u64),
 ///         f: JubJubAffine::from(
-///             zero_jubjub::GENERATOR_EXTENDED * JubJubScalar::from(2u64),
+///             jub_jub::GENERATOR_EXTENDED * JubJubScalar::from(2u64),
 ///         ),
 ///     };
 ///
@@ -228,7 +228,7 @@ impl VerifierData {
 ///     BlsScalar::from(25u64).into(),
 ///     BlsScalar::from(100u64).into(),
 ///     JubJubAffine::from(
-///         zero_jubjub::GENERATOR_EXTENDED * JubJubScalar::from(2u64),
+///         jub_jub::GENERATOR_EXTENDED * JubJubScalar::from(2u64),
 ///     )
 ///     .into(),
 /// ];

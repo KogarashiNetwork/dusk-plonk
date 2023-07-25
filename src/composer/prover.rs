@@ -10,9 +10,9 @@ use core::ops;
 use zkstd::common::Pairing;
 
 use merlin::Transcript;
+use poly_commit::{Fft, KeyPair, Polynomial};
 use rand_core::RngCore;
 use sp_std::vec;
-use zero_kzg::{Fft, KeyPair, Polynomial};
 use zkstd::behave::{FftField, Group};
 
 use crate::error::Error;

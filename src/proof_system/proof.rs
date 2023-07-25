@@ -9,7 +9,7 @@
 
 use super::linearization_poly::ProofEvaluations;
 use codec::{Decode, Encode};
-use zero_kzg::{Commitment, Polynomial};
+use poly_commit::{Commitment, Polynomial};
 use zkstd::behave::Ring;
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
@@ -64,10 +64,10 @@ use crate::{
 };
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
+use ec_pairing::msm_variable_base;
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zero_pairing::msm_variable_base;
 use zkstd::{
     behave::{FftField, Group, PrimeField},
     common::Pairing,

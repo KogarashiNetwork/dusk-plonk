@@ -89,8 +89,8 @@ pub fn batch_inversion<P: Pairing>(v: &mut [P::ScalarField]) {
 }
 #[cfg(test)]
 mod test {
-    use zero_bls12_381::Fr as BlsScalar;
-    use zero_pairing::TatePairing;
+    use bls_12_381::Fr as BlsScalar;
+    use ec_pairing::TatePairing;
 
     use super::*;
     #[test]

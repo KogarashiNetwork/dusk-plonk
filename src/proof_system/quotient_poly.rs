@@ -11,7 +11,7 @@ use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use zero_kzg::{Fft, Polynomial};
+use poly_commit::{Fft, Polynomial};
 use zkstd::behave::*;
 
 /// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
