@@ -476,59 +476,24 @@ impl<P: Pairing> Proof<P> {
         l1_eval: P::ScalarField,
         verifier_key: &VerificationKey<P>,
     ) -> Commitment<P::G1Affine> {
-        let mut scalars: Vec<_> = Vec::with_capacity(6);
-        let mut points: Vec<P::G1Affine> = Vec::with_capacity(6);
-
         let (arithmetic_scalars, arithmetic_points) =
             verifier_key.arithmetic.linearize(&self.evaluations);
-        arithmetic_scalars
-            .iter()
-            .zip(arithmetic_points.iter())
-            .for_each(|(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            });
 
         let (range_scalars, range_points) = verifier_key
             .range
             .linearize(range_sep_challenge, &self.evaluations);
-        range_scalars.iter().zip(range_points.iter()).for_each(
-            |(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            },
-        );
 
         let (logic_scalars, logic_points) = verifier_key
             .logic
             .linearize(logic_sep_challenge, &self.evaluations);
-        logic_scalars.iter().zip(logic_points.iter()).for_each(
-            |(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            },
-        );
 
         let (scalar_scalars, scalar_points) = verifier_key
             .fixed_base
             .linearize(fixed_base_sep_challenge, &self.evaluations);
-        scalar_scalars.iter().zip(scalar_points.iter()).for_each(
-            |(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            },
-        );
 
         let (addition_scalars, addition_points) = verifier_key
             .variable_base
             .linearize(var_base_sep_challenge, &self.evaluations);
-        addition_scalars
-            .iter()
-            .zip(addition_points.iter())
-            .for_each(|(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            });
 
         let (permutation_scalars, permutation_points) =
             verifier_key.permutation.linearize(
@@ -538,15 +503,27 @@ impl<P: Pairing> Proof<P> {
                 self.z_comm.0,
                 &self.evaluations,
             );
-        permutation_scalars
-            .iter()
-            .zip(permutation_points.iter())
-            .for_each(|(scalar, point)| {
-                scalars.push(*scalar);
-                points.push(*point);
-            });
 
-        Commitment::new(msm_variable_base::<P>(&points, &scalars))
+        Commitment::new(msm_variable_base::<P>(
+            &[
+                arithmetic_points,
+                range_points,
+                logic_points,
+                scalar_points,
+                addition_points,
+                permutation_points,
+            ]
+            .concat(),
+            &[
+                arithmetic_scalars,
+                range_scalars,
+                logic_scalars,
+                scalar_scalars,
+                addition_scalars,
+                permutation_scalars,
+            ]
+            .concat(),
+        ))
     }
 }
 

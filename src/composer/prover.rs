@@ -162,14 +162,10 @@ where
         let o_w_poly = Self::blind_poly(rng, &o_w_scalar, 1, &fft);
         let d_w_poly = Self::blind_poly(rng, &d_w_scalar, 1, &fft);
 
-        let a_w_poly_commit =
-            Polynomial::from_coefficients_vec(a_w_poly.0.clone());
-        let b_w_poly_commit =
-            Polynomial::from_coefficients_vec(b_w_poly.0.clone());
-        let o_w_poly_commit =
-            Polynomial::from_coefficients_vec(o_w_poly.0.clone());
-        let d_w_poly_commit =
-            Polynomial::from_coefficients_vec(d_w_poly.0.clone());
+        let a_w_poly_commit = a_w_poly.clone();
+        let b_w_poly_commit = b_w_poly.clone();
+        let o_w_poly_commit = o_w_poly.clone();
+        let d_w_poly_commit = d_w_poly.clone();
 
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
@@ -217,10 +213,10 @@ where
             b"gamma",
         );
         let sigma = [
-            Polynomial::new(self.prover_key.permutation.s_sigma_1.0 .0.clone()),
-            Polynomial::new(self.prover_key.permutation.s_sigma_2.0 .0.clone()),
-            Polynomial::new(self.prover_key.permutation.s_sigma_3.0 .0.clone()),
-            Polynomial::new(self.prover_key.permutation.s_sigma_4.0 .0.clone()),
+            self.prover_key.permutation.s_sigma_1.0.clone(),
+            self.prover_key.permutation.s_sigma_2.0.clone(),
+            self.prover_key.permutation.s_sigma_3.0.clone(),
+            self.prover_key.permutation.s_sigma_4.0.clone(),
         ];
         let wires = [
             a_w_scalar.as_slice(),
@@ -233,7 +229,6 @@ where
             .compute_permutation_vec(&fft, wires, &beta, &gamma, sigma);
 
         let z_poly = Self::blind_poly(rng, &permutation, 2, &fft);
-        let z_poly = Polynomial::from_coefficients_vec(z_poly.0);
         let z_poly_commit = self.keypair.commit(&z_poly)?;
         <Transcript as TranscriptProtocol<P>>::append_commitment(
             &mut transcript,
@@ -270,7 +265,7 @@ where
 
         // compute public inputs polynomial
         fft.idft(&mut dense_public_inputs);
-        let pi_poly = Polynomial::from_coefficients_vec(dense_public_inputs.0);
+        let pi_poly = dense_public_inputs;
 
         // compute quotient polynomial
         let wires = (&a_w_poly, &b_w_poly, &o_w_poly, &d_w_poly);
@@ -344,8 +339,6 @@ where
 
         // round 5
         // compute linearization polynomial
-        let t_poly = Polynomial::new(t_poly.0);
-
         let (r_poly, evaluations) = linearization_poly::compute(
             fft.generator(),
             &self.prover_key,
@@ -469,11 +462,6 @@ where
 
         // compute aggregate witness to polynomials evaluated at the evaluation
         // challenge z. The challenge v is selected inside
-        let a_w_poly = Polynomial::from_coefficients_vec(a_w_poly.0);
-        let b_w_poly = Polynomial::from_coefficients_vec(b_w_poly.0);
-        let o_w_poly = Polynomial::from_coefficients_vec(o_w_poly.0);
-        let d_w_poly = Polynomial::from_coefficients_vec(d_w_poly.0);
-
         let aggregate_witness = self.keypair.compute_aggregate_witness(
             &[
                 quot,
