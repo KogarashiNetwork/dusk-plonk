@@ -15,7 +15,7 @@ pub(crate) struct VerifierKey<P: Pairing> {
     pub(crate) q_variable_group_add: Commitment<P::G1Affine>,
 }
 
-use crate::proof_system::linearization_poly::ProofEvaluations;
+use zksnarks::Evaluations as ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 
@@ -25,7 +25,7 @@ impl<P: Pairing> VerifierKey<P> {
         curve_add_separation_challenge: &P::ScalarField,
         scalars: &mut Vec<P::ScalarField>,
         points: &mut Vec<P::G1Affine>,
-        evaluations: &ProofEvaluations<P>,
+        evaluations: &ProofEvaluations<P::ScalarField>,
     ) {
         let kappa = curve_add_separation_challenge.square();
 

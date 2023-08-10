@@ -6,59 +6,16 @@
 
 use crate::proof_system::ProverKey;
 
-use codec::{Decode, Encode};
 use poly_commit::Polynomial;
+use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::common::Pairing;
 
 /// Evaluations at points `z` or and `z * root of unity`
 #[allow(dead_code)]
 pub(crate) struct Evaluations<P: Pairing> {
-    pub(crate) proof: ProofEvaluations<P>,
+    pub(crate) proof: ProofEvaluations<P::ScalarField>,
     // Evaluation of the linearization sigma polynomial at `z`
     pub(crate) t_eval: P::ScalarField,
-}
-
-/// Subset of all of the evaluations. These evaluations
-/// are added to the [`Proof`](super::Proof).
-#[derive(Debug, Eq, PartialEq, Clone, Default, Decode, Encode)]
-pub(crate) struct ProofEvaluations<P: Pairing> {
-    // Evaluation of the witness polynomial for the left wire at `z`
-    pub(crate) a_eval: P::ScalarField,
-    // Evaluation of the witness polynomial for the right wire at `z`
-    pub(crate) b_eval: P::ScalarField,
-    // Evaluation of the witness polynomial for the output wire at `z`
-    pub(crate) c_eval: P::ScalarField,
-    // Evaluation of the witness polynomial for the fourth wire at `z`
-    pub(crate) d_eval: P::ScalarField,
-    //
-    pub(crate) a_next_eval: P::ScalarField,
-    //
-    pub(crate) b_next_eval: P::ScalarField,
-    // Evaluation of the witness polynomial for the fourth wire at `z * root of
-    // unity`
-    pub(crate) d_next_eval: P::ScalarField,
-    // Evaluation of the arithmetic selector polynomial at `z`
-    pub(crate) q_arith_eval: P::ScalarField,
-    //
-    pub(crate) q_c_eval: P::ScalarField,
-    //
-    pub(crate) q_l_eval: P::ScalarField,
-    //
-    pub(crate) q_r_eval: P::ScalarField,
-    //
-    // Evaluation of the left sigma polynomial at `z`
-    pub(crate) s_sigma_1_eval: P::ScalarField,
-    // Evaluation of the right sigma polynomial at `z`
-    pub(crate) s_sigma_2_eval: P::ScalarField,
-    // Evaluation of the out sigma polynomial at `z`
-    pub(crate) s_sigma_3_eval: P::ScalarField,
-
-    // Evaluation of the linearization sigma polynomial at `z`
-    pub(crate) r_poly_eval: P::ScalarField,
-
-    // (Shifted) Evaluation of the permutation polynomial at `z * root of
-    // unity`
-    pub(crate) perm_eval: P::ScalarField,
 }
 
 /// Compute the linearization polynomial.

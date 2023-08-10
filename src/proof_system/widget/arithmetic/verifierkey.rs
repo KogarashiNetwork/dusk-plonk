@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::Commitment;
+use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::common::Pairing;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -20,7 +21,6 @@ pub(crate) struct VerifierKey<P: Pairing> {
 
 mod alloc {
     use super::*;
-    use crate::proof_system::linearization_poly::ProofEvaluations;
     #[rustfmt::skip]
     use ::alloc::vec::Vec;
 
@@ -29,7 +29,7 @@ mod alloc {
             &self,
             scalars: &mut Vec<P::ScalarField>,
             points: &mut Vec<P::G1Affine>,
-            evaluations: &ProofEvaluations<P>,
+            evaluations: &ProofEvaluations<P::ScalarField>,
         ) {
             let q_arith_eval = evaluations.q_arith_eval;
 
