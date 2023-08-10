@@ -527,15 +527,21 @@ impl<P: Pairing> Proof<P> {
                 points.push(*point);
             });
 
-        verifier_key.permutation.compute_linearization_commitment(
-            &mut scalars,
-            &mut points,
-            &self.evaluations,
-            z_challenge,
-            (alpha, beta, gamma),
-            &l1_eval,
-            self.z_comm.0,
-        );
+        let (permutation_scalars, permutation_points) =
+            verifier_key.permutation.linearize(
+                z_challenge,
+                (alpha, beta, gamma),
+                &l1_eval,
+                self.z_comm.0,
+                &self.evaluations,
+            );
+        permutation_scalars
+            .iter()
+            .zip(permutation_points.iter())
+            .for_each(|(scalar, point)| {
+                scalars.push(*scalar);
+                points.push(*point);
+            });
 
         Commitment::new(msm_variable_base::<P>(&points, &scalars))
     }

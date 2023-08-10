@@ -8,7 +8,7 @@ use poly_commit::{Fft, KeyPair, Polynomial};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
-    logic,
+    logic, permutation,
 };
 use zkstd::common::{Group, Pairing, Ring};
 
@@ -221,7 +221,7 @@ impl Compiler {
         };
 
         // verifier Key for permutation argument
-        let permutation_verifier_key = widget::permutation::VerificationKey {
+        let permutation_verifier_key = permutation::VerificationKey {
             s_sigma_1: s_sigma_1_poly_commit,
             s_sigma_2: s_sigma_2_poly_commit,
             s_sigma_3: s_sigma_3_poly_commit,

@@ -13,6 +13,7 @@ pub mod range;
 use zksnarks::key::arithmetic as arith;
 use zksnarks::key::curve::{add as addition, scalar};
 use zksnarks::key::logic as logic_key;
+use zksnarks::key::permutation as permutation_key;
 
 /// PLONK circuit Verification Key.
 ///
@@ -34,7 +35,7 @@ pub struct VerificationKey<P: Pairing> {
     /// VerificationKey for variable base curve addition gates
     pub(crate) variable_base: addition::VerificationKey<P>,
     /// VerificationKey for permutation checks
-    pub(crate) permutation: permutation::VerificationKey<P>,
+    pub(crate) permutation: permutation_key::VerificationKey<P::G1Affine>,
 }
 
 use crate::{fft::Evaluations, transcript::TranscriptProtocol};

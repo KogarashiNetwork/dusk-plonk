@@ -6,8 +6,4 @@
 
 mod proverkey;
 
-mod verifierkey;
-
 pub(crate) use proverkey::ProverKey;
-
-pub(crate) use verifierkey::VerificationKey;
