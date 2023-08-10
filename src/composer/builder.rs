@@ -8,19 +8,20 @@ use alloc::vec::Vec;
 use core::ops;
 use hashbrown::HashMap;
 use sp_std::vec;
+use zksnarks::{Gate, Witness};
 use zkstd::{behave::Group, common::Pairing};
 
-use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
+use crate::constraint_system::{Constraint, Selector, WiredWitness};
 use crate::permutation::Permutation;
 use crate::runtime::Runtime;
 
-use super::{Composer, Polynomial};
+use super::Composer;
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
 pub struct Builder<P: Pairing> {
     /// Constraint system gates
-    pub(crate) constraints: Vec<Polynomial<P>>,
+    pub(crate) constraints: Vec<Gate<P::ScalarField>>,
 
     /// Sparse representation of the public inputs
     pub(crate) public_inputs: HashMap<usize, P::ScalarField>,
@@ -125,7 +126,7 @@ impl<P: Pairing> Composer<P> for Builder<P> {
         let q_variable_group_add =
             *constraint.coeff(Selector::GroupAddVariableBase);
 
-        let poly = Polynomial {
+        let poly = Gate {
             q_m,
             q_l,
             q_r,

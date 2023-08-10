@@ -13,6 +13,7 @@ use jub_jub::compute_windowed_naf;
 
 use bls_12_381::Fr as BlsScalar;
 use sp_std::vec;
+use zksnarks::Witness;
 use zkstd::behave::{
     Curve, CurveGroup, FftField, Group, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, TwistedEdwardsExtended,
@@ -22,7 +23,7 @@ use zkstd::common::Pairing;
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
 use crate::constraint_system::{
-    Constraint, Selector, WiredWitness, Witness, WitnessPoint,
+    Constraint, Selector, WiredWitness, WitnessPoint,
 };
 use crate::error::Error;
 use crate::runtime::{Runtime, RuntimeEvent};
@@ -30,14 +31,12 @@ use crate::runtime::{Runtime, RuntimeEvent};
 mod builder;
 mod circuit;
 mod compiler;
-mod polynomial;
 mod prover;
 mod verifier;
 
 pub use builder::Builder;
 pub use circuit::Circuit;
 pub use compiler::Compiler;
-pub use polynomial::Polynomial;
 pub use prover::Prover;
 pub use verifier::Verifier;
 

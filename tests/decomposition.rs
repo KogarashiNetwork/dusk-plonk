@@ -9,6 +9,7 @@ use poly_commit::KeyPair;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::Witness;
 use zkstd::common::*;
 
 #[test]

@@ -11,7 +11,7 @@
 
 pub use crate::{
     composer::{Builder, Circuit, Compiler, Composer, Prover, Verifier},
-    constraint_system::{Constraint, Witness, WitnessPoint},
+    constraint_system::{Constraint, WitnessPoint},
 };
 
 pub use crate::error::Error;
