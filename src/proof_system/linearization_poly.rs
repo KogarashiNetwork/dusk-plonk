@@ -160,7 +160,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
     q_r_eval: &P::ScalarField,
     prover_key: &ProverKey<P>,
 ) -> Polynomial<P::ScalarField> {
-    let a = prover_key.arithmetic.compute_linearization(
+    let a = prover_key.arithmetic.linearize(
         a_eval,
         b_eval,
         c_eval,

@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::{Fft, KeyPair, Polynomial};
+use poly_commit::{Evaluations as PolyEval, Fft, KeyPair, Polynomial};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
@@ -317,15 +317,6 @@ impl Compiler {
         let linear_eval_8n =
             Evaluations::from_vec_and_domain(min_p.0, domain_8n.clone());
 
-        let s_sigma_1_poly =
-            Polynomial::from_coefficients_vec(s_sigma_1_poly.0);
-        let s_sigma_2_poly =
-            Polynomial::from_coefficients_vec(s_sigma_2_poly.0);
-        let s_sigma_3_poly =
-            Polynomial::from_coefficients_vec(s_sigma_3_poly.0);
-        let s_sigma_4_poly =
-            Polynomial::from_coefficients_vec(s_sigma_4_poly.0);
-
         let selectors = Polynomials::<P> {
             q_m: q_m_poly,
             q_l: q_l_poly,
@@ -344,14 +335,23 @@ impl Compiler {
             s_sigma_4: s_sigma_4_poly,
         };
 
-        let arithmetic_prover_key = widget::arithmetic::ProverKey {
-            q_m: (selectors.q_m, q_m_eval_8n),
-            q_l: (selectors.q_l.clone(), q_l_eval_8n.clone()),
-            q_r: (selectors.q_r.clone(), q_r_eval_8n.clone()),
-            q_o: (selectors.q_o, q_o_eval_8n),
-            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
-            q_4: (selectors.q_4, q_4_eval_8n),
-            q_arith: (selectors.q_arith, q_arith_eval_8n),
+        let arithmetic_prover_key = arithmetic::ProverKey {
+            q_m: (selectors.q_m, PolyEval::new(q_m_eval_8n.evals)),
+            q_l: (
+                selectors.q_l.clone(),
+                PolyEval::new(q_l_eval_8n.evals.clone()),
+            ),
+            q_r: (
+                selectors.q_r.clone(),
+                PolyEval::new(q_r_eval_8n.evals.clone()),
+            ),
+            q_o: (selectors.q_o, PolyEval::new(q_o_eval_8n.evals)),
+            q_c: (
+                selectors.q_c.clone(),
+                PolyEval::new(q_c_eval_8n.evals.clone()),
+            ),
+            q_4: (selectors.q_4, PolyEval::new(q_4_eval_8n.evals)),
+            q_arith: (selectors.q_arith, PolyEval::new(q_arith_eval_8n.evals)),
         };
 
         let range_prover_key = widget::range::ProverKey {

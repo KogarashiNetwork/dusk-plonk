@@ -7,9 +7,7 @@
 //! A polynomial represented in evaluations form over a domain of size 2^n.
 
 use super::domain::EvaluationDomain;
-use core::ops::{
-    Add, AddAssign, DivAssign, Index, Mul, MulAssign, Sub, SubAssign,
-};
+use core::ops::Index;
 use sp_std::vec::Vec;
 use zkstd::behave::*;
 
@@ -38,82 +36,5 @@ impl<P: Pairing> Index<usize> for Evaluations<P> {
 
     fn index(&self, index: usize) -> &P::ScalarField {
         &self.evals[index]
-    }
-}
-
-impl<'a, 'b, P: Pairing> Mul<&'a Evaluations<P>> for &'b Evaluations<P> {
-    type Output = Evaluations<P>;
-
-    #[inline]
-    fn mul(self, other: &'a Evaluations<P>) -> Evaluations<P> {
-        let mut result = self.clone();
-        result *= other;
-        result
-    }
-}
-
-impl<'a, P: Pairing> MulAssign<&'a Evaluations<P>> for Evaluations<P> {
-    #[inline]
-    fn mul_assign(&mut self, other: &'a Evaluations<P>) {
-        assert_eq!(self.domain, other.domain, "domains are unequal");
-        self.evals
-            .iter_mut()
-            .zip(&other.evals)
-            .for_each(|(a, b)| *a *= b);
-    }
-}
-
-impl<'a, 'b, P: Pairing> Add<&'a Evaluations<P>> for &'b Evaluations<P> {
-    type Output = Evaluations<P>;
-
-    #[inline]
-    fn add(self, other: &'a Evaluations<P>) -> Evaluations<P> {
-        let mut result = self.clone();
-        result += other;
-        result
-    }
-}
-
-impl<'a, P: Pairing> AddAssign<&'a Evaluations<P>> for Evaluations<P> {
-    #[inline]
-    fn add_assign(&mut self, other: &'a Evaluations<P>) {
-        assert_eq!(self.domain, other.domain, "domains are unequal");
-        self.evals
-            .iter_mut()
-            .zip(&other.evals)
-            .for_each(|(a, b)| *a += b);
-    }
-}
-
-impl<'a, 'b, P: Pairing> Sub<&'a Evaluations<P>> for &'b Evaluations<P> {
-    type Output = Evaluations<P>;
-
-    #[inline]
-    fn sub(self, other: &'a Evaluations<P>) -> Evaluations<P> {
-        let mut result = self.clone();
-        result -= other;
-        result
-    }
-}
-
-impl<'a, P: Pairing> SubAssign<&'a Evaluations<P>> for Evaluations<P> {
-    #[inline]
-    fn sub_assign(&mut self, other: &'a Evaluations<P>) {
-        assert_eq!(self.domain, other.domain, "domains are unequal");
-        self.evals
-            .iter_mut()
-            .zip(&other.evals)
-            .for_each(|(a, b)| *a -= b);
-    }
-}
-
-impl<'a, P: Pairing> DivAssign<&'a Evaluations<P>> for Evaluations<P> {
-    #[inline]
-    fn div_assign(&mut self, other: &'a Evaluations<P>) {
-        assert_eq!(self.domain, other.domain, "domains are unequal");
-        self.evals
-            .iter_mut()
-            .zip(&other.evals)
-            .for_each(|(a, b)| *a *= b.invert().unwrap());
     }
 }
