@@ -7,11 +7,9 @@
 //! Implementation of the KZG10 polynomial commitment scheme.
 
 pub mod key;
-pub mod srs;
 
 pub(crate) use proof::AggregateProof;
 
 pub use key::OpeningKey;
 
-pub(crate) mod commitment;
 pub(crate) mod proof;

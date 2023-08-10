@@ -9,13 +9,13 @@ use zkstd::common::Pairing;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct VerifierKey<P: Pairing> {
-    pub q_m: Commitment<P>,
-    pub q_l: Commitment<P>,
-    pub q_r: Commitment<P>,
-    pub q_o: Commitment<P>,
-    pub q_4: Commitment<P>,
-    pub q_c: Commitment<P>,
-    pub q_arith: Commitment<P>,
+    pub q_m: Commitment<P::G1Affine>,
+    pub q_l: Commitment<P::G1Affine>,
+    pub q_r: Commitment<P::G1Affine>,
+    pub q_o: Commitment<P::G1Affine>,
+    pub q_4: Commitment<P::G1Affine>,
+    pub q_c: Commitment<P::G1Affine>,
+    pub q_arith: Commitment<P::G1Affine>,
 }
 
 mod alloc {

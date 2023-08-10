@@ -20,7 +20,11 @@ use crate::proof_system::VerifierKey;
 /// For convenience
 pub(crate) trait TranscriptProtocol<P: Pairing> {
     /// Append a `commitment` with the given `label`.
-    fn append_commitment(&mut self, label: &'static [u8], comm: &Commitment<P>);
+    fn append_commitment(
+        &mut self,
+        label: &'static [u8],
+        comm: &Commitment<P::G1Affine>,
+    );
 
     /// Append a `BlsScalar` with the given `label`.
     fn append_scalar(&mut self, label: &'static [u8], s: &P::ScalarField);
@@ -43,7 +47,7 @@ impl<P: Pairing> TranscriptProtocol<P> for Transcript {
     fn append_commitment(
         &mut self,
         label: &'static [u8],
-        comm: &Commitment<P>,
+        comm: &Commitment<P::G1Affine>,
     ) {
         self.append_message(label, &comm.0.to_bytes());
     }
