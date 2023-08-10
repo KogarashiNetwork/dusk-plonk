@@ -10,7 +10,7 @@ pub mod permutation;
 pub mod range;
 
 use crate::fft::Evaluations;
-use zksnarks::key::arithmetic;
+use zksnarks::key::{arithmetic, curve};
 use zkstd::common::Pairing;
 
 /// PLONK circuit Proving Key.
@@ -30,7 +30,7 @@ pub struct ProvingKey<P: Pairing> {
     /// ProvingKey for fixed base curve addition gates
     pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProvingKey<P>,
     /// ProvingKey for variable base curve addition gates
-    pub(crate) variable_base: ecc::curve_addition::ProvingKey<P>,
+    pub(crate) variable_base: curve::add::ProvingKey<P>,
     /// ProvingKey for permutation checks
     pub(crate) permutation: permutation::ProvingKey<P>,
     // Pre-processes the 8n Evaluations for the vanishing polynomial, so

@@ -203,7 +203,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
         q_c_eval,
     );
 
-    let e = prover_key.variable_base.compute_linearization(
+    let e = prover_key.variable_base.linearize(
         var_base_separation_challenge,
         a_eval,
         a_next_eval,

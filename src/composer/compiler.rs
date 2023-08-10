@@ -381,13 +381,12 @@ impl Compiler {
             linear_evaluations: linear_eval_8n,
         };
 
-        let curve_addition_prover_key =
-            widget::ecc::curve_addition::ProvingKey {
-                q_variable_group_add: (
-                    selectors.q_variable_group_add,
-                    q_variable_group_add_eval_8n,
-                ),
-            };
+        let curve_addition_prover_key = add::ProvingKey {
+            q_variable_group_add: (
+                selectors.q_variable_group_add,
+                PolyEval::new(q_variable_group_add_eval_8n.evals),
+            ),
+        };
 
         let v_h_coset_8n =
             domain_8n.compute_vanishing_poly_over_coset(fft.size() as u64);
