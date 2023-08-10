@@ -14,9 +14,6 @@ use sp_std::vec;
 use zksnarks::Witness;
 use zkstd::behave::*;
 
-#[cfg(test)]
-pub(crate) mod constants;
-
 /// Permutation provides the necessary state information and functions
 /// to create the permutation polynomial. In the literature, Z(X) is the
 /// "accumulator", this is what this codebase calls the permutation polynomial.
@@ -316,11 +313,14 @@ impl<P: Pairing> Permutation<P> {
 mod test {
     use super::*;
     use crate::fft::EvaluationDomain;
-    use crate::permutation::constants::*;
     use bls_12_381::Fr as BlsScalar;
     use ec_pairing::TatePairing;
     use poly_commit::Polynomial;
     use rand_core::OsRng;
+
+    pub(crate) const K1: BlsScalar = BlsScalar::to_mont_form([7, 0, 0, 0]);
+    pub(crate) const K2: BlsScalar = BlsScalar::to_mont_form([13, 0, 0, 0]);
+    pub(crate) const K3: BlsScalar = BlsScalar::to_mont_form([17, 0, 0, 0]);
 
     #[allow(dead_code)]
     fn compute_fast_permutation_poly(

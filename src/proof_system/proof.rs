@@ -510,12 +510,16 @@ impl<P: Pairing> Proof<P> {
             &self.evaluations,
         );
 
-        verifier_key.variable_base.compute_linearization_commitment(
-            var_base_sep_challenge,
-            &mut scalars,
-            &mut points,
-            &self.evaluations,
-        );
+        let (addition_scalars, addition_points) = verifier_key
+            .variable_base
+            .linearize(var_base_sep_challenge, &self.evaluations);
+        addition_scalars
+            .iter()
+            .zip(addition_points.iter())
+            .for_each(|(scalar, point)| {
+                scalars.push(*scalar);
+                points.push(*point);
+            });
 
         verifier_key.permutation.compute_linearization_commitment(
             &mut scalars,
