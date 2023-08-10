@@ -8,6 +8,7 @@ use poly_commit::{Fft, KeyPair, Polynomial};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
+    logic,
 };
 use zkstd::common::{Group, Pairing, Ring};
 
@@ -202,7 +203,7 @@ impl Compiler {
         };
 
         // verifier Key for logic circuits
-        let logic_verifier_key = widget::logic::VerificationKey {
+        let logic_verifier_key = logic::VerificationKey {
             q_c: q_c_poly_commit,
             q_logic: q_logic_poly_commit,
         };

@@ -496,11 +496,14 @@ impl<P: Pairing> Proof<P> {
             &self.evaluations,
         );
 
-        verifier_key.logic.compute_linearization_commitment(
-            logic_sep_challenge,
-            &mut scalars,
-            &mut points,
-            &self.evaluations,
+        let (logic_scalars, logic_points) = verifier_key
+            .logic
+            .linearize(logic_sep_challenge, &self.evaluations);
+        logic_scalars.iter().zip(logic_points.iter()).for_each(
+            |(scalar, point)| {
+                scalars.push(*scalar);
+                points.push(*point);
+            },
         );
 
         let (scalar_scalars, scalar_points) = verifier_key
