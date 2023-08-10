@@ -7,26 +7,10 @@
 //! Proving system
 
 pub(crate) mod linearization_poly;
-pub(crate) mod proof;
-pub(crate) mod widget;
-
 pub(crate) mod preprocess;
+pub(crate) mod proof;
 pub(crate) mod quotient_poly;
-
+pub(crate) mod widget;
 pub(crate) use widget::ProverKey;
-pub(crate) use widget::VerificationKey;
-
-cfg_if::cfg_if!(
-    if #[cfg(feature = "rkyv-impl")] {
-        pub use widget::alloc::{ArchivedProverKey, ProverKeyResolver};
-    }
-);
 
 pub use proof::Proof;
-
-cfg_if::cfg_if!(
-    if #[cfg(feature = "rkyv-impl")] {
-        pub use proof::{ArchivedProof, ProofResolver};
-        pub use widget::{ArchivedVerificationKey, VerificationKeyResolver};
-    }
-);

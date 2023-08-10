@@ -8,9 +8,10 @@
 //! that support the generation and usage of Commit and
 //! Opening keys.
 use super::proof::Proof;
-use crate::{error::Error, transcript::TranscriptProtocol, util};
+use crate::{error::Error, util};
 use codec::{Decode, Encode};
 use merlin::Transcript;
+use zksnarks::TranscriptProtocol;
 use zkstd::behave::{CurveGroup, Group, Pairing, PairingRange};
 
 /// Opening Key is used to verify opening proofs made about a committed

@@ -58,8 +58,6 @@ use crate::{
     commitment_scheme::{AggregateProof, OpeningKey},
     error::Error,
     fft::EvaluationDomain,
-    proof_system::widget::VerificationKey,
-    transcript::TranscriptProtocol,
     util::batch_inversion,
 };
 #[rustfmt::skip]
@@ -68,6 +66,7 @@ use ec_pairing::msm_variable_base;
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
+use zksnarks::{TranscriptProtocol, VerificationKey};
 use zkstd::{
     behave::{FftField, Group, PrimeField},
     common::Pairing,

@@ -6,14 +6,13 @@
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use zkstd::common::Pairing;
-
 use merlin::Transcript;
+use zksnarks::{TranscriptProtocol, VerificationKey};
+use zkstd::common::Pairing;
 
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::proof_system::{Proof, VerificationKey};
-use crate::transcript::TranscriptProtocol;
+use crate::proof_system::Proof;
 
 use super::Builder;
 

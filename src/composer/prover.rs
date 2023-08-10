@@ -13,14 +13,12 @@ use merlin::Transcript;
 use poly_commit::{Fft, KeyPair, Polynomial};
 use rand_core::RngCore;
 use sp_std::vec;
+use zksnarks::{TranscriptProtocol, VerificationKey};
 use zkstd::behave::{FftField, Group};
 
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
-use crate::proof_system::{
-    linearization_poly, quotient_poly, ProverKey, VerificationKey,
-};
-use crate::transcript::TranscriptProtocol;
+use crate::proof_system::{linearization_poly, quotient_poly, ProverKey};
 use crate::util;
 
 use super::{Builder, Circuit, Composer};

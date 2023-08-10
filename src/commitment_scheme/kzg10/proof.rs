@@ -22,13 +22,13 @@ pub(crate) struct Proof<P: Pairing> {
     pub(crate) commitment_to_polynomial: Commitment<P::G1Affine>,
 }
 
-use crate::transcript::TranscriptProtocol;
 use crate::util::powers_of;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 use merlin::Transcript;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
+use zksnarks::TranscriptProtocol;
 
 /// Proof that multiple polynomials were correctly evaluated at a point `z`,
 /// each producing their respective evaluated points p_i(z).
