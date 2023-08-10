@@ -58,7 +58,7 @@ use crate::{
     commitment_scheme::{AggregateProof, OpeningKey},
     error::Error,
     fft::EvaluationDomain,
-    proof_system::widget::VerifierKey,
+    proof_system::widget::VerificationKey,
     transcript::TranscriptProtocol,
     util::batch_inversion,
 };
@@ -77,7 +77,7 @@ impl<P: Pairing> Proof<P> {
     /// Performs the verification of a [`Proof`] returning a boolean result.
     pub(crate) fn verify(
         &self,
-        verifier_key: &VerifierKey<P>,
+        verifier_key: &VerificationKey<P>,
         transcript: &mut Transcript,
         opening_key: &OpeningKey<P>,
         pub_inputs: &[P::ScalarField],
@@ -474,16 +474,20 @@ impl<P: Pairing> Proof<P> {
         ),
         z_challenge: &P::ScalarField,
         l1_eval: P::ScalarField,
-        verifier_key: &VerifierKey<P>,
+        verifier_key: &VerificationKey<P>,
     ) -> Commitment<P::G1Affine> {
         let mut scalars: Vec<_> = Vec::with_capacity(6);
         let mut points: Vec<P::G1Affine> = Vec::with_capacity(6);
 
-        verifier_key.arithmetic.compute_linearization_commitment(
-            &mut scalars,
-            &mut points,
-            &self.evaluations,
-        );
+        let (arithmetic_scalars, arithmetic_points) =
+            verifier_key.arithmetic.linearize(&self.evaluations);
+        arithmetic_scalars
+            .iter()
+            .zip(arithmetic_points.iter())
+            .for_each(|(scalar, point)| {
+                scalars.push(*scalar);
+                points.push(*point);
+            });
 
         verifier_key.range.compute_linearization_commitment(
             range_sep_challenge,

@@ -9,7 +9,7 @@ use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::common::Pairing;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VerifierKey<P: Pairing> {
+pub(crate) struct VerificationKey<P: Pairing> {
     pub q_m: Commitment<P::G1Affine>,
     pub q_l: Commitment<P::G1Affine>,
     pub q_r: Commitment<P::G1Affine>,
@@ -24,7 +24,7 @@ mod alloc {
     #[rustfmt::skip]
     use ::alloc::vec::Vec;
 
-    impl<P: Pairing> VerifierKey<P> {
+    impl<P: Pairing> VerificationKey<P> {
         pub(crate) fn compute_linearization_commitment(
             &self,
             scalars: &mut Vec<P::ScalarField>,

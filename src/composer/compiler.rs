@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::{Fft, KeyPair, Polynomial};
+use zksnarks::key::arithmetic;
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Composer, Prover, Verifier};
@@ -182,7 +183,7 @@ impl Compiler {
         let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly_commit)?;
 
         // verifier Key for arithmetic circuits
-        let arithmetic_verifier_key = widget::arithmetic::VerifierKey {
+        let arithmetic_verifier_key = arithmetic::VerificationKey {
             q_m: q_m_poly_commit,
             q_l: q_l_poly_commit.clone(),
             q_r: q_r_poly_commit.clone(),
@@ -193,19 +194,19 @@ impl Compiler {
         };
 
         // verifier Key for range circuits
-        let range_verifier_key = widget::range::VerifierKey {
+        let range_verifier_key = widget::range::VerificationKey {
             q_range: q_range_poly_commit,
         };
 
         // verifier Key for logic circuits
-        let logic_verifier_key = widget::logic::VerifierKey {
+        let logic_verifier_key = widget::logic::VerificationKey {
             q_c: q_c_poly_commit,
             q_logic: q_logic_poly_commit,
         };
 
         // verifier Key for ecc circuits
         let ecc_verifier_key =
-            widget::ecc::scalar_mul::fixed_base::VerifierKey {
+            widget::ecc::scalar_mul::fixed_base::VerificationKey {
                 q_l: q_l_poly_commit,
                 q_r: q_r_poly_commit,
                 q_fixed_group_add: q_fixed_group_add_poly_commit,
@@ -213,19 +214,19 @@ impl Compiler {
 
         // verifier Key for curve addition circuits
         let curve_addition_verifier_key =
-            widget::ecc::curve_addition::VerifierKey {
+            widget::ecc::curve_addition::VerificationKey {
                 q_variable_group_add: q_variable_group_add_poly_commit,
             };
 
         // verifier Key for permutation argument
-        let permutation_verifier_key = widget::permutation::VerifierKey {
+        let permutation_verifier_key = widget::permutation::VerificationKey {
             s_sigma_1: s_sigma_1_poly_commit,
             s_sigma_2: s_sigma_2_poly_commit,
             s_sigma_3: s_sigma_3_poly_commit,
             s_sigma_4: s_sigma_4_poly_commit,
         };
 
-        let verifier_key = widget::VerifierKey {
+        let verifier_key = widget::VerificationKey {
             n: constraints,
             arithmetic: arithmetic_verifier_key,
             logic: logic_verifier_key,

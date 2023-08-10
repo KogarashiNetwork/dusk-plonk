@@ -11,7 +11,7 @@ use zkstd::{
 };
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VerifierKey<P: Pairing> {
+pub(crate) struct VerificationKey<P: Pairing> {
     pub(crate) q_variable_group_add: Commitment<P::G1Affine>,
 }
 
@@ -19,7 +19,7 @@ use zksnarks::Evaluations as ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 
-impl<P: Pairing> VerifierKey<P> {
+impl<P: Pairing> VerificationKey<P> {
     pub(crate) fn compute_linearization_commitment(
         &self,
         curve_add_separation_challenge: &P::ScalarField,

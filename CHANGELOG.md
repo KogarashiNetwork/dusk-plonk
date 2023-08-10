@@ -189,7 +189,7 @@ is necessary since `rkyv/validation` was required as a bound.
 
 - Implement `dusk_bytes::Serializable` for all possible structures that need serde. [#352]
 - Introduced a new type that unifies the Public Inputs `PublicInputValue`. [#416]
-- Impl `padded_circuit_size` for `VerifierKey` [#351]
+- Impl `padded_circuit_size` for `VerificationKey` [#351]
 - Impl a generic method that can verify Proofs of any `Circuit`. [#396]
 
 ### Removed
@@ -322,7 +322,7 @@ is necessary since `rkyv/validation` was required as a bound.
 
 ### Added
 
-- Added `ProverKey` & `VerifierKey` to the public API as exported types.
+- Added `ProverKey` & `VerificationKey` to the public API as exported types.
 
 ### Changed
 

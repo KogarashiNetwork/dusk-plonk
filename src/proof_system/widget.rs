@@ -10,34 +10,36 @@ pub mod logic;
 pub mod permutation;
 pub mod range;
 
+use zksnarks::key::arithmetic as arith;
+
 /// PLONK circuit Verification Key.
 ///
 /// This structure is used by the Verifier in order to verify a
 /// [`Proof`](super::Proof).
 #[derive(Debug, PartialEq, Eq, Clone)]
 
-pub struct VerifierKey<P: Pairing> {
+pub struct VerificationKey<P: Pairing> {
     /// Circuit size (not padded to a power of two).
     pub(crate) n: usize,
-    /// VerifierKey for arithmetic gates
-    pub(crate) arithmetic: arithmetic::VerifierKey<P>,
-    /// VerifierKey for logic gates
-    pub(crate) logic: logic::VerifierKey<P>,
-    /// VerifierKey for range gates
-    pub(crate) range: range::VerifierKey<P>,
-    /// VerifierKey for fixed base curve addition gates
-    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::VerifierKey<P>,
-    /// VerifierKey for variable base curve addition gates
-    pub(crate) variable_base: ecc::curve_addition::VerifierKey<P>,
-    /// VerifierKey for permutation checks
-    pub(crate) permutation: permutation::VerifierKey<P>,
+    /// VerificationKey for arithmetic gates
+    pub(crate) arithmetic: arith::VerificationKey<P::G1Affine>,
+    /// VerificationKey for logic gates
+    pub(crate) logic: logic::VerificationKey<P>,
+    /// VerificationKey for range gates
+    pub(crate) range: range::VerificationKey<P>,
+    /// VerificationKey for fixed base curve addition gates
+    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::VerificationKey<P>,
+    /// VerificationKey for variable base curve addition gates
+    pub(crate) variable_base: ecc::curve_addition::VerificationKey<P>,
+    /// VerificationKey for permutation checks
+    pub(crate) permutation: permutation::VerificationKey<P>,
 }
 
 use crate::{fft::Evaluations, transcript::TranscriptProtocol};
 use merlin::Transcript;
 use zkstd::common::Pairing;
 
-impl<P: Pairing> VerifierKey<P> {
+impl<P: Pairing> VerificationKey<P> {
     /// Adds the circuit description to the transcript
     pub(crate) fn seed_transcript(&self, transcript: &mut Transcript) {
         <Transcript as TranscriptProtocol<P>>::append_commitment(

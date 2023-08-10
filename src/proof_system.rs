@@ -14,7 +14,7 @@ pub(crate) mod preprocess;
 pub(crate) mod quotient_poly;
 
 pub(crate) use widget::ProverKey;
-pub(crate) use widget::VerifierKey;
+pub(crate) use widget::VerificationKey;
 
 cfg_if::cfg_if!(
     if #[cfg(feature = "rkyv-impl")] {
@@ -27,6 +27,6 @@ pub use proof::Proof;
 cfg_if::cfg_if!(
     if #[cfg(feature = "rkyv-impl")] {
         pub use proof::{ArchivedProof, ProofResolver};
-        pub use widget::{ArchivedVerifierKey, VerifierKeyResolver};
+        pub use widget::{ArchivedVerificationKey, VerificationKeyResolver};
     }
 );

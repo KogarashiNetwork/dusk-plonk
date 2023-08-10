@@ -12,14 +12,14 @@ use merlin::Transcript;
 
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::proof_system::{Proof, VerifierKey};
+use crate::proof_system::{Proof, VerificationKey};
 use crate::transcript::TranscriptProtocol;
 
 use super::Builder;
 
 /// Verify proofs of a given circuit
 pub struct Verifier<C, P: Pairing> {
-    verifier_key: VerifierKey<P>,
+    verifier_key: VerificationKey<P>,
     opening_key: OpeningKey<P>,
     public_input_indexes: Vec<usize>,
     transcript: Transcript,
@@ -30,7 +30,7 @@ pub struct Verifier<C, P: Pairing> {
 impl<C, P: Pairing> Verifier<C, P> {
     pub(crate) fn new(
         label: Vec<u8>,
-        verifier_key: VerifierKey<P>,
+        verifier_key: VerificationKey<P>,
         opening_key: OpeningKey<P>,
         public_input_indexes: Vec<usize>,
         size: usize,

@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VerifierKey<P: Pairing> {
+pub(crate) struct VerificationKey<P: Pairing> {
     pub(crate) s_sigma_1: Commitment<P::G1Affine>,
     pub(crate) s_sigma_2: Commitment<P::G1Affine>,
     pub(crate) s_sigma_3: Commitment<P::G1Affine>,
@@ -19,7 +19,7 @@ use poly_commit::Commitment;
 use zkstd::behave::PrimeField;
 use zkstd::common::Pairing;
 
-impl<P: Pairing> VerifierKey<P> {
+impl<P: Pairing> VerificationKey<P> {
     const K1: u64 = 7;
     const K2: u64 = 13;
     const K3: u64 = 17;

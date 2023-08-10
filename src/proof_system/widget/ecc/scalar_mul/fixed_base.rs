@@ -10,7 +10,7 @@ mod verifierkey;
 
 pub(crate) use proverkey::ProverKey;
 
-pub(crate) use verifierkey::VerifierKey;
+pub(crate) use verifierkey::VerificationKey;
 
 // Note: The ECC gadget does not check that the initial point is on the curve
 // for two reasons:

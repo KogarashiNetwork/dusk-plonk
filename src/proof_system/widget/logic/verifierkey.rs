@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VerifierKey<P: Pairing> {
+pub(crate) struct VerificationKey<P: Pairing> {
     pub(crate) q_c: Commitment<P::G1Affine>,
     pub(crate) q_logic: Commitment<P::G1Affine>,
 }
@@ -18,7 +18,7 @@ use poly_commit::Commitment;
 use zkstd::behave::PrimeField;
 use zkstd::common::Pairing;
 
-impl<P: Pairing> VerifierKey<P> {
+impl<P: Pairing> VerificationKey<P> {
     pub(crate) fn compute_linearization_commitment(
         &self,
         logic_separation_challenge: &P::ScalarField,

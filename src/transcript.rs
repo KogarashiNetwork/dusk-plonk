@@ -14,7 +14,7 @@ use poly_commit::Commitment;
 use zkstd::behave::{FftField, SigUtils};
 use zkstd::common::Pairing;
 
-use crate::proof_system::VerifierKey;
+use crate::proof_system::VerificationKey;
 
 /// Transcript adds an abstraction over the Merlin transcript
 /// For convenience
@@ -38,7 +38,7 @@ pub(crate) trait TranscriptProtocol<P: Pairing> {
     /// Create a new instance of the base transcript of the protocol
     fn base(
         label: &[u8],
-        verifier_key: &VerifierKey<P>,
+        verifier_key: &VerificationKey<P>,
         constraints: usize,
     ) -> Self;
 }
@@ -70,7 +70,7 @@ impl<P: Pairing> TranscriptProtocol<P> for Transcript {
 
     fn base(
         label: &[u8],
-        verifier_key: &VerifierKey<P>,
+        verifier_key: &VerificationKey<P>,
         constraints: usize,
     ) -> Self {
         // Transcript can't be serialized/deserialized. One alternative is to

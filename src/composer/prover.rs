@@ -18,7 +18,7 @@ use zkstd::behave::{FftField, Group};
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{
-    linearization_poly, quotient_poly, ProverKey, VerifierKey,
+    linearization_poly, quotient_poly, ProverKey, VerificationKey,
 };
 use crate::transcript::TranscriptProtocol;
 use crate::util;
@@ -62,7 +62,7 @@ where
         label: Vec<u8>,
         keypair: KeyPair<P>,
         prover_key: ProverKey<P>,
-        verifier_key: VerifierKey<P>,
+        verifier_key: VerificationKey<P>,
         size: usize,
         constraints: usize,
     ) -> Self {

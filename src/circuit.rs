@@ -9,11 +9,11 @@
 use crate::commitment_scheme::PublicParameters;
 use crate::constraint_system::TurboComposer;
 use crate::error::Error;
-use crate::proof_system::{Proof, Prover, ProverKey, Verifier, VerifierKey};
+use crate::proof_system::{Proof, Prover, ProverKey, Verifier, VerificationKey};
 use alloc::vec::Vec;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
-use bls_12_381::{Fr as BlsScalar};
+use bls_12_381::Fr as BlsScalar;
 use dusk_bytes::{DeserializableSlice, Serializable, Write};
 use jub_jub::{JubJubAffine, JubJubExtended, JubJubScalar};
 use rand_core::RngCore;
@@ -52,18 +52,18 @@ impl From<JubJubExtended> for PublicInputValue {
 /// Collection of structs/objects that the Verifier will use in order to
 /// de/serialize data needed for Circuit proof verification.
 /// This structure can be seen as a link between the [`Circuit`] public input
-/// positions and the [`VerifierKey`] that the Verifier needs to use.
+/// positions and the [`VerificationKey`] that the Verifier needs to use.
 #[derive(Debug, Clone)]
 pub struct VerifierData {
-    key: VerifierKey,
+    key: VerificationKey,
     public_inputs_indexes: Vec<usize>,
 }
 
 impl VerifierData {
-    /// Creates a new `VerifierData` from a [`VerifierKey`] and the public
+    /// Creates a new `VerifierData` from a [`VerificationKey`] and the public
     /// input positions of the circuit that it represents.
     pub const fn new(
-        key: VerifierKey,
+        key: VerificationKey,
         public_inputs_indexes: Vec<usize>,
     ) -> Self {
         Self {
@@ -72,8 +72,8 @@ impl VerifierData {
         }
     }
 
-    /// Returns a reference to the contained [`VerifierKey`].
-    pub const fn key(&self) -> &VerifierKey {
+    /// Returns a reference to the contained [`VerificationKey`].
+    pub const fn key(&self) -> &VerificationKey {
         &self.key
     }
 
@@ -87,7 +87,7 @@ impl VerifierData {
     pub fn to_var_bytes(&self) -> Vec<u8> {
         let mut buff = vec![
             0u8;
-            VerifierKey::SIZE
+            VerificationKey::SIZE
                 + u32::SIZE
                 + self.public_inputs_indexes.len() * u32::SIZE
         ];
@@ -106,7 +106,7 @@ impl VerifierData {
 
     /// Serializes `VerifierData` from a slice of bytes.
     pub fn from_slice(mut buf: &[u8]) -> Result<Self, Error> {
-        let key = VerifierKey::from_reader(&mut buf)?;
+        let key = VerificationKey::from_reader(&mut buf)?;
         let pos_num = u32::from_reader(&mut buf)? as usize;
 
         let mut public_inputs_indexes = vec![];
@@ -252,7 +252,7 @@ where
     fn gadget(&mut self, composer: &mut TurboComposer) -> Result<(), Error>;
 
     /// Compiles the circuit by using a function that returns a `Result`
-    /// with the `ProverKey`, `VerifierKey` and the circuit size.
+    /// with the `ProverKey`, `VerificationKey` and the circuit size.
     fn compile(
         &mut self,
         pub_params: &PublicParameters,
@@ -270,7 +270,7 @@ where
 
         prover.preprocess(&ck)?;
 
-        // Generate & save `VerifierKey` with some random values.
+        // Generate & save `VerificationKey` with some random values.
         let mut verifier = Verifier::new(b"CircuitCompilation");
 
         self.gadget(verifier.composer_mut())?;
@@ -283,7 +283,7 @@ where
                 .expect("Unexpected error. Missing ProverKey in compilation"),
             VerifierData::new(
                 verifier.verifier_key.expect(
-                    "Unexpected error. Missing VerifierKey in compilation",
+                    "Unexpected error. Missing VerificationKey in compilation",
                 ),
                 public_inputs_indexes,
             ),

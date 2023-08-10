@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub(crate) struct VerifierKey<P: Pairing> {
+pub(crate) struct VerificationKey<P: Pairing> {
     pub(crate) q_l: Commitment<P::G1Affine>,
     pub(crate) q_r: Commitment<P::G1Affine>,
     pub(crate) q_fixed_group_add: Commitment<P::G1Affine>,
@@ -23,7 +23,7 @@ use zkstd::behave::Ring;
 use zkstd::behave::TwistedEdwardsCurve;
 use zkstd::common::Pairing;
 
-impl<P: Pairing> VerifierKey<P> {
+impl<P: Pairing> VerificationKey<P> {
     pub(crate) fn compute_linearization_commitment(
         &self,
         ecc_separation_challenge: &P::ScalarField,

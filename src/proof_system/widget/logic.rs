@@ -8,4 +8,4 @@ pub(crate) mod proverkey;
 pub(crate) use proverkey::ProverKey;
 
 mod verifierkey;
-pub(crate) use verifierkey::VerifierKey;
+pub(crate) use verifierkey::VerificationKey;
