@@ -6,7 +6,7 @@
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct VerifierKey<P: Pairing> {
-    pub(crate) q_range: Commitment<P>,
+    pub(crate) q_range: Commitment<P::G1Affine>,
 }
 
 use crate::proof_system::linearization_poly::ProofEvaluations;

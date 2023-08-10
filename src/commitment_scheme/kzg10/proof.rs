@@ -14,12 +14,12 @@ use zkstd::common::Pairing;
 #[allow(dead_code)]
 pub(crate) struct Proof<P: Pairing> {
     /// This is a commitment to the witness polynomial.
-    pub(crate) commitment_to_witness: Commitment<P>,
+    pub(crate) commitment_to_witness: Commitment<P::G1Affine>,
     /// This is the result of evaluating a polynomial at the point `z`.
     pub(crate) evaluated_point: P::ScalarField,
     /// This is the commitment to the polynomial that you want to prove a
     /// statement about.
-    pub(crate) commitment_to_polynomial: Commitment<P>,
+    pub(crate) commitment_to_polynomial: Commitment<P::G1Affine>,
 }
 
 use crate::transcript::TranscriptProtocol;
@@ -35,18 +35,20 @@ use rayon::prelude::*;
 #[derive(Debug)]
 pub(crate) struct AggregateProof<P: Pairing> {
     /// This is a commitment to the aggregated witness polynomial.
-    pub(crate) commitment_to_witness: Commitment<P>,
+    pub(crate) commitment_to_witness: Commitment<P::G1Affine>,
     /// These are the results of the evaluating each polynomial at the
     /// point `z`.
     pub(crate) evaluated_points: Vec<P::ScalarField>,
     /// These are the commitments to the polynomials which you want to
     /// prove a statement about.
-    pub(crate) commitments_to_polynomials: Vec<Commitment<P>>,
+    pub(crate) commitments_to_polynomials: Vec<Commitment<P::G1Affine>>,
 }
 
 impl<P: Pairing> AggregateProof<P> {
     /// Initializes an `AggregatedProof` with the commitment to the witness.
-    pub(crate) fn with_witness(witness: Commitment<P>) -> AggregateProof<P> {
+    pub(crate) fn with_witness(
+        witness: Commitment<P::G1Affine>,
+    ) -> AggregateProof<P> {
         AggregateProof {
             commitment_to_witness: witness,
             evaluated_points: Vec::new(),
@@ -56,7 +58,10 @@ impl<P: Pairing> AggregateProof<P> {
 
     /// Adds an evaluated point with the commitment to the polynomial which
     /// produced it.
-    pub(crate) fn add_part(&mut self, part: (P::ScalarField, Commitment<P>)) {
+    pub(crate) fn add_part(
+        &mut self,
+        part: (P::ScalarField, Commitment<P::G1Affine>),
+    ) {
         self.evaluated_points.push(part.0);
         self.commitments_to_polynomials.push(part.1);
     }

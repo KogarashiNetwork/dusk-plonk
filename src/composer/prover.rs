@@ -179,10 +179,26 @@ where
         let d_w_poly_commit = self.keypair.commit(&d_w_poly_commit)?;
 
         // Add wire polynomial commitments to transcript
-        transcript.append_commitment(b"a_w", &a_w_poly_commit);
-        transcript.append_commitment(b"b_w", &b_w_poly_commit);
-        transcript.append_commitment(b"c_w", &o_w_poly_commit);
-        transcript.append_commitment(b"d_w", &d_w_poly_commit);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"a_w",
+            &a_w_poly_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"b_w",
+            &b_w_poly_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"c_w",
+            &o_w_poly_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"d_w",
+            &d_w_poly_commit,
+        );
 
         // round 2
         // permutation challenges
@@ -219,7 +235,11 @@ where
         let z_poly = Self::blind_poly(rng, &permutation, 2, &fft);
         let z_poly = Polynomial::from_coefficients_vec(z_poly.0);
         let z_poly_commit = self.keypair.commit(&z_poly)?;
-        transcript.append_commitment(b"z", &z_poly_commit);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"z",
+            &z_poly_commit,
+        );
 
         // round 3
         // compute quotient challenge alpha
@@ -293,10 +313,26 @@ where
         let t_4_commit = self.keypair.commit(&t_4_poly)?;
 
         // add quotient polynomial commitments to transcript
-        transcript.append_commitment(b"t_low", &t_low_commit);
-        transcript.append_commitment(b"t_mid", &t_mid_commit);
-        transcript.append_commitment(b"t_high", &t_high_commit);
-        transcript.append_commitment(b"t_4", &t_4_commit);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"t_low",
+            &t_low_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"t_mid",
+            &t_mid_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"t_high",
+            &t_high_commit,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            &mut transcript,
+            b"t_4",
+            &t_4_commit,
+        );
 
         // round 4
         // compute evaluation challenge 'z'

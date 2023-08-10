@@ -26,30 +26,30 @@ use zkstd::behave::Ring;
 
 pub struct Proof<P: Pairing> {
     /// Commitment to the witness polynomial for the left wires.
-    pub(crate) a_comm: Commitment<P>,
+    pub(crate) a_comm: Commitment<P::G1Affine>,
     /// Commitment to the witness polynomial for the right wires.
-    pub(crate) b_comm: Commitment<P>,
+    pub(crate) b_comm: Commitment<P::G1Affine>,
     /// Commitment to the witness polynomial for the output wires.
-    pub(crate) c_comm: Commitment<P>,
+    pub(crate) c_comm: Commitment<P::G1Affine>,
     /// Commitment to the witness polynomial for the fourth wires.
-    pub(crate) d_comm: Commitment<P>,
+    pub(crate) d_comm: Commitment<P::G1Affine>,
 
     /// Commitment to the permutation polynomial.
-    pub(crate) z_comm: Commitment<P>,
+    pub(crate) z_comm: Commitment<P::G1Affine>,
 
     /// Commitment to the quotient polynomial.
-    pub(crate) t_low_comm: Commitment<P>,
+    pub(crate) t_low_comm: Commitment<P::G1Affine>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_mid_comm: Commitment<P>,
+    pub(crate) t_mid_comm: Commitment<P::G1Affine>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_high_comm: Commitment<P>,
+    pub(crate) t_high_comm: Commitment<P::G1Affine>,
     /// Commitment to the quotient polynomial.
-    pub(crate) t_4_comm: Commitment<P>,
+    pub(crate) t_4_comm: Commitment<P::G1Affine>,
 
     /// Commitment to the opening polynomial.
-    pub(crate) w_z_chall_comm: Commitment<P>,
+    pub(crate) w_z_chall_comm: Commitment<P::G1Affine>,
     /// Commitment to the shifted opening polynomial.
-    pub(crate) w_z_chall_w_comm: Commitment<P>,
+    pub(crate) w_z_chall_w_comm: Commitment<P::G1Affine>,
     /// Subset of all of the evaluations added to the proof.
     pub(crate) evaluations: ProofEvaluations<P>,
 }
@@ -95,10 +95,26 @@ impl<P: Pairing> Proof<P> {
         // same challenges
         //
         // Add commitment to witness polynomials to transcript
-        transcript.append_commitment(b"a_w", &self.a_comm);
-        transcript.append_commitment(b"b_w", &self.b_comm);
-        transcript.append_commitment(b"c_w", &self.c_comm);
-        transcript.append_commitment(b"d_w", &self.d_comm);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"a_w",
+            &self.a_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"b_w",
+            &self.b_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"c_w",
+            &self.c_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"d_w",
+            &self.d_comm,
+        );
 
         // Compute beta and gamma challenges
         let beta = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
@@ -112,7 +128,11 @@ impl<P: Pairing> Proof<P> {
         );
 
         // Add commitment to permutation polynomial to transcript
-        transcript.append_commitment(b"z", &self.z_comm);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"z",
+            &self.z_comm,
+        );
 
         // Compute quotient challenge
         let alpha = <Transcript as TranscriptProtocol<P>>::challenge_scalar(
@@ -140,10 +160,26 @@ impl<P: Pairing> Proof<P> {
             );
 
         // Add commitment to quotient polynomial to transcript
-        transcript.append_commitment(b"t_low", &self.t_low_comm);
-        transcript.append_commitment(b"t_mid", &self.t_mid_comm);
-        transcript.append_commitment(b"t_high", &self.t_high_comm);
-        transcript.append_commitment(b"t_4", &self.t_4_comm);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"t_low",
+            &self.t_low_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"t_mid",
+            &self.t_mid_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"t_high",
+            &self.t_high_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"t_4",
+            &self.t_4_comm,
+        );
 
         // Compute evaluation challenge z
         let z_challenge =
@@ -329,8 +365,16 @@ impl<P: Pairing> Proof<P> {
 
         let flattened_proof_b = shifted_aggregate_proof.flatten(transcript);
         // Add commitment to openings to transcript
-        transcript.append_commitment(b"w_z", &self.w_z_chall_comm);
-        transcript.append_commitment(b"w_z_w", &self.w_z_chall_w_comm);
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"w_z",
+            &self.w_z_chall_comm,
+        );
+        <Transcript as TranscriptProtocol<P>>::append_commitment(
+            transcript,
+            b"w_z_w",
+            &self.w_z_chall_w_comm,
+        );
         // Batch check
         if opening_key
             .batch_check(
@@ -399,7 +443,7 @@ impl<P: Pairing> Proof<P> {
         &self,
         z_challenge: &P::ScalarField,
         n: usize,
-    ) -> Commitment<P> {
+    ) -> Commitment<P::G1Affine> {
         let z_n = z_challenge.pow(n as u64);
         let z_two_n = z_challenge.pow(2 * n as u64);
         let z_three_n = z_challenge.pow(3 * n as u64);
@@ -431,7 +475,7 @@ impl<P: Pairing> Proof<P> {
         z_challenge: &P::ScalarField,
         l1_eval: P::ScalarField,
         verifier_key: &VerifierKey<P>,
-    ) -> Commitment<P> {
+    ) -> Commitment<P::G1Affine> {
         let mut scalars: Vec<_> = Vec::with_capacity(6);
         let mut points: Vec<P::G1Affine> = Vec::with_capacity(6);
 

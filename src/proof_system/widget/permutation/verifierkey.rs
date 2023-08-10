@@ -6,10 +6,10 @@
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct VerifierKey<P: Pairing> {
-    pub(crate) s_sigma_1: Commitment<P>,
-    pub(crate) s_sigma_2: Commitment<P>,
-    pub(crate) s_sigma_3: Commitment<P>,
-    pub(crate) s_sigma_4: Commitment<P>,
+    pub(crate) s_sigma_1: Commitment<P::G1Affine>,
+    pub(crate) s_sigma_2: Commitment<P::G1Affine>,
+    pub(crate) s_sigma_3: Commitment<P::G1Affine>,
+    pub(crate) s_sigma_4: Commitment<P::G1Affine>,
 }
 
 use crate::proof_system::linearization_poly::ProofEvaluations;
