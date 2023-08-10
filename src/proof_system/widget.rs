@@ -4,7 +4,6 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub mod ecc;
 pub mod logic;
 pub mod permutation;
 pub mod range;
@@ -28,7 +27,7 @@ pub struct ProvingKey<P: Pairing> {
     /// ProvingKey for range gate
     pub(crate) range: range::ProvingKey<P>,
     /// ProvingKey for fixed base curve addition gates
-    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProvingKey<P>,
+    pub(crate) fixed_base: curve::scalar::ProvingKey<P>,
     /// ProvingKey for variable base curve addition gates
     pub(crate) variable_base: curve::add::ProvingKey<P>,
     /// ProvingKey for permutation checks

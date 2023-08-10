@@ -363,13 +363,13 @@ impl Compiler {
             q_logic: (selectors.q_logic, q_logic_eval_8n),
         };
 
-        let ecc_prover_key = widget::ecc::scalar_mul::fixed_base::ProvingKey {
-            q_l: (selectors.q_l, q_l_eval_8n),
-            q_r: (selectors.q_r, q_r_eval_8n),
-            q_c: (selectors.q_c, q_c_eval_8n),
+        let ecc_prover_key = scalar::ProvingKey {
+            q_l: (selectors.q_l, PolyEval::new(q_l_eval_8n.evals)),
+            q_r: (selectors.q_r, PolyEval::new(q_r_eval_8n.evals)),
+            q_c: (selectors.q_c, PolyEval::new(q_c_eval_8n.evals)),
             q_fixed_group_add: (
                 selectors.q_fixed_group_add,
-                q_fixed_group_add_eval_8n,
+                PolyEval::new(q_fixed_group_add_eval_8n.evals),
             ),
         };
 
