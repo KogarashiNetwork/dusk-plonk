@@ -358,9 +358,12 @@ impl Compiler {
             q_range: (selectors.q_range, q_range_eval_8n),
         };
 
-        let logic_prover_key = widget::logic::ProvingKey {
-            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
-            q_logic: (selectors.q_logic, q_logic_eval_8n),
+        let logic_prover_key = logic::ProvingKey {
+            q_c: (
+                selectors.q_c.clone(),
+                PolyEval::new(q_c_eval_8n.evals.clone()),
+            ),
+            q_logic: (selectors.q_logic, PolyEval::new(q_logic_eval_8n.evals)),
         };
 
         let ecc_prover_key = scalar::ProvingKey {

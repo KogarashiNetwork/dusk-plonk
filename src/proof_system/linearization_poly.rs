@@ -177,7 +177,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
         d_next_eval,
     );
 
-    let c = prover_key.logic.compute_linearization(
+    let c = prover_key.logic.linearize(
         logic_separation_challenge,
         a_eval,
         a_next_eval,
