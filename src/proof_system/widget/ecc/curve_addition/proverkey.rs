@@ -9,12 +9,12 @@ use poly_commit::Polynomial;
 use zkstd::behave::*;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub(crate) struct ProverKey<P: Pairing> {
+pub(crate) struct ProvingKey<P: Pairing> {
     pub(crate) q_variable_group_add:
         (Polynomial<P::ScalarField>, Evaluations<P>),
 }
 
-impl<P: Pairing> ProverKey<P> {
+impl<P: Pairing> ProvingKey<P> {
     pub(crate) fn compute_quotient_i(
         &self,
         index: usize,

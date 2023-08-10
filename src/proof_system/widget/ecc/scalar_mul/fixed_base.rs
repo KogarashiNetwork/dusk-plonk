@@ -6,7 +6,7 @@
 
 pub(crate) mod proverkey;
 
-pub(crate) use proverkey::ProverKey;
+pub(crate) use proverkey::ProvingKey;
 
 // Note: The ECC gadget does not check that the initial point is on the curve
 // for two reasons:

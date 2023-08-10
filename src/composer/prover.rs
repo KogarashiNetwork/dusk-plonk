@@ -18,7 +18,7 @@ use zkstd::behave::{FftField, Group};
 
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
-use crate::proof_system::{linearization_poly, quotient_poly, ProverKey};
+use crate::proof_system::{linearization_poly, quotient_poly, ProvingKey};
 use crate::util;
 
 use super::{Builder, Circuit, Composer};
@@ -30,7 +30,7 @@ where
     C: Circuit<P>,
     P: Pairing,
 {
-    pub(crate) prover_key: ProverKey<P>,
+    pub(crate) prover_key: ProvingKey<P>,
     pub(crate) keypair: KeyPair<P>,
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
@@ -44,7 +44,7 @@ where
     C: Circuit<P>,
     P: Pairing,
 {
-    type Target = ProverKey<P>;
+    type Target = ProvingKey<P>;
 
     fn deref(&self) -> &Self::Target {
         &self.prover_key
@@ -59,7 +59,7 @@ where
     pub(crate) fn new(
         label: Vec<u8>,
         keypair: KeyPair<P>,
-        prover_key: ProverKey<P>,
+        prover_key: ProvingKey<P>,
         verifier_key: VerificationKey<P>,
         size: usize,
         constraints: usize,

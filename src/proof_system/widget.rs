@@ -18,21 +18,21 @@ use zkstd::common::Pairing;
 /// This structure is used by the Prover in order to construct a
 /// [`Proof`](crate::proof_system::Proof).
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct ProverKey<P: Pairing> {
+pub struct ProvingKey<P: Pairing> {
     /// Circuit size
     pub(crate) n: usize,
-    /// ProverKey for arithmetic gate
-    pub(crate) arithmetic: arithmetic::ProverKey<P::ScalarField>,
-    /// ProverKey for logic gate
-    pub(crate) logic: logic::ProverKey<P>,
-    /// ProverKey for range gate
-    pub(crate) range: range::ProverKey<P>,
-    /// ProverKey for fixed base curve addition gates
-    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProverKey<P>,
-    /// ProverKey for variable base curve addition gates
-    pub(crate) variable_base: ecc::curve_addition::ProverKey<P>,
-    /// ProverKey for permutation checks
-    pub(crate) permutation: permutation::ProverKey<P>,
+    /// ProvingKey for arithmetic gate
+    pub(crate) arithmetic: arithmetic::ProvingKey<P::ScalarField>,
+    /// ProvingKey for logic gate
+    pub(crate) logic: logic::ProvingKey<P>,
+    /// ProvingKey for range gate
+    pub(crate) range: range::ProvingKey<P>,
+    /// ProvingKey for fixed base curve addition gates
+    pub(crate) fixed_base: ecc::scalar_mul::fixed_base::ProvingKey<P>,
+    /// ProvingKey for variable base curve addition gates
+    pub(crate) variable_base: ecc::curve_addition::ProvingKey<P>,
+    /// ProvingKey for permutation checks
+    pub(crate) permutation: permutation::ProvingKey<P>,
     // Pre-processes the 8n Evaluations for the vanishing polynomial, so
     // they do not need to be computed at the proving stage.
     // Note: With this, we can combine all parts of the quotient polynomial
@@ -41,7 +41,7 @@ pub struct ProverKey<P: Pairing> {
     pub(crate) v_h_coset_8n: Evaluations<P>,
 }
 
-impl<P: Pairing> ProverKey<P> {
+impl<P: Pairing> ProvingKey<P> {
     pub(crate) fn v_h_coset_8n(&self) -> &Evaluations<P> {
         &self.v_h_coset_8n
     }

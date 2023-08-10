@@ -17,7 +17,7 @@ use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use crate::fft::{EvaluationDomain, Evaluations};
 use crate::proof_system::preprocess::Polynomials;
-use crate::proof_system::{widget, ProverKey};
+use crate::proof_system::{widget, ProvingKey};
 use sp_std::vec;
 
 /// Generate the arguments to prove and verify a circuit
@@ -335,7 +335,7 @@ impl Compiler {
             s_sigma_4: s_sigma_4_poly,
         };
 
-        let arithmetic_prover_key = arithmetic::ProverKey {
+        let arithmetic_prover_key = arithmetic::ProvingKey {
             q_m: (selectors.q_m, PolyEval::new(q_m_eval_8n.evals)),
             q_l: (
                 selectors.q_l.clone(),
@@ -354,16 +354,16 @@ impl Compiler {
             q_arith: (selectors.q_arith, PolyEval::new(q_arith_eval_8n.evals)),
         };
 
-        let range_prover_key = widget::range::ProverKey {
+        let range_prover_key = widget::range::ProvingKey {
             q_range: (selectors.q_range, q_range_eval_8n),
         };
 
-        let logic_prover_key = widget::logic::ProverKey {
+        let logic_prover_key = widget::logic::ProvingKey {
             q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
             q_logic: (selectors.q_logic, q_logic_eval_8n),
         };
 
-        let ecc_prover_key = widget::ecc::scalar_mul::fixed_base::ProverKey {
+        let ecc_prover_key = widget::ecc::scalar_mul::fixed_base::ProvingKey {
             q_l: (selectors.q_l, q_l_eval_8n),
             q_r: (selectors.q_r, q_r_eval_8n),
             q_c: (selectors.q_c, q_c_eval_8n),
@@ -373,7 +373,7 @@ impl Compiler {
             ),
         };
 
-        let permutation_prover_key = widget::permutation::ProverKey {
+        let permutation_prover_key = widget::permutation::ProvingKey {
             s_sigma_1: (selectors.s_sigma_1, s_sigma_1_eval_8n),
             s_sigma_2: (selectors.s_sigma_2, s_sigma_2_eval_8n),
             s_sigma_3: (selectors.s_sigma_3, s_sigma_3_eval_8n),
@@ -382,7 +382,7 @@ impl Compiler {
         };
 
         let curve_addition_prover_key =
-            widget::ecc::curve_addition::ProverKey {
+            widget::ecc::curve_addition::ProvingKey {
                 q_variable_group_add: (
                     selectors.q_variable_group_add,
                     q_variable_group_add_eval_8n,
@@ -392,7 +392,7 @@ impl Compiler {
         let v_h_coset_8n =
             domain_8n.compute_vanishing_poly_over_coset(fft.size() as u64);
 
-        let prover_key = ProverKey {
+        let prover_key = ProvingKey {
             n: fft.size(),
             arithmetic: arithmetic_prover_key,
             logic: logic_prover_key,

@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![allow(clippy::type_complexity)]
-use crate::{error::Error, proof_system::ProverKey};
+use crate::{error::Error, proof_system::ProvingKey};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use sp_std::vec;
@@ -15,10 +15,10 @@ use poly_commit::{Fft, Polynomial};
 use zkstd::behave::*;
 
 /// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
-/// [`ProverKey`] and some other info.
+/// [`ProvingKey`] and some other info.
 pub(crate) fn compute<P: Pairing>(
     fft: &Fft<P::ScalarField>,
-    prover_key: &ProverKey<P>,
+    prover_key: &ProvingKey<P>,
     z_poly: &Polynomial<P::ScalarField>,
     (a_w_poly, b_w_poly, c_w_poly, d_w_poly): (
         &Polynomial<P::ScalarField>,
@@ -127,7 +127,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
         &P::ScalarField,
         &P::ScalarField,
     ),
-    prover_key: &ProverKey<P>,
+    prover_key: &ProvingKey<P>,
     (a_w_eval_8n, b_w_eval_8n, c_w_eval_8n, d_w_eval_8n): (
         &[P::ScalarField],
         &[P::ScalarField],
@@ -216,7 +216,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
 fn compute_permutation_checks<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     fft_n8: &Fft<P::ScalarField>,
-    prover_key: &ProverKey<P>,
+    prover_key: &ProvingKey<P>,
     (a_w_eval_8n, b_w_eval_8n, c_w_eval_8n, d_w_eval_8n): (
         &[P::ScalarField],
         &[P::ScalarField],

@@ -9,7 +9,7 @@ use poly_commit::Polynomial;
 use zkstd::behave::*;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub(crate) struct ProverKey<P: Pairing> {
+pub(crate) struct ProvingKey<P: Pairing> {
     pub(crate) s_sigma_1: (Polynomial<P::ScalarField>, Evaluations<P>),
     pub(crate) s_sigma_2: (Polynomial<P::ScalarField>, Evaluations<P>),
     pub(crate) s_sigma_3: (Polynomial<P::ScalarField>, Evaluations<P>),
@@ -23,7 +23,7 @@ pub(crate) struct ProverKey<P: Pairing> {
      * domain elements] */
 }
 
-impl<P: Pairing> ProverKey<P> {
+impl<P: Pairing> ProvingKey<P> {
     const K1: u64 = 7;
     const K2: u64 = 13;
     const K3: u64 = 17;

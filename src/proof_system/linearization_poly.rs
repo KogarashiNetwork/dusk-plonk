@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::proof_system::ProverKey;
+use crate::proof_system::ProvingKey;
 
 use poly_commit::Polynomial;
 use zksnarks::Evaluations as ProofEvaluations;
@@ -23,7 +23,7 @@ pub(crate) struct Evaluations<P: Pairing> {
 #[allow(clippy::type_complexity)]
 pub(crate) fn compute<P: Pairing>(
     group_generator: P::ScalarField,
-    prover_key: &ProverKey<P>,
+    prover_key: &ProvingKey<P>,
     (
         alpha,
         beta,
@@ -158,7 +158,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
     q_c_eval: &P::ScalarField,
     q_l_eval: &P::ScalarField,
     q_r_eval: &P::ScalarField,
-    prover_key: &ProverKey<P>,
+    prover_key: &ProvingKey<P>,
 ) -> Polynomial<P::ScalarField> {
     let a = prover_key.arithmetic.linearize(
         a_eval,

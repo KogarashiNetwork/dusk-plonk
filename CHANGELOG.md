@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Remove manual implementation of `CheckBytes` for `ArchivedProverKey`. This
+- Remove manual implementation of `CheckBytes` for `ArchivedProvingKey`. This
 is necessary since `rkyv/validation` was required as a bound.
 
 ## [0.13.0] - 2022-10-19
@@ -89,7 +89,7 @@ is necessary since `rkyv/validation` was required as a bound.
 ### Added
 
 - Add back benchmarks to the crate. [#555]
-- Add `ProverKey::num_multiset` [#581]
+- Add `ProvingKey::num_multiset` [#581]
 - Add alloc feature for lookup Vec structs [#582]
 - Add test coverage for polynomial evaluations [#586]
 - Add `Witness` by removing `AllocatedScalar`. [#588]
@@ -322,7 +322,7 @@ is necessary since `rkyv/validation` was required as a bound.
 
 ### Added
 
-- Added `ProverKey` & `VerificationKey` to the public API as exported types.
+- Added `ProvingKey` & `VerificationKey` to the public API as exported types.
 
 ### Changed
 

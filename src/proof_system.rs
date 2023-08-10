@@ -11,6 +11,6 @@ pub(crate) mod preprocess;
 pub(crate) mod proof;
 pub(crate) mod quotient_poly;
 pub(crate) mod widget;
-pub(crate) use widget::ProverKey;
+pub(crate) use widget::ProvingKey;
 
 pub use proof::Proof;

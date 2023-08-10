@@ -9,7 +9,7 @@
 use crate::commitment_scheme::PublicParameters;
 use crate::constraint_system::TurboComposer;
 use crate::error::Error;
-use crate::proof_system::{Proof, Prover, ProverKey, Verifier, VerificationKey};
+use crate::proof_system::{Proof, Prover, ProvingKey, Verifier, VerificationKey};
 use alloc::vec::Vec;
 #[cfg(feature = "canon")]
 use canonical_derive::Canon;
@@ -252,15 +252,15 @@ where
     fn gadget(&mut self, composer: &mut TurboComposer) -> Result<(), Error>;
 
     /// Compiles the circuit by using a function that returns a `Result`
-    /// with the `ProverKey`, `VerificationKey` and the circuit size.
+    /// with the `ProvingKey`, `VerificationKey` and the circuit size.
     fn compile(
         &mut self,
         pub_params: &PublicParameters,
-    ) -> Result<(ProverKey, VerifierData), Error> {
+    ) -> Result<(ProvingKey, VerifierData), Error> {
         // Setup PublicParams
         let (ck, _) = pub_params.trim(self.padded_gates())?;
 
-        // Generate & save `ProverKey` with some random values.
+        // Generate & save `ProvingKey` with some random values.
         let mut prover = Prover::new(b"CircuitCompilation");
 
         self.gadget(prover.composer_mut())?;
@@ -280,7 +280,7 @@ where
         Ok((
             prover
                 .prover_key
-                .expect("Unexpected error. Missing ProverKey in compilation"),
+                .expect("Unexpected error. Missing ProvingKey in compilation"),
             VerifierData::new(
                 verifier.verifier_key.expect(
                     "Unexpected error. Missing VerificationKey in compilation",
@@ -290,12 +290,12 @@ where
         ))
     }
 
-    /// Generates a proof using the provided `CircuitInputs` & `ProverKey`
+    /// Generates a proof using the provided `CircuitInputs` & `ProvingKey`
     /// instances.
     fn prove<R: RngCore>(
         &mut self,
         pub_params: &PublicParameters,
-        prover_key: &ProverKey,
+        prover_key: &ProvingKey,
         transcript_init: &'static [u8],
         rng: &mut R,
     ) -> Result<Proof, Error> {
@@ -307,7 +307,7 @@ where
         // Fill witnesses for Prover
         self.gadget(prover.composer_mut())?;
 
-        // Add ProverKey to Prover
+        // Add ProvingKey to Prover
         prover.prover_key = Some(prover_key.clone());
         prover.prove(&ck, rng)
     }

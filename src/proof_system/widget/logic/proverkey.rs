@@ -10,12 +10,12 @@ use zkstd::behave::Ring;
 use zkstd::common::{Pairing, PrimeField};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub(crate) struct ProverKey<P: Pairing> {
+pub(crate) struct ProvingKey<P: Pairing> {
     pub(crate) q_c: (Polynomial<P::ScalarField>, Evaluations<P>),
     pub(crate) q_logic: (Polynomial<P::ScalarField>, Evaluations<P>),
 }
 
-impl<P: Pairing> ProverKey<P> {
+impl<P: Pairing> ProvingKey<P> {
     pub(crate) fn compute_quotient_i(
         &self,
         index: usize,
