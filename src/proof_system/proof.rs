@@ -489,11 +489,14 @@ impl<P: Pairing> Proof<P> {
                 points.push(*point);
             });
 
-        verifier_key.range.compute_linearization_commitment(
-            range_sep_challenge,
-            &mut scalars,
-            &mut points,
-            &self.evaluations,
+        let (range_scalars, range_points) = verifier_key
+            .range
+            .linearize(range_sep_challenge, &self.evaluations);
+        range_scalars.iter().zip(range_points.iter()).for_each(
+            |(scalar, point)| {
+                scalars.push(*scalar);
+                points.push(*point);
+            },
         );
 
         let (logic_scalars, logic_points) = verifier_key

@@ -8,7 +8,7 @@ use poly_commit::{Fft, KeyPair, Polynomial};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
-    logic, permutation,
+    logic, permutation, range,
 };
 use zkstd::common::{Group, Pairing, Ring};
 
@@ -198,7 +198,7 @@ impl Compiler {
         };
 
         // verifier Key for range circuits
-        let range_verifier_key = widget::range::VerificationKey {
+        let range_verifier_key = range::VerificationKey {
             q_range: q_range_poly_commit,
         };
 

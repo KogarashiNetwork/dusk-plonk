@@ -14,6 +14,7 @@ use zksnarks::key::arithmetic as arith;
 use zksnarks::key::curve::{add as addition, scalar};
 use zksnarks::key::logic as logic_key;
 use zksnarks::key::permutation as permutation_key;
+use zksnarks::key::range as range_key;
 
 /// PLONK circuit Verification Key.
 ///
@@ -29,7 +30,7 @@ pub struct VerificationKey<P: Pairing> {
     /// VerificationKey for logic gates
     pub(crate) logic: logic_key::VerificationKey<P::G1Affine>,
     /// VerificationKey for range gates
-    pub(crate) range: range::VerificationKey<P>,
+    pub(crate) range: range_key::VerificationKey<P::G1Affine>,
     /// VerificationKey for fixed base curve addition gates
     pub(crate) fixed_base: scalar::VerificationKey<P>,
     /// VerificationKey for variable base curve addition gates
