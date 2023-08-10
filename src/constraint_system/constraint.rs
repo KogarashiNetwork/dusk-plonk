@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::composer::{Builder, Composer};
-use crate::constraint_system::Witness;
+use zksnarks::Witness;
 use zkstd::behave::{Group, Ring};
 use zkstd::common::Pairing;
 

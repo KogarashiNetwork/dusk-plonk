@@ -4,9 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use zksnarks::Witness;
 use zkstd::common::Pairing;
-
-use crate::constraint_system::Witness;
 
 /// Represents a JubJub point in the circuit
 #[derive(Debug, Clone, Copy)]

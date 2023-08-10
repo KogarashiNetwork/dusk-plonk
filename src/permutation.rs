@@ -4,13 +4,14 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::constraint_system::{WireData, Witness};
+use crate::constraint_system::WireData;
 use alloc::vec::Vec;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
 use poly_commit::{Fft, Polynomial};
 use sp_std::vec;
+use zksnarks::Witness;
 use zkstd::behave::*;
 
 #[cfg(test)]

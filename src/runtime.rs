@@ -7,9 +7,10 @@
 //! PLONK runtime controller
 
 use core::marker::PhantomData;
+use zksnarks::Witness;
 use zkstd::common::Pairing;
 
-use crate::constraint_system::{Constraint, Witness};
+use crate::constraint_system::Constraint;
 
 #[cfg(feature = "debug")]
 use crate::debugger::Debugger;

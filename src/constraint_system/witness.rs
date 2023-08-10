@@ -22,21 +22,3 @@ pub(crate) enum WireData {
     /// Fourth Wire of n'th gate
     Fourth(usize),
 }
-
-/// Allocated witness in the constraint system.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Witness {
-    index: usize,
-}
-
-impl Witness {
-    /// Generate a new [`Witness`]
-    pub(crate) const fn new(index: usize) -> Self {
-        Self { index }
-    }
-
-    /// Index of the allocated witness in the composer
-    pub const fn index(&self) -> usize {
-        self.index
-    }
-}
