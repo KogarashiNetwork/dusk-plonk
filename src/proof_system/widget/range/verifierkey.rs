@@ -9,8 +9,8 @@ pub(crate) struct VerifierKey<P: Pairing> {
     pub(crate) q_range: Commitment<P::G1Affine>,
 }
 
-use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::range::proverkey::delta;
+use zksnarks::Evaluations as ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 use poly_commit::Commitment;
@@ -22,7 +22,7 @@ impl<P: Pairing> VerifierKey<P> {
         range_separation_challenge: &P::ScalarField,
         scalars: &mut Vec<P::ScalarField>,
         points: &mut Vec<P::G1Affine>,
-        evaluations: &ProofEvaluations<P>,
+        evaluations: &ProofEvaluations<P::ScalarField>,
     ) {
         let four = P::ScalarField::from(4);
 

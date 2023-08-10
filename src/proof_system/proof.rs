@@ -7,9 +7,9 @@
 //! A Proof stores the commitments to all of the elements that
 //! are needed to univocally identify a prove of some statement.
 
-use super::linearization_poly::ProofEvaluations;
 use codec::{Decode, Encode};
 use poly_commit::{Commitment, Polynomial};
+use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::behave::Ring;
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
@@ -51,7 +51,7 @@ pub struct Proof<P: Pairing> {
     /// Commitment to the shifted opening polynomial.
     pub(crate) w_z_chall_w_comm: Commitment<P::G1Affine>,
     /// Subset of all of the evaluations added to the proof.
-    pub(crate) evaluations: ProofEvaluations<P>,
+    pub(crate) evaluations: ProofEvaluations<P::ScalarField>,
 }
 
 use crate::{

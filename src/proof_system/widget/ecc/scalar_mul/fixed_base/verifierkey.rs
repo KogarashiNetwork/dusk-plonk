@@ -11,10 +11,10 @@ pub(crate) struct VerifierKey<P: Pairing> {
     pub(crate) q_fixed_group_add: Commitment<P::G1Affine>,
 }
 
-use crate::proof_system::linearization_poly::ProofEvaluations;
 use crate::proof_system::widget::ecc::scalar_mul::fixed_base::proverkey::{
     check_bit_consistency, extract_bit,
 };
+use zksnarks::Evaluations as ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 use poly_commit::Commitment;
@@ -29,7 +29,7 @@ impl<P: Pairing> VerifierKey<P> {
         ecc_separation_challenge: &P::ScalarField,
         scalars: &mut Vec<P::ScalarField>,
         points: &mut Vec<P::G1Affine>,
-        evaluations: &ProofEvaluations<P>,
+        evaluations: &ProofEvaluations<P::ScalarField>,
     ) {
         let kappa = ecc_separation_challenge.square();
         let kappa_sq = kappa.square();

@@ -12,7 +12,7 @@ pub(crate) struct VerifierKey<P: Pairing> {
     pub(crate) s_sigma_4: Commitment<P::G1Affine>,
 }
 
-use crate::proof_system::linearization_poly::ProofEvaluations;
+use zksnarks::Evaluations as ProofEvaluations;
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
 use poly_commit::Commitment;
@@ -27,7 +27,7 @@ impl<P: Pairing> VerifierKey<P> {
         &self,
         scalars: &mut Vec<P::ScalarField>,
         points: &mut Vec<P::G1Affine>,
-        evaluations: &ProofEvaluations<P>,
+        evaluations: &ProofEvaluations<P::ScalarField>,
         z_challenge: &P::ScalarField,
         (alpha, beta, gamma): (
             &P::ScalarField,
