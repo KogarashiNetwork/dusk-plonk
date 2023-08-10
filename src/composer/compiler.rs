@@ -5,7 +5,10 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::{Fft, KeyPair, Polynomial};
-use zksnarks::key::{arithmetic, curve::add};
+use zksnarks::key::{
+    arithmetic,
+    curve::{add, scalar},
+};
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Composer, Prover, Verifier};
@@ -205,12 +208,11 @@ impl Compiler {
         };
 
         // verifier Key for ecc circuits
-        let ecc_verifier_key =
-            widget::ecc::scalar_mul::fixed_base::VerificationKey {
-                q_l: q_l_poly_commit,
-                q_r: q_r_poly_commit,
-                q_fixed_group_add: q_fixed_group_add_poly_commit,
-            };
+        let ecc_verifier_key = scalar::VerificationKey {
+            q_l: q_l_poly_commit,
+            q_r: q_r_poly_commit,
+            q_fixed_group_add: q_fixed_group_add_poly_commit,
+        };
 
         // verifier Key for curve addition circuits
         let curve_addition_verifier_key = add::VerificationKey {
