@@ -13,9 +13,10 @@ use dusk_cdf::{
     BaseConfig, Config, EncodableConstraint, EncodableSource, EncodableWitness,
     Encoder, EncoderContextFileProvider, Polynomial, Selectors, WiredWitnesses,
 };
+use zksnarks::Witness;
 use zkstd::behave::{Group, Pairing, SigUtils};
 
-use crate::constraint_system::{Constraint, Selector, WiredWitness, Witness};
+use crate::constraint_system::{Constraint, Selector, WiredWitness};
 use crate::runtime::RuntimeEvent;
 
 /// PLONK debugger
