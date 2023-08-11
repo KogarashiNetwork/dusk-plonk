@@ -312,10 +312,9 @@ impl<P: Pairing> Permutation<P> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::fft::EvaluationDomain;
     use bls_12_381::Fr as BlsScalar;
     use ec_pairing::TatePairing;
-    use poly_commit::Polynomial;
+    use poly_commit::{Fft, Polynomial};
     use rand_core::OsRng;
 
     pub(crate) const K1: BlsScalar = BlsScalar::to_mont_form([7, 0, 0, 0]);
@@ -324,7 +323,7 @@ mod test {
 
     #[allow(dead_code)]
     fn compute_fast_permutation_poly(
-        domain: &EvaluationDomain<TatePairing>,
+        domain: &Fft<BlsScalar>,
         a_w: &[BlsScalar],
         b_w: &[BlsScalar],
         c_w: &[BlsScalar],
@@ -504,8 +503,8 @@ mod test {
         z
     }
 
-    fn compute_slow_permutation_poly<I>(
-        domain: &EvaluationDomain<TatePairing>,
+    fn compute_slow_permutation_poly<I, F: FftField>(
+        domain: &Fft<F>,
         a_w: I,
         b_w: I,
         c_w: I,
@@ -804,10 +803,9 @@ mod test {
         assert_eq!(s_sigma_4[2], WireData::Fourth(3));
         assert_eq!(s_sigma_4[3], WireData::Fourth(0));
 
-        let domain =
-            EvaluationDomain::<TatePairing>::new(num_wire_mappings).unwrap();
+        let domain = Fft::new(k);
         let fft = Fft::<BlsScalar>::new(k);
-        let w = domain.group_gen;
+        let w: BlsScalar = domain.generator();
         let w_squared = w.pow(2);
         let w_cubed = w.pow(3);
 
@@ -996,40 +994,6 @@ mod test {
         assert_eq!(encoded_s_sigma_4[3], K3);
     }
 
-    #[test]
-    fn test_basic_slow_permutation_poly() {
-        let k = 1;
-        let num_wire_mappings = 2;
-        let mut perm = Permutation::new();
-        let domain =
-            EvaluationDomain::<TatePairing>::new(num_wire_mappings).unwrap();
-        let fft = Fft::<BlsScalar>::new(k);
-
-        let var_one = perm.new_witness();
-        let var_two = perm.new_witness();
-        let var_three = perm.new_witness();
-        let var_four = perm.new_witness();
-
-        perm.add_witnesses_to_map(var_one, var_two, var_three, var_four, 0);
-        perm.add_witnesses_to_map(var_three, var_two, var_one, var_four, 1);
-
-        let a_w: Vec<_> = vec![BlsScalar::one(), BlsScalar::from(3)];
-        let b_w: Vec<_> = vec![BlsScalar::from(2), BlsScalar::from(2)];
-        let c_w: Vec<_> = vec![BlsScalar::from(3), BlsScalar::one()];
-        let d_w: Vec<_> = vec![BlsScalar::one(), BlsScalar::one()];
-
-        test_correct_permutation_poly(
-            num_wire_mappings,
-            perm,
-            &domain,
-            &fft,
-            a_w,
-            b_w,
-            c_w,
-            d_w,
-        );
-    }
-
     // shifts the polynomials by one root of unity
     fn shift_poly_by_one(z_coefficients: Vec<BlsScalar>) -> Vec<BlsScalar> {
         let mut shifted_z_coefficients = z_coefficients;
@@ -1041,7 +1005,7 @@ mod test {
     fn test_correct_permutation_poly(
         n: usize,
         mut perm: Permutation<TatePairing>,
-        domain: &EvaluationDomain<TatePairing>,
+        domain: &Fft<BlsScalar>,
         fft: &Fft<BlsScalar>,
         a_w: Vec<BlsScalar>,
         b_w: Vec<BlsScalar>,
@@ -1119,7 +1083,7 @@ mod test {
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
         assert_eq!(z_poly.evaluate(&BlsScalar::one()), BlsScalar::one());
-        let n_plus_one = fft.elements.last().unwrap() * domain.group_gen;
+        let n_plus_one = fft.elements.last().unwrap() * domain.generator();
         assert_eq!(z_poly.evaluate(&n_plus_one), BlsScalar::one());
         //
         // Check that when z is unblinded, it has the correct degree
@@ -1131,7 +1095,7 @@ mod test {
 
         for i in 1..roots.len() {
             let current_root = roots[i];
-            let next_root = current_root * domain.group_gen;
+            let next_root = current_root * domain.generator();
 
             let current_identity_perm_product = &numerator_components[i];
             assert_ne!(current_identity_perm_product, &BlsScalar::zero());
@@ -1166,7 +1130,7 @@ mod test {
         fft.idft(&mut shifted_z);
         let shifted_z_poly = Polynomial::from_coefficients_vec(shifted_z.0);
         for element in fft.elements.iter() {
-            let z_eval = z_poly.evaluate(&(*element * domain.group_gen));
+            let z_eval = z_poly.evaluate(&(*element * domain.generator()));
             let shifted_z_eval = shifted_z_poly.evaluate(element);
 
             assert_eq!(z_eval, shifted_z_eval)

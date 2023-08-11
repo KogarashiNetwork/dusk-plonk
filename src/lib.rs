@@ -66,8 +66,6 @@ pub mod composer;
 pub mod constraint_system;
 pub mod runtime;
 
-mod fft;
-
 #[cfg(feature = "debug")]
 pub(crate) mod debugger;
 

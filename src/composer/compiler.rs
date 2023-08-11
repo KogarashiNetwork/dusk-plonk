@@ -15,7 +15,6 @@ use zkstd::common::{Group, Pairing, Ring};
 use super::{Builder, Circuit, Composer, Prover, Verifier};
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::fft::EvaluationDomain;
 use crate::proof_system::preprocess::Polynomials;
 use sp_std::vec;
 
@@ -244,7 +243,6 @@ impl Compiler {
         let n = (8 * fft.size()).next_power_of_two();
         let k = n.trailing_zeros();
         let fft_8n = Fft::new(k as usize);
-        let domain_8n = EvaluationDomain::<P>::new(8 * fft.size())?;
         let mut s_sigma_1 = s_sigma_1_poly.clone();
         let mut s_sigma_2 = s_sigma_2_poly.clone();
         let mut s_sigma_3 = s_sigma_3_poly.clone();
@@ -355,7 +353,7 @@ impl Compiler {
         };
 
         let v_h_coset_8n =
-            domain_8n.compute_vanishing_poly_over_coset(fft.size() as u64);
+            fft_8n.compute_vanishing_poly_over_coset(fft.size() as u64);
 
         let prover_key = ProvingKey {
             n: fft.size(),
@@ -365,7 +363,7 @@ impl Compiler {
             permutation: permutation_prover_key,
             variable_base: curve_addition_prover_key,
             fixed_base: ecc_prover_key,
-            v_h_coset_8n: PolyEval::new(v_h_coset_8n.evals),
+            v_h_coset_8n,
         };
 
         let public_input_indexes = prover.public_input_indexes();
