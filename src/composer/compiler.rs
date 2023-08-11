@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::{Coefficients, Evaluations as PolyEval, Fft, KeyPair};
+use poly_commit::{Coefficients, Fft, KeyPair, PointsValue};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
@@ -272,26 +272,26 @@ impl Compiler {
         fft_8n.coset_dft(&mut s_sigma_4);
         fft_8n.coset_dft(&mut min_p);
 
-        let q_m_eval_8n = PolyEval::new(q_m.0.clone());
-        let q_l_eval_8n = PolyEval::new(q_l.0.clone());
-        let q_r_eval_8n = PolyEval::new(q_r.0.clone());
-        let q_o_eval_8n = PolyEval::new(q_o.0.clone());
-        let q_c_eval_8n = PolyEval::new(q_c.0.clone());
-        let q_4_eval_8n = PolyEval::new(q_d.0.clone());
-        let q_arith_eval_8n = PolyEval::new(q_arith.0.clone());
-        let q_range_eval_8n = PolyEval::new(q_range.0.clone());
-        let q_logic_eval_8n = PolyEval::new(q_logic.0.clone());
+        let q_m_eval_8n = PointsValue::new(q_m.0.clone());
+        let q_l_eval_8n = PointsValue::new(q_l.0.clone());
+        let q_r_eval_8n = PointsValue::new(q_r.0.clone());
+        let q_o_eval_8n = PointsValue::new(q_o.0.clone());
+        let q_c_eval_8n = PointsValue::new(q_c.0.clone());
+        let q_4_eval_8n = PointsValue::new(q_d.0.clone());
+        let q_arith_eval_8n = PointsValue::new(q_arith.0.clone());
+        let q_range_eval_8n = PointsValue::new(q_range.0.clone());
+        let q_logic_eval_8n = PointsValue::new(q_logic.0.clone());
         let q_fixed_group_add_eval_8n =
-            PolyEval::new(q_fixed_group_add.0.clone());
+            PointsValue::new(q_fixed_group_add.0.clone());
         let q_variable_group_add_eval_8n =
-            PolyEval::new(q_variable_group_add.0.clone());
+            PointsValue::new(q_variable_group_add.0.clone());
 
-        let s_sigma_1_eval_8n = PolyEval::new(s_sigma_1.0);
-        let s_sigma_2_eval_8n = PolyEval::new(s_sigma_2.0);
-        let s_sigma_3_eval_8n = PolyEval::new(s_sigma_3.0);
-        let s_sigma_4_eval_8n = PolyEval::new(s_sigma_4.0);
+        let s_sigma_1_eval_8n = PointsValue::new(s_sigma_1.0);
+        let s_sigma_2_eval_8n = PointsValue::new(s_sigma_2.0);
+        let s_sigma_3_eval_8n = PointsValue::new(s_sigma_3.0);
+        let s_sigma_4_eval_8n = PointsValue::new(s_sigma_4.0);
 
-        let linear_eval_8n = PolyEval::new(min_p.0);
+        let linear_eval_8n = PointsValue::new(min_p.0);
 
         let selectors = Polynomials::<P> {
             q_m: q_m_poly,
