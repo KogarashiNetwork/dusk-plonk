@@ -9,7 +9,7 @@ use alloc::vec::Vec;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
-use poly_commit::{Fft, Polynomial};
+use poly_commit::{Coefficients, Fft};
 use sp_std::vec;
 use zksnarks::Witness;
 use zkstd::behave::*;
@@ -180,7 +180,7 @@ impl<P: Pairing> Permutation<P> {
         &mut self,
         n: usize,
         fft: &Fft<P::ScalarField>,
-    ) -> [Polynomial<P::ScalarField>; 4] {
+    ) -> [Coefficients<P::ScalarField>; 4] {
         // Compute sigma mappings
         let sigmas = self.compute_sigma_permutations(n);
 
@@ -190,14 +190,18 @@ impl<P: Pairing> Permutation<P> {
         assert_eq!(sigmas[3].len(), n);
 
         // define the sigma permutations using two non quadratic residues
-        let mut s_sigma_1 =
-            Polynomial::new(self.compute_permutation_lagrange(&sigmas[0], fft));
-        let mut s_sigma_2 =
-            Polynomial::new(self.compute_permutation_lagrange(&sigmas[1], fft));
-        let mut s_sigma_3 =
-            Polynomial::new(self.compute_permutation_lagrange(&sigmas[2], fft));
-        let mut s_sigma_4 =
-            Polynomial::new(self.compute_permutation_lagrange(&sigmas[3], fft));
+        let mut s_sigma_1 = Coefficients::new(
+            self.compute_permutation_lagrange(&sigmas[0], fft),
+        );
+        let mut s_sigma_2 = Coefficients::new(
+            self.compute_permutation_lagrange(&sigmas[1], fft),
+        );
+        let mut s_sigma_3 = Coefficients::new(
+            self.compute_permutation_lagrange(&sigmas[2], fft),
+        );
+        let mut s_sigma_4 = Coefficients::new(
+            self.compute_permutation_lagrange(&sigmas[3], fft),
+        );
 
         fft.idft(&mut s_sigma_1);
         fft.idft(&mut s_sigma_2);
@@ -216,7 +220,7 @@ impl<P: Pairing> Permutation<P> {
         wires: [&[P::ScalarField]; 4],
         beta: &P::ScalarField,
         gamma: &P::ScalarField,
-        mut sigma_polys: [Polynomial<P::ScalarField>; 4],
+        mut sigma_polys: [Coefficients<P::ScalarField>; 4],
     ) -> Vec<P::ScalarField> {
         let n = fft.size();
 
@@ -314,7 +318,7 @@ mod test {
     use super::*;
     use bls_12_381::Fr as BlsScalar;
     use ec_pairing::TatePairing;
-    use poly_commit::{Fft, Polynomial};
+    use poly_commit::{Coefficients, Fft};
     use rand_core::OsRng;
 
     pub(crate) const K1: BlsScalar = BlsScalar::to_mont_form([7, 0, 0, 0]);
@@ -331,10 +335,10 @@ mod test {
         beta: &BlsScalar,
         gamma: &BlsScalar,
         (s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly): (
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
         ),
     ) -> Vec<BlsScalar> {
         let n = domain.size();
@@ -512,10 +516,10 @@ mod test {
         beta: &BlsScalar,
         gamma: &BlsScalar,
         (s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly): (
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
-            &Polynomial<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
+            &Coefficients<BlsScalar>,
         ),
     ) -> (Vec<BlsScalar>, Vec<BlsScalar>, Vec<BlsScalar>)
     where
@@ -1076,9 +1080,9 @@ mod test {
 
         //3. Now we perform the two checks that need to be done on the
         // permutation polynomial (z)
-        let mut z_vec = Polynomial::new(z_vec);
+        let mut z_vec = Coefficients::new(z_vec);
         fft.idft(&mut z_vec);
-        let z_poly = Polynomial::from_coefficients_vec(z_vec.0);
+        let z_poly = Coefficients::from_coefficients_vec(z_vec.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1126,9 +1130,9 @@ mod test {
         }
 
         // Test that the shifted polynomial is correct
-        let mut shifted_z = Polynomial::new(shift_poly_by_one(fast_z_vec));
+        let mut shifted_z = Coefficients::new(shift_poly_by_one(fast_z_vec));
         fft.idft(&mut shifted_z);
-        let shifted_z_poly = Polynomial::from_coefficients_vec(shifted_z.0);
+        let shifted_z_poly = Coefficients::from_coefficients_vec(shifted_z.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.generator()));
             let shifted_z_eval = shifted_z_poly.evaluate(element);

@@ -165,8 +165,8 @@ impl From<DuskBytesError> for Error {
 impl From<KzgError> for Error {
     fn from(err: KzgError) -> Self {
         match err {
-            KzgError::PolynomialDegreeIsZero => Self::PolynomialDegreeIsZero,
-            KzgError::PolynomialDegreeTooLarge => {
+            KzgError::CoefficientsDegreeIsZero => Self::PolynomialDegreeIsZero,
+            KzgError::CoefficientsDegreeTooLarge => {
                 Self::PolynomialDegreeTooLarge
             }
         }

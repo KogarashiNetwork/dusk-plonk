@@ -8,7 +8,7 @@
 //! are needed to univocally identify a prove of some statement.
 
 use codec::{Decode, Encode};
-use poly_commit::{batch_inversion, Commitment, Fft, Polynomial};
+use poly_commit::{batch_inversion, Coefficients, Commitment, Fft};
 use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::behave::Ring;
 
@@ -187,7 +187,7 @@ impl<P: Pairing> Proof<P> {
             );
 
         // Compute zero polynomial evaluated at challenge `z`
-        let z_h_eval = Polynomial::t(n as u64, z_challenge);
+        let z_h_eval = Coefficients::t(n as u64, z_challenge);
 
         // Compute first lagrange polynomial evaluated at challenge `z`
         let l1_eval = compute_first_lagrange_evaluation::<P>(

@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::{Evaluations as PolyEval, Fft, KeyPair, Polynomial};
+use poly_commit::{Coefficients, Evaluations as PolyEval, Fft, KeyPair};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
@@ -86,27 +86,27 @@ impl Compiler {
         // we use allocated vectors because the current ifft api only accepts
         // slices
         let mut q_m =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_l =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_r =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_o =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_c =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_d =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_arith =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_range =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_logic =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_fixed_group_add =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
         let mut q_variable_group_add =
-            Polynomial::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
 
         prover.constraints.iter().enumerate().for_each(|(i, c)| {
             q_m.0[i] = c.q_m;
@@ -134,19 +134,22 @@ impl Compiler {
         fft.idft(&mut q_fixed_group_add);
         fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = Polynomial::from_coefficients_vec(q_m.0.clone());
-        let q_l_poly = Polynomial::from_coefficients_vec(q_l.0.clone());
-        let q_r_poly = Polynomial::from_coefficients_vec(q_r.0.clone());
-        let q_o_poly = Polynomial::from_coefficients_vec(q_o.0.clone());
-        let q_c_poly = Polynomial::from_coefficients_vec(q_c.0.clone());
-        let q_d_poly = Polynomial::from_coefficients_vec(q_d.0.clone());
-        let q_arith_poly = Polynomial::from_coefficients_vec(q_arith.0.clone());
-        let q_range_poly = Polynomial::from_coefficients_vec(q_range.0.clone());
-        let q_logic_poly = Polynomial::from_coefficients_vec(q_logic.0.clone());
+        let q_m_poly = Coefficients::from_coefficients_vec(q_m.0.clone());
+        let q_l_poly = Coefficients::from_coefficients_vec(q_l.0.clone());
+        let q_r_poly = Coefficients::from_coefficients_vec(q_r.0.clone());
+        let q_o_poly = Coefficients::from_coefficients_vec(q_o.0.clone());
+        let q_c_poly = Coefficients::from_coefficients_vec(q_c.0.clone());
+        let q_d_poly = Coefficients::from_coefficients_vec(q_d.0.clone());
+        let q_arith_poly =
+            Coefficients::from_coefficients_vec(q_arith.0.clone());
+        let q_range_poly =
+            Coefficients::from_coefficients_vec(q_range.0.clone());
+        let q_logic_poly =
+            Coefficients::from_coefficients_vec(q_logic.0.clone());
         let q_fixed_group_add_poly =
-            Polynomial::from_coefficients_vec(q_fixed_group_add.0.clone());
+            Coefficients::from_coefficients_vec(q_fixed_group_add.0.clone());
         let q_variable_group_add_poly =
-            Polynomial::from_coefficients_vec(q_variable_group_add.0.clone());
+            Coefficients::from_coefficients_vec(q_variable_group_add.0.clone());
 
         // 2. compute the sigma polynomials
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
@@ -171,13 +174,13 @@ impl Compiler {
             .unwrap_or_default();
 
         let s_sigma_1_poly_commit =
-            Polynomial::from_coefficients_vec(s_sigma_1_poly.0.clone());
+            Coefficients::from_coefficients_vec(s_sigma_1_poly.0.clone());
         let s_sigma_2_poly_commit =
-            Polynomial::from_coefficients_vec(s_sigma_2_poly.0.clone());
+            Coefficients::from_coefficients_vec(s_sigma_2_poly.0.clone());
         let s_sigma_3_poly_commit =
-            Polynomial::from_coefficients_vec(s_sigma_3_poly.0.clone());
+            Coefficients::from_coefficients_vec(s_sigma_3_poly.0.clone());
         let s_sigma_4_poly_commit =
-            Polynomial::from_coefficients_vec(s_sigma_4_poly.0.clone());
+            Coefficients::from_coefficients_vec(s_sigma_4_poly.0.clone());
 
         let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit)?;
         let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit)?;
@@ -247,7 +250,7 @@ impl Compiler {
         let mut s_sigma_2 = s_sigma_2_poly.clone();
         let mut s_sigma_3 = s_sigma_3_poly.clone();
         let mut s_sigma_4 = s_sigma_4_poly.clone();
-        let mut min_p = Polynomial::new(vec![
+        let mut min_p = Coefficients::new(vec![
             P::ScalarField::zero(),
             P::ScalarField::one(),
         ]);

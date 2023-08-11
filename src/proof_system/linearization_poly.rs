@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::Polynomial;
+use poly_commit::Coefficients;
 use zksnarks::{Evaluations as ProofEvaluations, ProvingKey};
 use zkstd::common::Pairing;
 
@@ -41,13 +41,13 @@ pub(crate) fn compute<P: Pairing>(
         P::ScalarField,
         P::ScalarField,
     ),
-    a_w_poly: &Polynomial<P::ScalarField>,
-    b_w_poly: &Polynomial<P::ScalarField>,
-    c_w_poly: &Polynomial<P::ScalarField>,
-    d_w_poly: &Polynomial<P::ScalarField>,
-    t_x_poly: &Polynomial<P::ScalarField>,
-    z_poly: &Polynomial<P::ScalarField>,
-) -> (Polynomial<P::ScalarField>, Evaluations<P>) {
+    a_w_poly: &Coefficients<P::ScalarField>,
+    b_w_poly: &Coefficients<P::ScalarField>,
+    c_w_poly: &Coefficients<P::ScalarField>,
+    d_w_poly: &Coefficients<P::ScalarField>,
+    t_x_poly: &Coefficients<P::ScalarField>,
+    z_poly: &Coefficients<P::ScalarField>,
+) -> (Coefficients<P::ScalarField>, Evaluations<P>) {
     // Compute evaluations
     let t_eval = t_x_poly.evaluate(z_challenge);
     let a_eval = a_w_poly.evaluate(z_challenge);
@@ -157,7 +157,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
     q_l_eval: &P::ScalarField,
     q_r_eval: &P::ScalarField,
     prover_key: &ProvingKey<P>,
-) -> Polynomial<P::ScalarField> {
+) -> Coefficients<P::ScalarField> {
     let a = prover_key.arithmetic.linearize(
         a_eval,
         b_eval,

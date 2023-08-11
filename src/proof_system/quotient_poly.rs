@@ -11,23 +11,23 @@ use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use poly_commit::{Fft, Polynomial};
+use poly_commit::{Coefficients, Fft};
 use zksnarks::ProvingKey;
 use zkstd::behave::*;
 
-/// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
+/// Computes the Quotient [`Coefficients`] given the [`EvaluationDomain`], a
 /// [`ProvingKey`] and some other info.
 pub(crate) fn compute<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     prover_key: &ProvingKey<P>,
-    z_poly: &Polynomial<P::ScalarField>,
+    z_poly: &Coefficients<P::ScalarField>,
     (a_w_poly, b_w_poly, c_w_poly, d_w_poly): (
-        &Polynomial<P::ScalarField>,
-        &Polynomial<P::ScalarField>,
-        &Polynomial<P::ScalarField>,
-        &Polynomial<P::ScalarField>,
+        &Coefficients<P::ScalarField>,
+        &Coefficients<P::ScalarField>,
+        &Coefficients<P::ScalarField>,
+        &Coefficients<P::ScalarField>,
     ),
-    public_inputs_poly: &Polynomial<P::ScalarField>,
+    public_inputs_poly: &Coefficients<P::ScalarField>,
     (
         alpha,
         beta,
@@ -45,13 +45,13 @@ pub(crate) fn compute<P: Pairing>(
         P::ScalarField,
         P::ScalarField,
     ),
-) -> Result<Polynomial<P::ScalarField>, Error> {
+) -> Result<Coefficients<P::ScalarField>, Error> {
     // Compute 8n evals
     let n = (8 * fft.size()).next_power_of_two();
     let k = n.trailing_zeros();
     let fft_8n = Fft::<P::ScalarField>::new(k as usize);
 
-    let mut z_poly = Polynomial::new(z_poly.0.clone());
+    let mut z_poly = Coefficients::new(z_poly.0.clone());
     let mut a_w_poly = a_w_poly.clone();
     let mut b_w_poly = b_w_poly.clone();
     let mut c_w_poly = c_w_poly.clone();
@@ -72,11 +72,11 @@ pub(crate) fn compute<P: Pairing>(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = Polynomial::from_coefficients_vec(z_poly.0);
-    let a_w_eval_8n = Polynomial::from_coefficients_vec(a_w_poly.0);
-    let b_w_eval_8n = Polynomial::from_coefficients_vec(b_w_poly.0);
-    let c_w_eval_8n = Polynomial::from_coefficients_vec(c_w_poly.0);
-    let d_w_eval_8n = Polynomial::from_coefficients_vec(d_w_poly.0);
+    let z_eval_8n = Coefficients::from_coefficients_vec(z_poly.0);
+    let a_w_eval_8n = Coefficients::from_coefficients_vec(a_w_poly.0);
+    let b_w_eval_8n = Coefficients::from_coefficients_vec(b_w_poly.0);
+    let c_w_eval_8n = Coefficients::from_coefficients_vec(c_w_poly.0);
+    let d_w_eval_8n = Coefficients::from_coefficients_vec(d_w_poly.0);
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -107,10 +107,10 @@ pub(crate) fn compute<P: Pairing>(
             numerator * denominator.invert().unwrap()
         })
         .collect();
-    let mut quotient = Polynomial::new(quotient);
+    let mut quotient = Coefficients::new(quotient);
     fft_8n.coset_idft(&mut quotient);
 
-    Ok(Polynomial::from_coefficients_vec(quotient.0))
+    Ok(Coefficients::from_coefficients_vec(quotient.0))
 }
 
 // Ensures that the circuit is satisfied
@@ -135,9 +135,9 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
         &[P::ScalarField],
         &[P::ScalarField],
     ),
-    pi_poly: &Polynomial<P::ScalarField>,
+    pi_poly: &Coefficients<P::ScalarField>,
 ) -> Vec<P::ScalarField> {
-    let mut pi_poly = Polynomial::new(pi_poly.0.clone());
+    let mut pi_poly = Coefficients::new(pi_poly.0.clone());
     fft.coset_dft(&mut pi_poly);
     let public_eval_8n = pi_poly.0;
 
@@ -261,9 +261,10 @@ fn compute_permutation_checks<P: Pairing>(
 fn compute_first_lagrange_poly_scaled<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     scale: P::ScalarField,
-) -> Polynomial<P::ScalarField> {
-    let mut x_evals = Polynomial::new(vec![P::ScalarField::zero(); fft.size()]);
+) -> Coefficients<P::ScalarField> {
+    let mut x_evals =
+        Coefficients::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
     fft.idft(&mut x_evals);
-    Polynomial::from_coefficients_vec(x_evals.0)
+    Coefficients::from_coefficients_vec(x_evals.0)
 }

@@ -10,7 +10,7 @@ use core::ops;
 use zkstd::common::Pairing;
 
 use merlin::Transcript;
-use poly_commit::{Fft, KeyPair, Polynomial};
+use poly_commit::{Coefficients, Fft, KeyPair};
 use rand_core::RngCore;
 use sp_std::vec;
 use zksnarks::{ProvingKey, TranscriptProtocol, VerificationKey};
@@ -89,11 +89,11 @@ where
         witnesses: &[P::ScalarField],
         hiding_degree: usize,
         fft: &Fft<P::ScalarField>,
-    ) -> Polynomial<P::ScalarField>
+    ) -> Coefficients<P::ScalarField>
     where
         R: RngCore,
     {
-        let mut w_vec_inverse = Polynomial::new(witnesses.to_vec());
+        let mut w_vec_inverse = Coefficients::new(witnesses.to_vec());
         fft.idft(&mut w_vec_inverse);
 
         for i in 0..hiding_degree + 1 {
@@ -127,7 +127,7 @@ where
         let public_inputs = prover.public_inputs();
         let public_input_indexes = prover.public_input_indexes();
         let mut dense_public_inputs =
-            Polynomial::new(Builder::<P>::dense_public_inputs(
+            Coefficients::new(Builder::<P>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
                 self.size,
@@ -287,15 +287,16 @@ where
 
         // split quotient polynomial into 4 degree `n` polynomials
         let domain_size = fft.size();
-        let t_low_poly =
-            Polynomial::from_coefficients_vec(t_poly[0..domain_size].to_vec());
-        let t_mid_poly = Polynomial::from_coefficients_vec(
+        let t_low_poly = Coefficients::from_coefficients_vec(
+            t_poly[0..domain_size].to_vec(),
+        );
+        let t_mid_poly = Coefficients::from_coefficients_vec(
             t_poly[domain_size..2 * domain_size].to_vec(),
         );
-        let t_high_poly = Polynomial::from_coefficients_vec(
+        let t_high_poly = Coefficients::from_coefficients_vec(
             t_poly[2 * domain_size..3 * domain_size].to_vec(),
         );
-        let t_4_poly = Polynomial::from_coefficients_vec(
+        let t_4_poly = Coefficients::from_coefficients_vec(
             t_poly[3 * domain_size..].to_vec(),
         );
 

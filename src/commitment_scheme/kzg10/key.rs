@@ -114,7 +114,7 @@ mod test {
     use super::*;
     use bls_12_381::Fr as BlsScalar;
     use ec_pairing::TatePairing;
-    use poly_commit::{KeyPair, Polynomial};
+    use poly_commit::{Coefficients, KeyPair};
     use rand_core::OsRng;
 
     #[test]
@@ -124,7 +124,7 @@ mod test {
         let keypair = KeyPair::<TatePairing>::setup(degree as u64, r);
         let point = BlsScalar::from(10);
 
-        let z_poly = Polynomial::rand(degree, &mut OsRng);
+        let z_poly = Coefficients::rand(degree, &mut OsRng);
 
         let witness = keypair.create_witness(&z_poly, point);
 
@@ -132,6 +132,7 @@ mod test {
         assert!(z_ok);
         Ok(())
     }
+
     // #[test]
     // fn test_batch_verification() -> Result<(), Error> {
     //     let degree = 25;
@@ -141,13 +142,13 @@ mod test {
     //     let point_b = BlsScalar::from(11);
 
     //     // Compute secret polynomial a
-    //     let poly_a = Polynomial::rand(degree, &mut OsRng);
+    //     let poly_a = Coefficients::rand(degree, &mut OsRng);
     //     let value_a = poly_a.evaluate(&point_a);
     //     let proof_a = open_single(&ck, &poly_a, &value_a, &point_a)?;
     //     assert!(check(&vk, point_a, proof_a));
 
     //     // Compute secret polynomial b
-    //     let poly_b = Polynomial::rand(degree, &mut OsRng);
+    //     let poly_b = Coefficients::rand(degree, &mut OsRng);
     //     let value_b = poly_b.evaluate(&point_b);
     //     let proof_b = open_single(&ck, &poly_b, &value_b, &point_b)?;
     //     assert!(check(&vk, point_b, proof_b));
@@ -167,13 +168,13 @@ mod test {
     //     // Committer's View
     //     let aggregated_proof = {
     //         // Compute secret polynomials and their evaluations
-    //         let poly_a = Polynomial::rand(25, &mut OsRng);
+    //         let poly_a = Coefficients::rand(25, &mut OsRng);
     //         let poly_a_eval = poly_a.evaluate(&point);
 
-    //         let poly_b = Polynomial::rand(26 + 1, &mut OsRng);
+    //         let poly_b = Coefficients::rand(26 + 1, &mut OsRng);
     //         let poly_b_eval = poly_b.evaluate(&point);
 
-    //         let poly_c = Polynomial::rand(27, &mut OsRng);
+    //         let poly_c = Coefficients::rand(27, &mut OsRng);
     //         let poly_c_eval = poly_c.evaluate(&point);
 
     //         open_multiple(
@@ -206,16 +207,16 @@ mod test {
     //     // Committer's View
     //     let (aggregated_proof, single_proof) = {
     //         // Compute secret polynomial and their evaluations
-    //         let poly_a = Polynomial::rand(25, &mut OsRng);
+    //         let poly_a = Coefficients::rand(25, &mut OsRng);
     //         let poly_a_eval = poly_a.evaluate(&point_a);
 
-    //         let poly_b = Polynomial::rand(26, &mut OsRng);
+    //         let poly_b = Coefficients::rand(26, &mut OsRng);
     //         let poly_b_eval = poly_b.evaluate(&point_a);
 
-    //         let poly_c = Polynomial::rand(27, &mut OsRng);
+    //         let poly_c = Coefficients::rand(27, &mut OsRng);
     //         let poly_c_eval = poly_c.evaluate(&point_a);
 
-    //         let poly_d = Polynomial::rand(28, &mut OsRng);
+    //         let poly_d = Coefficients::rand(28, &mut OsRng);
     //         let poly_d_eval = poly_d.evaluate(&point_b);
 
     //         let aggregated_proof = open_multiple(
