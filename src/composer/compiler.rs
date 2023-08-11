@@ -15,7 +15,7 @@ use zkstd::common::{Group, Pairing, Ring};
 use super::{Builder, Circuit, Composer, Prover, Verifier};
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::fft::{EvaluationDomain, Evaluations};
+use crate::fft::EvaluationDomain;
 use crate::proof_system::preprocess::Polynomials;
 use sp_std::vec;
 
@@ -271,50 +271,26 @@ impl Compiler {
         fft_8n.coset_dft(&mut s_sigma_4);
         fft_8n.coset_dft(&mut min_p);
 
-        let q_m_eval_8n =
-            Evaluations::from_vec_and_domain(q_m.0.clone(), domain_8n.clone());
-        let q_l_eval_8n =
-            Evaluations::from_vec_and_domain(q_l.0.clone(), domain_8n.clone());
-        let q_r_eval_8n =
-            Evaluations::from_vec_and_domain(q_r.0.clone(), domain_8n.clone());
-        let q_o_eval_8n =
-            Evaluations::from_vec_and_domain(q_o.0.clone(), domain_8n.clone());
-        let q_c_eval_8n =
-            Evaluations::from_vec_and_domain(q_c.0.clone(), domain_8n.clone());
-        let q_4_eval_8n =
-            Evaluations::from_vec_and_domain(q_d.0.clone(), domain_8n.clone());
-        let q_arith_eval_8n = Evaluations::from_vec_and_domain(
-            q_arith.0.clone(),
-            domain_8n.clone(),
-        );
-        let q_range_eval_8n = Evaluations::from_vec_and_domain(
-            q_range.0.clone(),
-            domain_8n.clone(),
-        );
-        let q_logic_eval_8n = Evaluations::from_vec_and_domain(
-            q_logic.0.clone(),
-            domain_8n.clone(),
-        );
-        let q_fixed_group_add_eval_8n = Evaluations::from_vec_and_domain(
-            q_fixed_group_add.0.clone(),
-            domain_8n.clone(),
-        );
-        let q_variable_group_add_eval_8n = Evaluations::from_vec_and_domain(
-            q_variable_group_add.0.clone(),
-            domain_8n.clone(),
-        );
+        let q_m_eval_8n = PolyEval::new(q_m.0.clone());
+        let q_l_eval_8n = PolyEval::new(q_l.0.clone());
+        let q_r_eval_8n = PolyEval::new(q_r.0.clone());
+        let q_o_eval_8n = PolyEval::new(q_o.0.clone());
+        let q_c_eval_8n = PolyEval::new(q_c.0.clone());
+        let q_4_eval_8n = PolyEval::new(q_d.0.clone());
+        let q_arith_eval_8n = PolyEval::new(q_arith.0.clone());
+        let q_range_eval_8n = PolyEval::new(q_range.0.clone());
+        let q_logic_eval_8n = PolyEval::new(q_logic.0.clone());
+        let q_fixed_group_add_eval_8n =
+            PolyEval::new(q_fixed_group_add.0.clone());
+        let q_variable_group_add_eval_8n =
+            PolyEval::new(q_variable_group_add.0.clone());
 
-        let s_sigma_1_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_1.0, domain_8n.clone());
-        let s_sigma_2_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_2.0, domain_8n.clone());
-        let s_sigma_3_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_3.0, domain_8n.clone());
-        let s_sigma_4_eval_8n =
-            Evaluations::from_vec_and_domain(s_sigma_4.0, domain_8n.clone());
+        let s_sigma_1_eval_8n = PolyEval::new(s_sigma_1.0);
+        let s_sigma_2_eval_8n = PolyEval::new(s_sigma_2.0);
+        let s_sigma_3_eval_8n = PolyEval::new(s_sigma_3.0);
+        let s_sigma_4_eval_8n = PolyEval::new(s_sigma_4.0);
 
-        let linear_eval_8n =
-            Evaluations::from_vec_and_domain(min_p.0, domain_8n.clone());
+        let linear_eval_8n = PolyEval::new(min_p.0);
 
         let selectors = Polynomials::<P> {
             q_m: q_m_poly,
@@ -335,70 +311,46 @@ impl Compiler {
         };
 
         let arithmetic_prover_key = arithmetic::ProvingKey {
-            q_m: (selectors.q_m, PolyEval::new(q_m_eval_8n.evals)),
-            q_l: (
-                selectors.q_l.clone(),
-                PolyEval::new(q_l_eval_8n.evals.clone()),
-            ),
-            q_r: (
-                selectors.q_r.clone(),
-                PolyEval::new(q_r_eval_8n.evals.clone()),
-            ),
-            q_o: (selectors.q_o, PolyEval::new(q_o_eval_8n.evals)),
-            q_c: (
-                selectors.q_c.clone(),
-                PolyEval::new(q_c_eval_8n.evals.clone()),
-            ),
-            q_4: (selectors.q_4, PolyEval::new(q_4_eval_8n.evals)),
-            q_arith: (selectors.q_arith, PolyEval::new(q_arith_eval_8n.evals)),
+            q_m: (selectors.q_m, q_m_eval_8n),
+            q_l: (selectors.q_l.clone(), q_l_eval_8n.clone()),
+            q_r: (selectors.q_r.clone(), q_r_eval_8n.clone()),
+            q_o: (selectors.q_o, q_o_eval_8n),
+            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
+            q_4: (selectors.q_4, q_4_eval_8n),
+            q_arith: (selectors.q_arith, q_arith_eval_8n),
         };
 
         let range_prover_key = range::ProvingKey {
-            q_range: (selectors.q_range, PolyEval::new(q_range_eval_8n.evals)),
+            q_range: (selectors.q_range, q_range_eval_8n),
         };
 
         let logic_prover_key = logic::ProvingKey {
-            q_c: (
-                selectors.q_c.clone(),
-                PolyEval::new(q_c_eval_8n.evals.clone()),
-            ),
-            q_logic: (selectors.q_logic, PolyEval::new(q_logic_eval_8n.evals)),
+            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
+            q_logic: (selectors.q_logic, q_logic_eval_8n),
         };
 
         let ecc_prover_key = scalar::ProvingKey::<P> {
-            q_l: (selectors.q_l, PolyEval::new(q_l_eval_8n.evals)),
-            q_r: (selectors.q_r, PolyEval::new(q_r_eval_8n.evals)),
-            q_c: (selectors.q_c, PolyEval::new(q_c_eval_8n.evals)),
+            q_l: (selectors.q_l, q_l_eval_8n),
+            q_r: (selectors.q_r, q_r_eval_8n),
+            q_c: (selectors.q_c, q_c_eval_8n),
             q_fixed_group_add: (
                 selectors.q_fixed_group_add,
-                PolyEval::new(q_fixed_group_add_eval_8n.evals),
+                q_fixed_group_add_eval_8n,
             ),
         };
 
         let permutation_prover_key = permutation::ProvingKey {
-            s_sigma_1: (
-                selectors.s_sigma_1,
-                PolyEval::new(s_sigma_1_eval_8n.evals),
-            ),
-            s_sigma_2: (
-                selectors.s_sigma_2,
-                PolyEval::new(s_sigma_2_eval_8n.evals),
-            ),
-            s_sigma_3: (
-                selectors.s_sigma_3,
-                PolyEval::new(s_sigma_3_eval_8n.evals),
-            ),
-            s_sigma_4: (
-                selectors.s_sigma_4,
-                PolyEval::new(s_sigma_4_eval_8n.evals),
-            ),
-            linear_evaluations: PolyEval::new(linear_eval_8n.evals),
+            s_sigma_1: (selectors.s_sigma_1, s_sigma_1_eval_8n),
+            s_sigma_2: (selectors.s_sigma_2, s_sigma_2_eval_8n),
+            s_sigma_3: (selectors.s_sigma_3, s_sigma_3_eval_8n),
+            s_sigma_4: (selectors.s_sigma_4, s_sigma_4_eval_8n),
+            linear_evaluations: linear_eval_8n,
         };
 
         let curve_addition_prover_key = add::ProvingKey {
             q_variable_group_add: (
                 selectors.q_variable_group_add,
-                PolyEval::new(q_variable_group_add_eval_8n.evals),
+                q_variable_group_add_eval_8n,
             ),
         };
 
