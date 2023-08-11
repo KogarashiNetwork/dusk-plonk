@@ -4,10 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub mod range;
-
 use crate::fft::Evaluations;
-use zksnarks::key::{arithmetic, curve, logic, permutation};
+use zksnarks::key::{arithmetic, curve, logic, permutation, range};
 use zkstd::common::Pairing;
 
 /// PLONK circuit Proving Key.
@@ -23,7 +21,7 @@ pub struct ProvingKey<P: Pairing> {
     /// ProvingKey for logic gate
     pub(crate) logic: logic::ProvingKey<P::ScalarField>,
     /// ProvingKey for range gate
-    pub(crate) range: range::ProvingKey<P>,
+    pub(crate) range: range::ProvingKey<P::ScalarField>,
     /// ProvingKey for fixed base curve addition gates
     pub(crate) fixed_base: curve::scalar::ProvingKey<P>,
     /// ProvingKey for variable base curve addition gates

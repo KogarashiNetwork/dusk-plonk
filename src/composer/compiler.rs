@@ -17,7 +17,7 @@ use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use crate::fft::{EvaluationDomain, Evaluations};
 use crate::proof_system::preprocess::Polynomials;
-use crate::proof_system::{widget, ProvingKey};
+use crate::proof_system::ProvingKey;
 use sp_std::vec;
 
 /// Generate the arguments to prove and verify a circuit
@@ -354,8 +354,8 @@ impl Compiler {
             q_arith: (selectors.q_arith, PolyEval::new(q_arith_eval_8n.evals)),
         };
 
-        let range_prover_key = widget::range::ProvingKey {
-            q_range: (selectors.q_range, q_range_eval_8n),
+        let range_prover_key = range::ProvingKey {
+            q_range: (selectors.q_range, PolyEval::new(q_range_eval_8n.evals)),
         };
 
         let logic_prover_key = logic::ProvingKey {

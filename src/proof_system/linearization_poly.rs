@@ -168,7 +168,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
         q_arith_eval,
     );
 
-    let b = prover_key.range.compute_linearization(
+    let b = prover_key.range.linearize(
         range_separation_challenge,
         a_eval,
         b_eval,
