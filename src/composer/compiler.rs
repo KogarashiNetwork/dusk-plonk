@@ -8,7 +8,7 @@ use poly_commit::{Evaluations as PolyEval, Fft, KeyPair, Polynomial};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
-    logic, permutation, range, VerificationKey,
+    logic, permutation, range, ProvingKey, VerificationKey,
 };
 use zkstd::common::{Group, Pairing, Ring};
 
@@ -17,7 +17,6 @@ use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use crate::fft::{EvaluationDomain, Evaluations};
 use crate::proof_system::preprocess::Polynomials;
-use crate::proof_system::ProvingKey;
 use sp_std::vec;
 
 /// Generate the arguments to prove and verify a circuit
@@ -245,7 +244,7 @@ impl Compiler {
         let n = (8 * fft.size()).next_power_of_two();
         let k = n.trailing_zeros();
         let fft_8n = Fft::new(k as usize);
-        let domain_8n = EvaluationDomain::new(8 * fft.size())?;
+        let domain_8n = EvaluationDomain::<P>::new(8 * fft.size())?;
         let mut s_sigma_1 = s_sigma_1_poly.clone();
         let mut s_sigma_2 = s_sigma_2_poly.clone();
         let mut s_sigma_3 = s_sigma_3_poly.clone();
@@ -366,7 +365,7 @@ impl Compiler {
             q_logic: (selectors.q_logic, PolyEval::new(q_logic_eval_8n.evals)),
         };
 
-        let ecc_prover_key = scalar::ProvingKey {
+        let ecc_prover_key = scalar::ProvingKey::<P> {
             q_l: (selectors.q_l, PolyEval::new(q_l_eval_8n.evals)),
             q_r: (selectors.q_r, PolyEval::new(q_r_eval_8n.evals)),
             q_c: (selectors.q_c, PolyEval::new(q_c_eval_8n.evals)),
@@ -414,7 +413,7 @@ impl Compiler {
             permutation: permutation_prover_key,
             variable_base: curve_addition_prover_key,
             fixed_base: ecc_prover_key,
-            v_h_coset_8n,
+            v_h_coset_8n: PolyEval::new(v_h_coset_8n.evals),
         };
 
         let public_input_indexes = prover.public_input_indexes();

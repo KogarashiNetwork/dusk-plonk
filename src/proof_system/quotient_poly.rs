@@ -5,13 +5,14 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 #![allow(clippy::type_complexity)]
-use crate::{error::Error, proof_system::ProvingKey};
+use crate::error::Error;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
 use poly_commit::{Fft, Polynomial};
+use zksnarks::ProvingKey;
 use zkstd::behave::*;
 
 /// Computes the Quotient [`Polynomial`] given the [`EvaluationDomain`], a
@@ -102,7 +103,7 @@ pub(crate) fn compute<P: Pairing>(
     let quotient: Vec<_> = (0..fft_8n.size())
         .map(|i| {
             let numerator = t_1[i] + t_2[i];
-            let denominator = prover_key.v_h_coset_8n()[i];
+            let denominator = prover_key.v_h_coset_8n().0[i];
             numerator * denominator.invert().unwrap()
         })
         .collect();

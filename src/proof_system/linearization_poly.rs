@@ -4,10 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::proof_system::ProvingKey;
-
 use poly_commit::Polynomial;
-use zksnarks::Evaluations as ProofEvaluations;
+use zksnarks::{Evaluations as ProofEvaluations, ProvingKey};
 use zkstd::common::Pairing;
 
 /// Evaluations at points `z` or and `z * root of unity`

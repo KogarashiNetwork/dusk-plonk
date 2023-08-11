@@ -13,12 +13,12 @@ use merlin::Transcript;
 use poly_commit::{Fft, KeyPair, Polynomial};
 use rand_core::RngCore;
 use sp_std::vec;
-use zksnarks::{TranscriptProtocol, VerificationKey};
+use zksnarks::{ProvingKey, TranscriptProtocol, VerificationKey};
 use zkstd::behave::{FftField, Group};
 
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
-use crate::proof_system::{linearization_poly, quotient_poly, ProvingKey};
+use crate::proof_system::{linearization_poly, quotient_poly};
 use crate::util;
 
 use super::{Builder, Circuit, Composer};
@@ -337,7 +337,7 @@ where
 
         // round 5
         // compute linearization polynomial
-        let (r_poly, evaluations) = linearization_poly::compute(
+        let (r_poly, evaluations) = linearization_poly::compute::<P>(
             fft.generator(),
             &self.prover_key,
             &(
