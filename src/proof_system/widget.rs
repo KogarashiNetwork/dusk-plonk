@@ -4,11 +4,10 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-pub mod permutation;
 pub mod range;
 
 use crate::fft::Evaluations;
-use zksnarks::key::{arithmetic, curve, logic};
+use zksnarks::key::{arithmetic, curve, logic, permutation};
 use zkstd::common::Pairing;
 
 /// PLONK circuit Proving Key.
@@ -30,7 +29,7 @@ pub struct ProvingKey<P: Pairing> {
     /// ProvingKey for variable base curve addition gates
     pub(crate) variable_base: curve::add::ProvingKey<P>,
     /// ProvingKey for permutation checks
-    pub(crate) permutation: permutation::ProvingKey<P>,
+    pub(crate) permutation: permutation::ProvingKey<P::ScalarField>,
     // Pre-processes the 8n Evaluations for the vanishing polynomial, so
     // they do not need to be computed at the proving stage.
     // Note: With this, we can combine all parts of the quotient polynomial

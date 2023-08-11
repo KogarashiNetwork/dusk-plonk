@@ -12,8 +12,6 @@
 //! This allows us to perform polynomial operations in O(n)
 //! by performing an O(n log n) FFT over such a domain.
 
-use sp_std::vec;
-
 /// Defines a domain over which finite field (I)FFTs can be performed. Works
 /// only for fields that have a large multiplicative subgroup of size that is
 /// a power-of-2.
@@ -83,52 +81,6 @@ impl<P: Pairing> EvaluationDomain<P> {
     /// Return the size of `self`.
     pub(crate) fn size(&self) -> usize {
         self.size as usize
-    }
-
-    #[allow(clippy::needless_range_loop)]
-    /// Evaluate all the lagrange polynomials defined by this domain at the
-    /// point `tau`.
-    pub(crate) fn evaluate_all_lagrange_coefficients(
-        &self,
-        tau: P::ScalarField,
-    ) -> Vec<P::ScalarField> {
-        // Evaluate all Lagrange polynomials
-        let size = self.size as usize;
-        let t_size = tau.pow(self.size);
-        let one = P::ScalarField::one();
-        if t_size == P::ScalarField::one() {
-            let mut u = vec![P::ScalarField::zero(); size];
-            let mut omega_i = one;
-            for i in 0..size {
-                if omega_i == tau {
-                    u[i] = one;
-                    break;
-                }
-                omega_i *= &self.group_gen;
-            }
-            u
-        } else {
-            use crate::util::batch_inversion;
-
-            let mut l = (t_size - one) * self.size_inv;
-            let mut r = one;
-            let mut u = vec![P::ScalarField::zero(); size];
-            let mut ls = vec![P::ScalarField::zero(); size];
-            for i in 0..size {
-                u[i] = tau - r;
-                ls[i] = l;
-                l *= &self.group_gen;
-                r *= &self.group_gen;
-            }
-
-            batch_inversion::<P>(u.as_mut_slice());
-
-            u.iter_mut().zip(ls).for_each(|(tau_minus_r, l)| {
-                *tau_minus_r = l * *tau_minus_r;
-            });
-
-            u
-        }
     }
 
     /// Given that the domain size is `D`  

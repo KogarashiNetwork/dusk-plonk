@@ -95,7 +95,7 @@ pub(crate) fn compute<P: Pairing>(
         prover_key,
     );
 
-    let f_2 = prover_key.permutation.compute_linearization(
+    let f_2 = prover_key.permutation.linearize(
         z_challenge,
         (alpha, beta, gamma),
         (&a_eval, &b_eval, &c_eval, &d_eval),

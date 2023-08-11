@@ -376,12 +376,24 @@ impl Compiler {
             ),
         };
 
-        let permutation_prover_key = widget::permutation::ProvingKey {
-            s_sigma_1: (selectors.s_sigma_1, s_sigma_1_eval_8n),
-            s_sigma_2: (selectors.s_sigma_2, s_sigma_2_eval_8n),
-            s_sigma_3: (selectors.s_sigma_3, s_sigma_3_eval_8n),
-            s_sigma_4: (selectors.s_sigma_4, s_sigma_4_eval_8n),
-            linear_evaluations: linear_eval_8n,
+        let permutation_prover_key = permutation::ProvingKey {
+            s_sigma_1: (
+                selectors.s_sigma_1,
+                PolyEval::new(s_sigma_1_eval_8n.evals),
+            ),
+            s_sigma_2: (
+                selectors.s_sigma_2,
+                PolyEval::new(s_sigma_2_eval_8n.evals),
+            ),
+            s_sigma_3: (
+                selectors.s_sigma_3,
+                PolyEval::new(s_sigma_3_eval_8n.evals),
+            ),
+            s_sigma_4: (
+                selectors.s_sigma_4,
+                PolyEval::new(s_sigma_4_eval_8n.evals),
+            ),
+            linear_evaluations: PolyEval::new(linear_eval_8n.evals),
         };
 
         let curve_addition_prover_key = add::ProvingKey {

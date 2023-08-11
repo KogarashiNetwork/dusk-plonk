@@ -8,7 +8,7 @@
 //! are needed to univocally identify a prove of some statement.
 
 use codec::{Decode, Encode};
-use poly_commit::{Commitment, Polynomial};
+use poly_commit::{batch_inversion, Commitment, Polynomial};
 use zksnarks::Evaluations as ProofEvaluations;
 use zkstd::behave::Ring;
 
@@ -58,7 +58,6 @@ use crate::{
     commitment_scheme::{AggregateProof, OpeningKey},
     error::Error,
     fft::EvaluationDomain,
-    util::batch_inversion,
 };
 #[rustfmt::skip]
     use ::alloc::vec::Vec;
@@ -575,7 +574,7 @@ fn compute_barycentric_eval<P: Pairing>(
                 - P::ScalarField::one()
         })
         .collect();
-    batch_inversion::<P>(&mut denominators);
+    batch_inversion(&mut denominators);
 
     let result: P::ScalarField = range
         .map(|i| {
