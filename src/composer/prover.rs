@@ -19,7 +19,6 @@ use zkstd::behave::{FftField, Group};
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{linearization_poly, quotient_poly};
-use crate::util;
 
 use super::{Builder, Circuit, Composer};
 
@@ -97,7 +96,7 @@ where
         fft.idft(&mut w_vec_inverse);
 
         for i in 0..hiding_degree + 1 {
-            let blinding_scalar = util::random_scalar::<R, P>(rng);
+            let blinding_scalar = P::ScalarField::random(&mut *rng);
             w_vec_inverse.0[i] -= blinding_scalar;
             w_vec_inverse.0.push(blinding_scalar);
         }
@@ -160,17 +159,12 @@ where
         let o_w_poly = Self::blind_poly(rng, &o_w_scalar, 1, &fft);
         let d_w_poly = Self::blind_poly(rng, &d_w_scalar, 1, &fft);
 
-        let a_w_poly_commit = a_w_poly.clone();
-        let b_w_poly_commit = b_w_poly.clone();
-        let o_w_poly_commit = o_w_poly.clone();
-        let d_w_poly_commit = d_w_poly.clone();
-
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
-        let a_w_poly_commit = self.keypair.commit(&a_w_poly_commit)?;
-        let b_w_poly_commit = self.keypair.commit(&b_w_poly_commit)?;
-        let o_w_poly_commit = self.keypair.commit(&o_w_poly_commit)?;
-        let d_w_poly_commit = self.keypair.commit(&d_w_poly_commit)?;
+        let a_w_poly_commit = self.keypair.commit(&a_w_poly)?;
+        let b_w_poly_commit = self.keypair.commit(&b_w_poly)?;
+        let o_w_poly_commit = self.keypair.commit(&o_w_poly)?;
+        let d_w_poly_commit = self.keypair.commit(&d_w_poly)?;
 
         // Add wire polynomial commitments to transcript
         <Transcript as TranscriptProtocol<P>>::append_commitment(
@@ -287,18 +281,16 @@ where
 
         // split quotient polynomial into 4 degree `n` polynomials
         let domain_size = fft.size();
-        let t_low_poly = Coefficients::from_coefficients_vec(
-            t_poly[0..domain_size].to_vec(),
-        );
-        let t_mid_poly = Coefficients::from_coefficients_vec(
+        let t_low_poly =
+            Coefficients::from_vec(t_poly[0..domain_size].to_vec());
+        let t_mid_poly = Coefficients::from_vec(
             t_poly[domain_size..2 * domain_size].to_vec(),
         );
-        let t_high_poly = Coefficients::from_coefficients_vec(
+        let t_high_poly = Coefficients::from_vec(
             t_poly[2 * domain_size..3 * domain_size].to_vec(),
         );
-        let t_4_poly = Coefficients::from_coefficients_vec(
-            t_poly[3 * domain_size..].to_vec(),
-        );
+        let t_4_poly =
+            Coefficients::from_vec(t_poly[3 * domain_size..].to_vec());
 
         // commit to split quotient polynomial
         let t_low_commit = self.keypair.commit(&t_low_poly)?;

@@ -51,7 +51,7 @@ pub(crate) fn compute<P: Pairing>(
     let k = n.trailing_zeros();
     let fft_8n = Fft::<P::ScalarField>::new(k as usize);
 
-    let mut z_poly = Coefficients::new(z_poly.0.clone());
+    let mut z_poly = z_poly.clone();
     let mut a_w_poly = a_w_poly.clone();
     let mut b_w_poly = b_w_poly.clone();
     let mut c_w_poly = c_w_poly.clone();
@@ -72,11 +72,11 @@ pub(crate) fn compute<P: Pairing>(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = Coefficients::from_coefficients_vec(z_poly.0);
-    let a_w_eval_8n = Coefficients::from_coefficients_vec(a_w_poly.0);
-    let b_w_eval_8n = Coefficients::from_coefficients_vec(b_w_poly.0);
-    let c_w_eval_8n = Coefficients::from_coefficients_vec(c_w_poly.0);
-    let d_w_eval_8n = Coefficients::from_coefficients_vec(d_w_poly.0);
+    let z_eval_8n = Coefficients::from_vec(z_poly.0);
+    let a_w_eval_8n = Coefficients::from_vec(a_w_poly.0);
+    let b_w_eval_8n = Coefficients::from_vec(b_w_poly.0);
+    let c_w_eval_8n = Coefficients::from_vec(c_w_poly.0);
+    let d_w_eval_8n = Coefficients::from_vec(d_w_poly.0);
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -110,7 +110,7 @@ pub(crate) fn compute<P: Pairing>(
     let mut quotient = Coefficients::new(quotient);
     fft_8n.coset_idft(&mut quotient);
 
-    Ok(Coefficients::from_coefficients_vec(quotient.0))
+    Ok(Coefficients::from_vec(quotient.0))
 }
 
 // Ensures that the circuit is satisfied
@@ -266,5 +266,5 @@ fn compute_first_lagrange_poly_scaled<P: Pairing>(
         Coefficients::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
     fft.idft(&mut x_evals);
-    Coefficients::from_coefficients_vec(x_evals.0)
+    Coefficients::from_vec(x_evals.0)
 }

@@ -134,22 +134,19 @@ impl Compiler {
         fft.idft(&mut q_fixed_group_add);
         fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = Coefficients::from_coefficients_vec(q_m.0.clone());
-        let q_l_poly = Coefficients::from_coefficients_vec(q_l.0.clone());
-        let q_r_poly = Coefficients::from_coefficients_vec(q_r.0.clone());
-        let q_o_poly = Coefficients::from_coefficients_vec(q_o.0.clone());
-        let q_c_poly = Coefficients::from_coefficients_vec(q_c.0.clone());
-        let q_d_poly = Coefficients::from_coefficients_vec(q_d.0.clone());
-        let q_arith_poly =
-            Coefficients::from_coefficients_vec(q_arith.0.clone());
-        let q_range_poly =
-            Coefficients::from_coefficients_vec(q_range.0.clone());
-        let q_logic_poly =
-            Coefficients::from_coefficients_vec(q_logic.0.clone());
+        let q_m_poly = Coefficients::from_vec(q_m.0.clone());
+        let q_l_poly = Coefficients::from_vec(q_l.0.clone());
+        let q_r_poly = Coefficients::from_vec(q_r.0.clone());
+        let q_o_poly = Coefficients::from_vec(q_o.0.clone());
+        let q_c_poly = Coefficients::from_vec(q_c.0.clone());
+        let q_d_poly = Coefficients::from_vec(q_d.0.clone());
+        let q_arith_poly = Coefficients::from_vec(q_arith.0.clone());
+        let q_range_poly = Coefficients::from_vec(q_range.0.clone());
+        let q_logic_poly = Coefficients::from_vec(q_logic.0.clone());
         let q_fixed_group_add_poly =
-            Coefficients::from_coefficients_vec(q_fixed_group_add.0.clone());
+            Coefficients::from_vec(q_fixed_group_add.0.clone());
         let q_variable_group_add_poly =
-            Coefficients::from_coefficients_vec(q_variable_group_add.0.clone());
+            Coefficients::from_vec(q_variable_group_add.0.clone());
 
         // 2. compute the sigma polynomials
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
@@ -174,13 +171,13 @@ impl Compiler {
             .unwrap_or_default();
 
         let s_sigma_1_poly_commit =
-            Coefficients::from_coefficients_vec(s_sigma_1_poly.0.clone());
+            Coefficients::from_vec(s_sigma_1_poly.0.clone());
         let s_sigma_2_poly_commit =
-            Coefficients::from_coefficients_vec(s_sigma_2_poly.0.clone());
+            Coefficients::from_vec(s_sigma_2_poly.0.clone());
         let s_sigma_3_poly_commit =
-            Coefficients::from_coefficients_vec(s_sigma_3_poly.0.clone());
+            Coefficients::from_vec(s_sigma_3_poly.0.clone());
         let s_sigma_4_poly_commit =
-            Coefficients::from_coefficients_vec(s_sigma_4_poly.0.clone());
+            Coefficients::from_vec(s_sigma_4_poly.0.clone());
 
         let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit)?;
         let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit)?;
