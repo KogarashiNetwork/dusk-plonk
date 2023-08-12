@@ -15,7 +15,6 @@ use zkstd::common::{Group, Pairing, Ring};
 use super::{Builder, Circuit, Composer, Prover, Verifier};
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
-use crate::proof_system::preprocess::Polynomials;
 use sp_std::vec;
 
 /// Generate the arguments to prove and verify a circuit
@@ -290,64 +289,46 @@ impl Compiler {
 
         let linear_eval_8n = PointsValue::new(min_p.0);
 
-        let selectors = Polynomials::<P> {
-            q_m: q_m_poly,
-            q_l: q_l_poly,
-            q_r: q_r_poly,
-            q_o: q_o_poly,
-            q_c: q_c_poly,
-            q_4: q_d_poly,
-            q_arith: q_arith_poly,
-            q_range: q_range_poly,
-            q_logic: q_logic_poly,
-            q_fixed_group_add: q_fixed_group_add_poly,
-            q_variable_group_add: q_variable_group_add_poly,
-            s_sigma_1: s_sigma_1_poly,
-            s_sigma_2: s_sigma_2_poly,
-            s_sigma_3: s_sigma_3_poly,
-            s_sigma_4: s_sigma_4_poly,
-        };
-
         let arithmetic_prover_key = arithmetic::ProvingKey {
-            q_m: (selectors.q_m, q_m_eval_8n),
-            q_l: (selectors.q_l.clone(), q_l_eval_8n.clone()),
-            q_r: (selectors.q_r.clone(), q_r_eval_8n.clone()),
-            q_o: (selectors.q_o, q_o_eval_8n),
-            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
-            q_4: (selectors.q_4, q_4_eval_8n),
-            q_arith: (selectors.q_arith, q_arith_eval_8n),
+            q_m: (q_m_poly, q_m_eval_8n),
+            q_l: (q_l_poly.clone(), q_l_eval_8n.clone()),
+            q_r: (q_r_poly.clone(), q_r_eval_8n.clone()),
+            q_o: (q_o_poly, q_o_eval_8n),
+            q_c: (q_c_poly.clone(), q_c_eval_8n.clone()),
+            q_4: (q_d_poly, q_4_eval_8n),
+            q_arith: (q_arith_poly, q_arith_eval_8n),
         };
 
         let range_prover_key = range::ProvingKey {
-            q_range: (selectors.q_range, q_range_eval_8n),
+            q_range: (q_range_poly, q_range_eval_8n),
         };
 
         let logic_prover_key = logic::ProvingKey {
-            q_c: (selectors.q_c.clone(), q_c_eval_8n.clone()),
-            q_logic: (selectors.q_logic, q_logic_eval_8n),
+            q_c: (q_c_poly.clone(), q_c_eval_8n.clone()),
+            q_logic: (q_logic_poly, q_logic_eval_8n),
         };
 
         let ecc_prover_key = scalar::ProvingKey::<P> {
-            q_l: (selectors.q_l, q_l_eval_8n),
-            q_r: (selectors.q_r, q_r_eval_8n),
-            q_c: (selectors.q_c, q_c_eval_8n),
+            q_l: (q_l_poly, q_l_eval_8n),
+            q_r: (q_r_poly, q_r_eval_8n),
+            q_c: (q_c_poly, q_c_eval_8n),
             q_fixed_group_add: (
-                selectors.q_fixed_group_add,
+                q_fixed_group_add_poly,
                 q_fixed_group_add_eval_8n,
             ),
         };
 
         let permutation_prover_key = permutation::ProvingKey {
-            s_sigma_1: (selectors.s_sigma_1, s_sigma_1_eval_8n),
-            s_sigma_2: (selectors.s_sigma_2, s_sigma_2_eval_8n),
-            s_sigma_3: (selectors.s_sigma_3, s_sigma_3_eval_8n),
-            s_sigma_4: (selectors.s_sigma_4, s_sigma_4_eval_8n),
+            s_sigma_1: (s_sigma_1_poly, s_sigma_1_eval_8n),
+            s_sigma_2: (s_sigma_2_poly, s_sigma_2_eval_8n),
+            s_sigma_3: (s_sigma_3_poly, s_sigma_3_eval_8n),
+            s_sigma_4: (s_sigma_4_poly, s_sigma_4_eval_8n),
             linear_evaluations: linear_eval_8n,
         };
 
         let curve_addition_prover_key = add::ProvingKey {
             q_variable_group_add: (
-                selectors.q_variable_group_add,
+                q_variable_group_add_poly,
                 q_variable_group_add_eval_8n,
             ),
         };

@@ -4,23 +4,20 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use alloc::vec::Vec;
-use core::marker::PhantomData;
-use core::ops;
-use zkstd::common::Pairing;
-
-use merlin::Transcript;
-use poly_commit::{Coefficients, Fft, KeyPair};
-use rand_core::RngCore;
-use sp_std::vec;
-use zksnarks::{ProvingKey, TranscriptProtocol, VerificationKey};
-use zkstd::behave::{FftField, Group};
-
 use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{linearization_poly, quotient_poly};
 
 use super::{Builder, Circuit, Composer};
+
+use alloc::vec::Vec;
+use core::marker::PhantomData;
+use core::ops;
+use poly_commit::{Coefficients, Fft, KeyPair};
+use rand_core::RngCore;
+use sp_std::vec;
+use zksnarks::{ProvingKey, Transcript, TranscriptProtocol, VerificationKey};
+use zkstd::behave::{FftField, Group, Pairing};
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]

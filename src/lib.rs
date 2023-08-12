@@ -60,7 +60,6 @@ extern crate alloc;
 
 mod bit_iterator;
 mod permutation;
-mod util;
 
 pub mod composer;
 pub mod constraint_system;

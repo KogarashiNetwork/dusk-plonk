@@ -114,7 +114,6 @@ pub(crate) fn compute<P: Pairing>(
 }
 
 // Ensures that the circuit is satisfied
-// Ensures that the circuit is satisfied
 fn compute_circuit_satisfiability_equation<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     (

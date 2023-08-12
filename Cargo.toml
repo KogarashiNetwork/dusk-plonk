@@ -17,7 +17,6 @@ exclude = [
 ]
 
 [dependencies]
-merlin = {version = "3.0", default-features = false}
 rand_core = {version="0.6", default-features=false}
 itertools = {version = "0.9", default-features = false}
 hashbrown = {version = "0.9", default-features=false, features = ["ahash"]}

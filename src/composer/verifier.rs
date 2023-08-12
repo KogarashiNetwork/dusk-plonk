@@ -4,17 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use alloc::vec::Vec;
-use core::marker::PhantomData;
-use merlin::Transcript;
-use zksnarks::{TranscriptProtocol, VerificationKey};
-use zkstd::common::Pairing;
-
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use crate::proof_system::Proof;
 
 use super::Builder;
+
+use alloc::vec::Vec;
+use core::marker::PhantomData;
+use zksnarks::{Transcript, TranscriptProtocol, VerificationKey};
+use zkstd::common::Pairing;
 
 /// Verify proofs of a given circuit
 pub struct Verifier<C, P: Pairing> {

@@ -4,8 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
-use poly_commit::Commitment;
+use poly_commit::{powers_of, Commitment};
+#[cfg(feature = "std")]
+use rayon::prelude::*;
+use zksnarks::{Transcript, TranscriptProtocol};
 use zkstd::common::Pairing;
 
 /// Proof that a polynomial `p` was correctly evaluated at a point `z`
@@ -21,14 +25,6 @@ pub(crate) struct Proof<P: Pairing> {
     /// statement about.
     pub(crate) commitment_to_polynomial: Commitment<P::G1Affine>,
 }
-
-use crate::util::powers_of;
-#[rustfmt::skip]
-    use ::alloc::vec::Vec;
-use merlin::Transcript;
-#[cfg(feature = "std")]
-use rayon::prelude::*;
-use zksnarks::TranscriptProtocol;
 
 /// Proof that multiple polynomials were correctly evaluated at a point `z`,
 /// each producing their respective evaluated points p_i(z).
@@ -75,10 +71,8 @@ impl<P: Pairing> AggregateProof<P> {
         >>::challenge_scalar(
             transcript, b"v_challenge"
         );
-        let powers: Vec<P::ScalarField> = powers_of::<P>(
-            &v_challenge,
-            self.commitments_to_polynomials.len() - 1,
-        );
+        let powers =
+            powers_of(&v_challenge, self.commitments_to_polynomials.len() - 1);
 
         #[cfg(not(feature = "std"))]
         let flattened_poly_commitments_iter =

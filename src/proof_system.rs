@@ -7,7 +7,6 @@
 //! Proving system
 
 pub(crate) mod linearization_poly;
-pub(crate) mod preprocess;
 pub(crate) mod proof;
 pub(crate) mod quotient_poly;
 

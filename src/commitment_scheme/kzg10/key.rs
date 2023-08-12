@@ -8,10 +8,10 @@
 //! that support the generation and usage of Commit and
 //! Opening keys.
 use super::proof::Proof;
-use crate::{error::Error, util};
+use crate::error::Error;
 use codec::{Decode, Encode};
-use merlin::Transcript;
-use zksnarks::TranscriptProtocol;
+use poly_commit::powers_of;
+use zksnarks::{Transcript, TranscriptProtocol};
 use zkstd::behave::{CurveGroup, Group, Pairing, PairingRange};
 
 /// Opening Key is used to verify opening proofs made about a committed
@@ -63,7 +63,7 @@ impl<P: Pairing> OpeningKey<P> {
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
                 transcript, b"batch",
             ); // XXX: Verifier can add their own randomness at this point
-        let powers = util::powers_of::<P>(&u_challenge, proofs.len() - 1);
+        let powers = powers_of(&u_challenge, proofs.len() - 1);
         // Instead of multiplying g and gamma_g in each turn, we simply
         // accumulate their coefficients and perform a final
         // multiplication at the end.

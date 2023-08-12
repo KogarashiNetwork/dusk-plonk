@@ -7,10 +7,21 @@
 //! A Proof stores the commitments to all of the elements that
 //! are needed to univocally identify a prove of some statement.
 
+use crate::{
+    commitment_scheme::{AggregateProof, OpeningKey},
+    error::Error,
+};
+use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
+use ec_pairing::msm_variable_base;
 use poly_commit::{batch_inversion, Coefficients, Commitment, Fft};
-use zksnarks::Evaluations as ProofEvaluations;
-use zkstd::behave::Ring;
+#[cfg(feature = "std")]
+use rayon::prelude::*;
+use zksnarks::{
+    Evaluations as ProofEvaluations, Transcript, TranscriptProtocol,
+    VerificationKey,
+};
+use zkstd::behave::{FftField, Group, Pairing, PrimeField, Ring};
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
 /// Quotient, Shifted and Opening polynomials as well as the
@@ -53,22 +64,6 @@ pub struct Proof<P: Pairing> {
     /// Subset of all of the evaluations added to the proof.
     pub(crate) evaluations: ProofEvaluations<P::ScalarField>,
 }
-
-use crate::{
-    commitment_scheme::{AggregateProof, OpeningKey},
-    error::Error,
-};
-#[rustfmt::skip]
-    use ::alloc::vec::Vec;
-use ec_pairing::msm_variable_base;
-use merlin::Transcript;
-#[cfg(feature = "std")]
-use rayon::prelude::*;
-use zksnarks::{TranscriptProtocol, VerificationKey};
-use zkstd::{
-    behave::{FftField, Group, PrimeField},
-    common::Pairing,
-};
 
 impl<P: Pairing> Proof<P> {
     /// Performs the verification of a [`Proof`] returning a boolean result.
