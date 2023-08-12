@@ -28,7 +28,7 @@ pub(crate) fn compute<P: Pairing>(
         gamma,
         range_separation_challenge,
         logic_separation_challenge,
-        fixed_base_separation_challenge,
+        curve_scalar_separation_challenge,
         var_base_separation_challenge,
         z_challenge,
     ): &(
@@ -64,8 +64,8 @@ pub(crate) fn compute<P: Pairing>(
 
     let q_arith_eval = prover_key.arithmetic.q_arith.0.evaluate(z_challenge);
     let q_c_eval = prover_key.logic.q_c.0.evaluate(z_challenge);
-    let q_l_eval = prover_key.fixed_base.q_l.0.evaluate(z_challenge);
-    let q_r_eval = prover_key.fixed_base.q_r.0.evaluate(z_challenge);
+    let q_l_eval = prover_key.curve_scalar.q_l.0.evaluate(z_challenge);
+    let q_r_eval = prover_key.curve_scalar.q_r.0.evaluate(z_challenge);
 
     let a_next_eval = a_w_poly.evaluate(&(*z_challenge * group_generator));
     let b_next_eval = b_w_poly.evaluate(&(*z_challenge * group_generator));
@@ -76,7 +76,7 @@ pub(crate) fn compute<P: Pairing>(
         (
             range_separation_challenge,
             logic_separation_challenge,
-            fixed_base_separation_challenge,
+            curve_scalar_separation_challenge,
             var_base_separation_challenge,
         ),
         &a_eval,
@@ -137,7 +137,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
     (
         range_separation_challenge,
         logic_separation_challenge,
-        fixed_base_separation_challenge,
+        curve_scalar_separation_challenge,
         var_base_separation_challenge,
     ): (
         &P::ScalarField,
@@ -187,8 +187,8 @@ fn compute_circuit_satisfiability<P: Pairing>(
         q_c_eval,
     );
 
-    let d = prover_key.fixed_base.linearize(
-        fixed_base_separation_challenge,
+    let d = prover_key.curve_scalar.linearize(
+        curve_scalar_separation_challenge,
         a_eval,
         a_next_eval,
         b_eval,
@@ -201,7 +201,7 @@ fn compute_circuit_satisfiability<P: Pairing>(
         q_c_eval,
     );
 
-    let e = prover_key.variable_base.linearize(
+    let e = prover_key.curve_addtion.linearize(
         var_base_separation_challenge,
         a_eval,
         a_next_eval,

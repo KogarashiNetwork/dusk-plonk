@@ -13,7 +13,7 @@ use crate::{
 };
 use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
-use ec_pairing::msm_variable_base;
+use ec_pairing::msm_curve_addtion;
 use poly_commit::{batch_inversion, Coefficients, Commitment};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
@@ -137,7 +137,7 @@ impl<P: Pairing> Proof<P> {
                 transcript,
                 b"logic separation challenge",
             );
-        let fixed_base_sep_challenge =
+        let curve_scalar_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
                 transcript,
                 b"fixed base separation challenge",
@@ -302,7 +302,7 @@ impl<P: Pairing> Proof<P> {
             (
                 &range_sep_challenge,
                 &logic_sep_challenge,
-                &fixed_base_sep_challenge,
+                &curve_scalar_sep_challenge,
                 &var_base_sep_challenge,
             ),
             &z_challenge,
@@ -468,7 +468,7 @@ impl<P: Pairing> Proof<P> {
         (
             range_sep_challenge,
             logic_sep_challenge,
-            fixed_base_sep_challenge,
+            curve_scalar_sep_challenge,
             var_base_sep_challenge,
         ): (
             &P::ScalarField,
@@ -492,11 +492,11 @@ impl<P: Pairing> Proof<P> {
             .linearize(logic_sep_challenge, &self.evaluations);
 
         let (scalar_scalars, scalar_points) = verifier_key
-            .fixed_base
-            .linearize(fixed_base_sep_challenge, &self.evaluations);
+            .curve_scalar
+            .linearize(curve_scalar_sep_challenge, &self.evaluations);
 
         let (addition_scalars, addition_points) = verifier_key
-            .variable_base
+            .curve_addtion
             .linearize(var_base_sep_challenge, &self.evaluations);
 
         let (permutation_scalars, permutation_points) =
@@ -508,7 +508,7 @@ impl<P: Pairing> Proof<P> {
                 &self.evaluations,
             );
 
-        Commitment::new(msm_variable_base::<P>(
+        Commitment::new(msm_curve_addtion::<P>(
             &[
                 arithmetic_points,
                 range_points,

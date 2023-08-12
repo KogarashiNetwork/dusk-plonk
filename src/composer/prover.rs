@@ -241,7 +241,7 @@ where
                 &mut transcript,
                 b"logic separation challenge",
             );
-        let fixed_base_sep_challenge =
+        let curve_scalar_sep_challenge =
             <Transcript as TranscriptProtocol<P>>::challenge_scalar(
                 &mut transcript,
                 b"fixed base separation challenge",
@@ -264,7 +264,7 @@ where
             gamma,
             range_sep_challenge,
             logic_sep_challenge,
-            fixed_base_sep_challenge,
+            curve_scalar_sep_challenge,
             var_base_sep_challenge,
         );
         let t_poly = quotient_poly::compute(
@@ -336,7 +336,7 @@ where
                 gamma,
                 range_sep_challenge,
                 logic_sep_challenge,
-                fixed_base_sep_challenge,
+                curve_scalar_sep_challenge,
                 var_base_sep_challenge,
                 z_challenge,
             ),

@@ -34,7 +34,7 @@ pub(crate) fn compute<P: Pairing>(
         gamma,
         range_challenge,
         logic_challenge,
-        fixed_base_challenge,
+        curve_scalar_challenge,
         var_base_challenge,
     ): &(
         P::ScalarField,
@@ -83,7 +83,7 @@ pub(crate) fn compute<P: Pairing>(
         (
             range_challenge,
             logic_challenge,
-            fixed_base_challenge,
+            curve_scalar_challenge,
             var_base_challenge,
         ),
         prover_key,
@@ -119,7 +119,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
     (
         range_challenge,
         logic_challenge,
-        fixed_base_challenge,
+        curve_scalar_challenge,
         var_base_challenge,
     ): (
         &P::ScalarField,
@@ -183,9 +183,9 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
                 d_w_next,
             );
 
-            let d = prover_key.fixed_base.compute_quotient_i(
+            let d = prover_key.curve_scalar.compute_quotient_i(
                 i,
-                fixed_base_challenge,
+                curve_scalar_challenge,
                 a_w,
                 a_w_next,
                 b_w,
@@ -195,7 +195,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
                 d_w_next,
             );
 
-            let e = prover_key.variable_base.compute_quotient_i(
+            let e = prover_key.curve_addtion.compute_quotient_i(
                 i,
                 var_base_challenge,
                 a_w,

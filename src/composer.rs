@@ -358,7 +358,7 @@ pub trait Composer<PR: Pairing>:
             };
 
             let constraint =
-                Constraint::group_add_fixed_base(&Constraint::new())
+                Constraint::group_add_curve_scalar(&Constraint::new())
                     .left(wnaf_round.x_beta)
                     .right(wnaf_round.y_beta)
                     .constant(wnaf_round.xy_beta)
@@ -721,7 +721,7 @@ pub trait Composer<PR: Pairing>:
 
         // Add the rest of the prepared points into the composer
         let constraint = Constraint::new().a(x_1).b(y_1).o(x_2).d(y_2);
-        let constraint = Constraint::group_add_variable_base(&constraint);
+        let constraint = Constraint::group_add_curve_addtion(&constraint);
 
         self.append_custom_gate(constraint);
 

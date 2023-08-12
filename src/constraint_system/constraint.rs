@@ -241,14 +241,14 @@ impl<P: Pairing> Constraint<P> {
     #[allow(dead_code)]
     // TODO to be used when `ComposerBackend` replaces internal selectors
     // with this struct
-    pub(crate) fn group_add_fixed_base(s: &Self) -> Self {
+    pub(crate) fn group_add_curve_scalar(s: &Self) -> Self {
         Self::from_external(s).set(Selector::GroupAddFixedBase, 1)
     }
 
     #[allow(dead_code)]
     // TODO to be used when `ComposerBackend` replaces internal selectors
     // with this struct
-    pub(crate) fn group_add_variable_base(s: &Self) -> Self {
+    pub(crate) fn group_add_curve_addtion(s: &Self) -> Self {
         Self::from_external(s).set(Selector::GroupAddVariableBase, 1)
     }
 }

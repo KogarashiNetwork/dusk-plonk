@@ -333,11 +333,11 @@ is necessary since `rkyv/validation` was required as a bound.
 
 ### Added
 
-- Add a `variable_base_scalar_mul` method using a variable base curve add gate.
+- Add a `curve_addtion_scalar_mul` method using a variable base curve add gate.
 
 ### Changed
 
-- `ecc::scalar_mul` now named fixed_base_scalar_mul
+- `ecc::scalar_mul` now named curve_scalar_scalar_mul
 
 ## [0.2.7] - 2020-08-13
 
@@ -346,7 +346,7 @@ is necessary since `rkyv/validation` was required as a bound.
 - `Anyhow` & `thiserror` for error handling support.
 - Serialization methods for the crate public structures &
   `serde` support.
-- Add a `variable_base_scalar_mul` method using a variable base curve add gate.
+- Add a `curve_addtion_scalar_mul` method using a variable base curve add gate.
 
 ### Removed
 
@@ -358,7 +358,7 @@ is necessary since `rkyv/validation` was required as a bound.
   a `Scalar` and returns a constant & constrained witness `Variable`.
 - Update `add_witness_to_circuit_description` fn sig [#282], [#284]
 - dusk-jubjub version updated to 0.3.6
-- `ecc::scalar_mul` now named fixed_base_scalar_mul
+- `ecc::scalar_mul` now named curve_scalar_scalar_mul
 
 ## [0.2.6] - 2020-08-03
 
