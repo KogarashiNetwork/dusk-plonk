@@ -14,7 +14,7 @@ use crate::{
 use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
 use ec_pairing::msm_variable_base;
-use poly_commit::{batch_inversion, Coefficients, Commitment, Fft};
+use poly_commit::{batch_inversion, Coefficients, Commitment};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use zksnarks::{
@@ -74,10 +74,6 @@ impl<P: Pairing> Proof<P> {
         opening_key: &OpeningKey<P>,
         pub_inputs: &[P::ScalarField],
     ) -> Result<(), Error> {
-        let n = verifier_key.n.next_power_of_two();
-        let k = n.trailing_zeros();
-        let domain = Fft::new(k as usize);
-
         // Subgroup checks are done when the proof is deserialized.
 
         // In order for the Verifier and Prover to have the same view in the
@@ -181,19 +177,23 @@ impl<P: Pairing> Proof<P> {
                 b"z_challenge",
             );
 
+        let n = verifier_key.n.next_power_of_two() as u64;
+        let n_inv = verifier_key.n_inv;
+        let generator = verifier_key.generator;
+        let generator_inv = verifier_key.generator_inv;
+
         // Compute zero polynomial evaluated at challenge `z`
-        let z_h_eval = Coefficients::t(n as u64, z_challenge);
+        let z_h_eval = Coefficients::t(n, z_challenge);
 
         // Compute first lagrange polynomial evaluated at challenge `z`
-        let l1_eval = compute_first_lagrange_evaluation::<P>(
-            &domain,
-            &z_h_eval,
-            &z_challenge,
-        );
+        let l1_eval =
+            compute_first_lagrange_evaluation(n, &z_h_eval, &z_challenge);
 
         // Compute quotient polynomial evaluated at challenge `z`
         let t_eval = self.compute_quotient_evaluation(
-            &domain,
+            n,
+            &n_inv,
+            &generator_inv,
             pub_inputs,
             &alpha,
             &beta,
@@ -374,7 +374,7 @@ impl<P: Pairing> Proof<P> {
         // Batch check
         if opening_key
             .batch_check(
-                &[z_challenge, (z_challenge * domain.generator())],
+                &[z_challenge, (z_challenge * generator)],
                 &[flattened_proof_a, flattened_proof_b],
                 transcript,
             )
@@ -389,7 +389,9 @@ impl<P: Pairing> Proof<P> {
     #[allow(clippy::too_many_arguments)]
     fn compute_quotient_evaluation(
         &self,
-        domain: &Fft<P::ScalarField>,
+        n: u64,
+        n_inv: &P::ScalarField,
+        generator_inv: &P::ScalarField,
         pub_inputs: &[P::ScalarField],
         alpha: &P::ScalarField,
         beta: &P::ScalarField,
@@ -400,8 +402,13 @@ impl<P: Pairing> Proof<P> {
         z_hat_eval: &P::ScalarField,
     ) -> P::ScalarField {
         // Compute the public input polynomial evaluated at challenge `z`
-        let pi_eval =
-            compute_barycentric_eval::<P>(pub_inputs, z_challenge, domain);
+        let pi_eval = compute_barycentric_eval::<P>(
+            pub_inputs,
+            z_challenge,
+            n,
+            n_inv,
+            generator_inv,
+        );
 
         // Compute powers of alpha_0
         let alpha_sq = alpha.square();
@@ -439,11 +446,11 @@ impl<P: Pairing> Proof<P> {
     fn compute_quotient_commitment(
         &self,
         z_challenge: &P::ScalarField,
-        n: usize,
+        n: u64,
     ) -> Commitment<P::G1Affine> {
-        let z_n = z_challenge.pow(n as u64);
-        let z_two_n = z_challenge.pow(2 * n as u64);
-        let z_three_n = z_challenge.pow(3 * n as u64);
+        let z_n = z_challenge.pow(n);
+        let z_two_n = z_challenge.pow(2 * n);
+        let z_three_n = z_challenge.pow(3 * n);
         let t_comm = self.t_low_comm.0
             + self.t_mid_comm.0 * z_n
             + self.t_high_comm.0 * z_two_n
@@ -524,23 +531,24 @@ impl<P: Pairing> Proof<P> {
     }
 }
 
-fn compute_first_lagrange_evaluation<P: Pairing>(
-    domain: &Fft<P::ScalarField>,
-    z_h_eval: &P::ScalarField,
-    z_challenge: &P::ScalarField,
-) -> P::ScalarField {
-    let n_fr = P::ScalarField::from(domain.size() as u64);
-    let denom = n_fr * (*z_challenge - P::ScalarField::one());
+fn compute_first_lagrange_evaluation<F: PrimeField>(
+    n: u64,
+    z_h_eval: &F,
+    z_challenge: &F,
+) -> F {
+    let n_fr = F::from(n);
+    let denom = n_fr * (*z_challenge - F::one());
     *z_h_eval * denom.invert().unwrap()
 }
 
 fn compute_barycentric_eval<P: Pairing>(
     evaluations: &[P::ScalarField],
     point: &P::ScalarField,
-    domain: &Fft<P::ScalarField>,
+    n: u64,
+    n_inv: &P::ScalarField,
+    generator_inv: &P::ScalarField,
 ) -> P::ScalarField {
-    let numerator = (point.pow(domain.size() as u64) - P::ScalarField::one())
-        * domain.size_inv();
+    let numerator = (point.pow(n) - P::ScalarField::one()) * n_inv;
 
     // Indices with non-zero evaluations
     #[cfg(not(feature = "std"))]
@@ -569,8 +577,7 @@ fn compute_barycentric_eval<P: Pairing>(
             // index of non-zero evaluation
             let index = non_zero_evaluations[i];
 
-            (domain.generator_inv().pow(index as u64) * point)
-                - P::ScalarField::one()
+            (generator_inv.pow(index as u64) * point) - P::ScalarField::one()
         })
         .collect();
     batch_inversion(&mut denominators);

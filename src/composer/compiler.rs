@@ -4,7 +4,9 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::{Coefficients, Fft, KeyPair, PointsValue};
+use poly_commit::{
+    Coefficients as Coeffs, Fft, KeyPair, PointsValue as Points,
+};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
@@ -76,36 +78,27 @@ impl Compiler {
         let mut perm = prover.perm.clone();
 
         let constraints = prover.constraints();
-        let size = constraints.next_power_of_two();
-        let k = size.trailing_zeros();
+        let n = constraints.next_power_of_two();
+        let k = n.trailing_zeros();
         let fft = Fft::<P::ScalarField>::new(k as usize);
 
         // 1. pad circuit to a power of two
         //
         // we use allocated vectors because the current ifft api only accepts
         // slices
-        let mut q_m =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_l =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_r =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_o =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_c =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_d =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_arith =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_range =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
-        let mut q_logic =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
+        let mut q_m = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_l = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_r = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_o = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_c = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_d = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_arith = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_range = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_logic = Coeffs::new(vec![P::ScalarField::zero(); n]);
         let mut q_fixed_group_add =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coeffs::new(vec![P::ScalarField::zero(); n]);
         let mut q_variable_group_add =
-            Coefficients::new(vec![<P::ScalarField as Group>::zero(); size]);
+            Coeffs::new(vec![P::ScalarField::zero(); n]);
 
         prover.constraints.iter().enumerate().for_each(|(i, c)| {
             q_m.0[i] = c.q_m;
@@ -133,23 +126,23 @@ impl Compiler {
         fft.idft(&mut q_fixed_group_add);
         fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = Coefficients::from_vec(q_m.0.clone());
-        let q_l_poly = Coefficients::from_vec(q_l.0.clone());
-        let q_r_poly = Coefficients::from_vec(q_r.0.clone());
-        let q_o_poly = Coefficients::from_vec(q_o.0.clone());
-        let q_c_poly = Coefficients::from_vec(q_c.0.clone());
-        let q_d_poly = Coefficients::from_vec(q_d.0.clone());
-        let q_arith_poly = Coefficients::from_vec(q_arith.0.clone());
-        let q_range_poly = Coefficients::from_vec(q_range.0.clone());
-        let q_logic_poly = Coefficients::from_vec(q_logic.0.clone());
+        let q_m_poly = Coeffs::from_vec(q_m.0.clone());
+        let q_l_poly = Coeffs::from_vec(q_l.0.clone());
+        let q_r_poly = Coeffs::from_vec(q_r.0.clone());
+        let q_o_poly = Coeffs::from_vec(q_o.0.clone());
+        let q_c_poly = Coeffs::from_vec(q_c.0.clone());
+        let q_d_poly = Coeffs::from_vec(q_d.0.clone());
+        let q_arith_poly = Coeffs::from_vec(q_arith.0.clone());
+        let q_range_poly = Coeffs::from_vec(q_range.0.clone());
+        let q_logic_poly = Coeffs::from_vec(q_logic.0.clone());
         let q_fixed_group_add_poly =
-            Coefficients::from_vec(q_fixed_group_add.0.clone());
+            Coeffs::from_vec(q_fixed_group_add.0.clone());
         let q_variable_group_add_poly =
-            Coefficients::from_vec(q_variable_group_add.0.clone());
+            Coeffs::from_vec(q_variable_group_add.0.clone());
 
         // 2. compute the sigma polynomials
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
-            perm.compute_sigma_polynomials(size, &fft);
+            perm.compute_sigma_polynomials(n, &fft);
 
         let q_m_poly_commit = keypair.commit(&q_m_poly).unwrap_or_default();
         let q_l_poly_commit = keypair.commit(&q_l_poly).unwrap_or_default();
@@ -169,14 +162,10 @@ impl Compiler {
             .commit(&q_variable_group_add_poly)
             .unwrap_or_default();
 
-        let s_sigma_1_poly_commit =
-            Coefficients::from_vec(s_sigma_1_poly.0.clone());
-        let s_sigma_2_poly_commit =
-            Coefficients::from_vec(s_sigma_2_poly.0.clone());
-        let s_sigma_3_poly_commit =
-            Coefficients::from_vec(s_sigma_3_poly.0.clone());
-        let s_sigma_4_poly_commit =
-            Coefficients::from_vec(s_sigma_4_poly.0.clone());
+        let s_sigma_1_poly_commit = Coeffs::from_vec(s_sigma_1_poly.0.clone());
+        let s_sigma_2_poly_commit = Coeffs::from_vec(s_sigma_2_poly.0.clone());
+        let s_sigma_3_poly_commit = Coeffs::from_vec(s_sigma_3_poly.0.clone());
+        let s_sigma_4_poly_commit = Coeffs::from_vec(s_sigma_4_poly.0.clone());
 
         let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit)?;
         let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit)?;
@@ -227,6 +216,9 @@ impl Compiler {
 
         let verifier_key = VerificationKey {
             n: constraints,
+            n_inv: fft.size_inv(),
+            generator: fft.generator(),
+            generator_inv: fft.generator_inv(),
             arithmetic: arithmetic_verifier_key,
             logic: logic_verifier_key,
             range: range_verifier_key,
@@ -239,17 +231,15 @@ impl Compiler {
         // Plus, adding the blinding factors translates to
         // the polynomial not fitting in 4n, so now we need
         // 8n, the next power of 2
-        let n = (8 * fft.size()).next_power_of_two();
-        let k = n.trailing_zeros();
-        let fft_8n = Fft::new(k as usize);
+        let x8n = (8 * n).next_power_of_two();
+        let x8k = x8n.trailing_zeros();
+        let fft_8n = Fft::new(x8k as usize);
         let mut s_sigma_1 = s_sigma_1_poly.clone();
         let mut s_sigma_2 = s_sigma_2_poly.clone();
         let mut s_sigma_3 = s_sigma_3_poly.clone();
         let mut s_sigma_4 = s_sigma_4_poly.clone();
-        let mut min_p = Coefficients::new(vec![
-            P::ScalarField::zero(),
-            P::ScalarField::one(),
-        ]);
+        let mut min_p =
+            Coeffs::new(vec![P::ScalarField::zero(), P::ScalarField::one()]);
 
         fft_8n.coset_dft(&mut q_m);
         fft_8n.coset_dft(&mut q_l);
@@ -268,26 +258,26 @@ impl Compiler {
         fft_8n.coset_dft(&mut s_sigma_4);
         fft_8n.coset_dft(&mut min_p);
 
-        let q_m_eval_8n = PointsValue::new(q_m.0.clone());
-        let q_l_eval_8n = PointsValue::new(q_l.0.clone());
-        let q_r_eval_8n = PointsValue::new(q_r.0.clone());
-        let q_o_eval_8n = PointsValue::new(q_o.0.clone());
-        let q_c_eval_8n = PointsValue::new(q_c.0.clone());
-        let q_4_eval_8n = PointsValue::new(q_d.0.clone());
-        let q_arith_eval_8n = PointsValue::new(q_arith.0.clone());
-        let q_range_eval_8n = PointsValue::new(q_range.0.clone());
-        let q_logic_eval_8n = PointsValue::new(q_logic.0.clone());
+        let q_m_eval_8n = Points::new(q_m.0.clone());
+        let q_l_eval_8n = Points::new(q_l.0.clone());
+        let q_r_eval_8n = Points::new(q_r.0.clone());
+        let q_o_eval_8n = Points::new(q_o.0.clone());
+        let q_c_eval_8n = Points::new(q_c.0.clone());
+        let q_4_eval_8n = Points::new(q_d.0.clone());
+        let q_arith_eval_8n = Points::new(q_arith.0.clone());
+        let q_range_eval_8n = Points::new(q_range.0.clone());
+        let q_logic_eval_8n = Points::new(q_logic.0.clone());
         let q_fixed_group_add_eval_8n =
-            PointsValue::new(q_fixed_group_add.0.clone());
+            Points::new(q_fixed_group_add.0.clone());
         let q_variable_group_add_eval_8n =
-            PointsValue::new(q_variable_group_add.0.clone());
+            Points::new(q_variable_group_add.0.clone());
 
-        let s_sigma_1_eval_8n = PointsValue::new(s_sigma_1.0);
-        let s_sigma_2_eval_8n = PointsValue::new(s_sigma_2.0);
-        let s_sigma_3_eval_8n = PointsValue::new(s_sigma_3.0);
-        let s_sigma_4_eval_8n = PointsValue::new(s_sigma_4.0);
+        let s_sigma_1_eval_8n = Points::new(s_sigma_1.0);
+        let s_sigma_2_eval_8n = Points::new(s_sigma_2.0);
+        let s_sigma_3_eval_8n = Points::new(s_sigma_3.0);
+        let s_sigma_4_eval_8n = Points::new(s_sigma_4.0);
 
-        let linear_eval_8n = PointsValue::new(min_p.0);
+        let linear_eval_8n = Points::new(min_p.0);
 
         let arithmetic_prover_key = arithmetic::ProvingKey {
             q_m: (q_m_poly, q_m_eval_8n),
@@ -333,11 +323,10 @@ impl Compiler {
             ),
         };
 
-        let v_h_coset_8n =
-            fft_8n.compute_vanishing_poly_over_coset(fft.size() as u64);
+        let v_h_coset_8n = fft_8n.compute_vanishing_poly_over_coset(n as u64);
 
         let prover_key = ProvingKey {
-            n: fft.size(),
+            n,
             arithmetic: arithmetic_prover_key,
             logic: logic_prover_key,
             range: range_prover_key,
@@ -356,7 +345,7 @@ impl Compiler {
             keypair.clone(),
             prover_key,
             verifier_key.clone(),
-            size,
+            n,
             constraints,
         );
 
@@ -369,7 +358,7 @@ impl Compiler {
                 keypair.beta_h(),
             ),
             public_input_indexes,
-            size,
+            n,
             constraints,
         );
 
