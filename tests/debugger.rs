@@ -4,8 +4,11 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use dusk_cdf::CircuitDescription;
 use ec_pairing::TatePairing;
+use std::{env, io};
 use zero_plonk::prelude::*;
+use zkstd::common::Group;
 
 #[derive(Debug, Default)]
 struct EmptyCircuit;
