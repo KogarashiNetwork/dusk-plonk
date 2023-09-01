@@ -11,19 +11,18 @@ use std::path::PathBuf;
 
 use dusk_cdf::{
     BaseConfig, Config, EncodableConstraint, EncodableSource, EncodableWitness,
-    Encoder, EncoderContextFileProvider, Polynomial, Selectors, Wirees,
+    Encoder, EncoderContextFileProvider, Polynomial, Selectors, WiredWitnesses,
 };
-use zksnarks::Witness;
+use zksnarks::{Constraint, Witness};
 use zkstd::behave::{Group, Pairing, SigUtils};
 
-use crate::constraint_system::{Constraint, Selector, Wire};
 use crate::runtime::RuntimeEvent;
 
 /// PLONK debugger
 #[derive(Debug, Clone)]
 pub(crate) struct Debugger<P: Pairing> {
     witnesses: Vec<(EncodableSource, Witness, P::ScalarField)>,
-    constraints: Vec<(EncodableSource, Constraint<P>)>,
+    constraints: Vec<(EncodableSource, Constraint<P::ScalarField>)>,
 }
 
 impl<P: Pairing> Debugger<P> {
@@ -88,25 +87,26 @@ impl<P: Pairing> Debugger<P> {
                 .map(|(id, (source, c))| {
                     let source = source.clone();
 
-                    let qm = c.coeff(Selector::Multiplication);
-                    let ql = c.coeff(Selector::Left);
-                    let qr = c.coeff(Selector::Right);
-                    let qd = c.coeff(Selector::Fourth);
-                    let qc = c.coeff(Selector::Constant);
-                    let qo = c.coeff(Selector::Output);
-                    let pi = c.coeff(Selector::PublicInput);
-                    let qarith = c.coeff(Selector::Arithmetic);
-                    let qlogic = c.coeff(Selector::Logic);
-                    let qrange = c.coeff(Selector::Range);
-                    let qgroup_variable =
-                        c.coeff(Selector::GroupAddVariableBase);
-                    let qfixed_add = c.coeff(Selector::GroupAddFixedBase);
+                    let qm = c.q_m;
+                    let ql = c.q_l;
+                    let qr = c.q_r;
+                    let qd = c.q_d;
+                    let qc = c.q_c;
+                    let qo = c.q_o;
+                    let pi = c
+                        .public_input
+                        .unwrap_or_else(|| P::ScalarField::zero());
+                    let qarith = c.q_arith;
+                    let qlogic = c.q_logic;
+                    let qrange = c.q_range;
+                    let qgroup_variable = c.q_variable_group_add;
+                    let qfixed_add = c.q_fixed_group_add;
 
-                    let witnesses = Wirees {
-                        a: c.witness(Wire::A).index(),
-                        b: c.witness(Wire::B).index(),
-                        d: c.witness(Wire::D).index(),
-                        o: c.witness(Wire::O).index(),
+                    let witnesses = WiredWitnesses {
+                        a: c.w_a.index(),
+                        b: c.w_b.index(),
+                        d: c.w_d.index(),
+                        o: c.w_o.index(),
                     };
 
                     let wa = self
@@ -134,11 +134,11 @@ impl<P: Pairing> Debugger<P> {
                         .unwrap_or_default();
 
                     // TODO check arith, range, logic & ecc wires
-                    let evaluation = *qm * wa * wb
-                        + *ql * wa
-                        + *qr * wb
-                        + *qd * wd
-                        + *qo * wo
+                    let evaluation = qm * wa * wb
+                        + ql * wa
+                        + qr * wb
+                        + qd * wd
+                        + qo * wo
                         + qc
                         + pi;
 
