@@ -40,26 +40,15 @@ pub struct Constraint<P: Pairing> {
 
 impl<P: Pairing> Default for Constraint<P> {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<P: Pairing> AsRef<[P::ScalarField]> for Constraint<P> {
-    fn as_ref(&self) -> &[P::ScalarField] {
-        &self.coefficients
-    }
-}
-
-impl<P: Pairing> Constraint<P> {
-    /// Initiate the composition of a new selector description of a circuit.
-    pub fn new() -> Self {
         Self {
             coefficients: [P::ScalarField::zero(); 13],
             witnesses: [Builder::<P>::ZERO; 4],
             has_public_input: false,
         }
     }
+}
 
+impl<P: Pairing> Constraint<P> {
     fn set<T: Into<P::ScalarField>>(mut self, r: Selector, s: T) -> Self {
         self.coefficients[r as usize] = s.into();
 

@@ -156,9 +156,9 @@ pub trait Composer<PR: Pairing>:
         // `wn` product accumulators will safeguard the quotient polynomial.
 
         let mut constraint = if is_component_xor {
-            Constraint::logic_xor(&Constraint::new())
+            Constraint::logic_xor(&Constraint::default())
         } else {
-            Constraint::logic(&Constraint::new())
+            Constraint::logic(&Constraint::default())
         };
 
         for i in 0..num_quads {
@@ -216,7 +216,7 @@ pub trait Composer<PR: Pairing>:
         let b = constraint.witness(Wire::B);
         let d = constraint.witness(Wire::D);
 
-        let constraint = Constraint::new().a(a).b(b).d(d);
+        let constraint = Constraint::default().a(a).b(b).d(d);
 
         self.append_custom_gate(constraint);
 
@@ -356,7 +356,7 @@ pub trait Composer<PR: Pairing>:
             };
 
             let constraint =
-                Constraint::group_add_curve_scalar(&Constraint::new())
+                Constraint::group_add_curve_scalar(&Constraint::default())
                     .left(wnaf_round.x_beta)
                     .right(wnaf_round.y_beta)
                     .constant(wnaf_round.xy_beta)
@@ -383,7 +383,7 @@ pub trait Composer<PR: Pairing>:
 
         // FIXME the gate isn't checking anything. maybe remove?
         let constraint =
-            Constraint::new().a(acc_x).b(acc_y).d(last_accumulated_bit);
+            Constraint::default().a(acc_x).b(acc_y).d(last_accumulated_bit);
         self.append_gate(constraint);
 
         // constrain the last element in the accumulator to be equal to the
@@ -481,7 +481,7 @@ pub trait Composer<PR: Pairing>:
         let min_twenty = self.append_witness(-PR::ScalarField::from(20));
 
         // Add a dummy constraint so that we do not have zero polynomials
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .mult(1)
             .left(2)
             .right(3)
@@ -497,7 +497,7 @@ pub trait Composer<PR: Pairing>:
 
         // Add another dummy constraint so that we do not get the identity
         // permutation
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .mult(1)
             .left(1)
             .right(1)
@@ -593,7 +593,7 @@ pub trait Composer<PR: Pairing>:
 
     /// Asserts `a == b` by appending a gate
     fn assert_equal(&mut self, a: Witness, b: Witness) {
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .left(1)
             .right(-PR::ScalarField::one())
             .a(a)
@@ -644,7 +644,7 @@ pub trait Composer<PR: Pairing>:
         public: Option<PR::ScalarField>,
     ) {
         let constant = constant.into();
-        let constraint = Constraint::new().left(1).constant(-constant).a(a);
+        let constraint = Constraint::default().left(1).constant(-constant).a(a);
         let constraint = public
             .map(|p| constraint.clone().public(p))
             .unwrap_or(constraint);
@@ -718,12 +718,12 @@ pub trait Composer<PR: Pairing>:
         let y_3 = self.append_witness(y_3);
 
         // Add the rest of the prepared points into the composer
-        let constraint = Constraint::new().a(x_1).b(y_1).o(x_2).d(y_2);
+        let constraint = Constraint::default().a(x_1).b(y_1).o(x_2).d(y_2);
         let constraint = Constraint::group_add_curve_addtion(&constraint);
 
         self.append_custom_gate(constraint);
 
-        let constraint = Constraint::new().a(x_3).b(y_3).d(x_1_y_2);
+        let constraint = Constraint::default().a(x_3).b(y_3).d(x_1_y_2);
 
         self.append_custom_gate(constraint);
 
@@ -739,7 +739,7 @@ pub trait Composer<PR: Pairing>:
     /// equation to fail.
     fn component_boolean(&mut self, a: Witness) {
         let zero = Self::ZERO;
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .mult(1)
             .output(-PR::ScalarField::one())
             .a(a)
@@ -776,7 +776,7 @@ pub trait Composer<PR: Pairing>:
 
                 self.component_boolean(*d);
 
-                let constraint = Constraint::new()
+                let constraint = Constraint::default()
                     .left(PR::ScalarField::pow_of_2(i as u64))
                     .right(1)
                     .a(*d)
@@ -844,22 +844,22 @@ pub trait Composer<PR: Pairing>:
         b: Witness,
     ) -> Witness {
         // bit * a
-        let constraint = Constraint::new().mult(1).a(bit).b(a);
+        let constraint = Constraint::default().mult(1).a(bit).b(a);
         let bit_times_a = self.gate_mul(constraint);
 
         // 1 - bit
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .left(-PR::ScalarField::one())
             .constant(1)
             .a(bit);
         let one_min_bit = self.gate_add(constraint);
 
         // (1 - bit) * b
-        let constraint = Constraint::new().mult(1).a(one_min_bit).b(b);
+        let constraint = Constraint::default().mult(1).a(one_min_bit).b(b);
         let one_min_bit_b = self.gate_mul(constraint);
 
         // [ (1 - bit) * b ] + [ bit * a ]
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .left(1)
             .right(1)
             .a(one_min_bit_b)
@@ -885,7 +885,7 @@ pub trait Composer<PR: Pairing>:
         let f_x = PR::ScalarField::one() - b + (b * v);
         let f_x = self.append_witness(f_x);
 
-        let constraint = Constraint::new()
+        let constraint = Constraint::default()
             .mult(1)
             .left(-PR::ScalarField::one())
             .output(-PR::ScalarField::one())
@@ -930,7 +930,7 @@ pub trait Composer<PR: Pairing>:
         bit: Witness,
         value: Witness,
     ) -> Witness {
-        let constraint = Constraint::new().mult(1).a(bit).b(value);
+        let constraint = Constraint::default().mult(1).a(bit).b(value);
 
         self.gate_mul(constraint)
     }
@@ -972,7 +972,7 @@ pub trait Composer<PR: Pairing>:
         // last gate is reserved for either the genesis quad or the padding
         let used_gates = num_gates + 1;
 
-        let base = Constraint::new();
+        let base = Constraint::default();
         let base = Constraint::range(&base);
         let mut constraints = vec![base; used_gates];
 
@@ -1011,7 +1011,7 @@ pub trait Composer<PR: Pairing>:
         // last constraint is zeroed as it is reserved for the genesis quad or
         // padding
         if let Some(c) = constraints.last_mut() {
-            *c = Constraint::new()
+            *c = Constraint::default()
         }
 
         // the accumulators count is a function to the number of quads. hence,
