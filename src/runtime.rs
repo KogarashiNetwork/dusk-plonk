@@ -7,10 +7,8 @@
 //! PLONK runtime controller
 
 use core::marker::PhantomData;
-use zksnarks::Witness;
+use zksnarks::{Gate, Witness};
 use zkstd::common::Pairing;
-
-use crate::constraint_system::Constraint;
 
 #[cfg(feature = "debug")]
 use crate::debugger::Debugger;
@@ -29,7 +27,7 @@ pub enum RuntimeEvent<P: Pairing> {
     /// A constraint was appended
     ConstraintAppended {
         /// Appended constraint
-        c: Constraint<P>,
+        c: Gate<P::ScalarField>,
     },
 
     /// The proof construction was finished

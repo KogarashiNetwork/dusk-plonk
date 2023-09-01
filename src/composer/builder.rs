@@ -8,10 +8,9 @@ use alloc::vec::Vec;
 use core::ops;
 use hashbrown::HashMap;
 use sp_std::vec;
-use zksnarks::{Gate, Selector, Wire, Witness};
+use zksnarks::{Gate, Witness};
 use zkstd::{behave::Group, common::Pairing};
 
-use crate::constraint_system::Constraint;
 use crate::permutation::Permutation;
 use crate::runtime::Runtime;
 
@@ -104,55 +103,28 @@ impl<P: Pairing> Composer<P> for Builder<P> {
         Witness::new(n)
     }
 
-    fn append_custom_gate_internal(&mut self, constraint: Constraint<P>) {
+    fn append_custom_gate_internal(
+        &mut self,
+        constraint: Gate<P::ScalarField>,
+    ) {
         let n = self.constraints.len();
 
-        let w_a = constraint.witness(Wire::A);
-        let w_b = constraint.witness(Wire::B);
-        let w_o = constraint.witness(Wire::O);
-        let w_d = constraint.witness(Wire::D);
+        self.constraints.push(constraint);
 
-        let q_m = *constraint.coeff(Selector::Multiplication);
-        let q_l = *constraint.coeff(Selector::Left);
-        let q_r = *constraint.coeff(Selector::Right);
-        let q_o = *constraint.coeff(Selector::Output);
-        let q_c = *constraint.coeff(Selector::Constant);
-        let q_d = *constraint.coeff(Selector::Fourth);
-
-        let q_arith = *constraint.coeff(Selector::Arithmetic);
-        let q_range = *constraint.coeff(Selector::Range);
-        let q_logic = *constraint.coeff(Selector::Logic);
-        let q_fixed_group_add = *constraint.coeff(Selector::GroupAddFixedBase);
-        let q_variable_group_add =
-            *constraint.coeff(Selector::GroupAddVariableBase);
-
-        let poly = Gate {
-            q_m,
-            q_l,
-            q_r,
-            q_o,
-            q_c,
-            q_d,
-            q_arith,
-            q_range,
-            q_logic,
-            q_fixed_group_add,
-            q_variable_group_add,
-            w_a,
-            w_b,
-            w_o,
-            w_d,
-        };
-
-        self.constraints.push(poly);
-
-        if constraint.has_public_input() {
-            let pi = *constraint.coeff(Selector::PublicInput);
-
-            self.public_inputs.insert(n, pi);
+        match constraint.public_input {
+            Some(pi) => {
+                self.public_inputs.insert(n, pi);
+            }
+            _ => {}
         }
 
-        self.perm.add_witnesses_to_map(w_a, w_b, w_o, w_d, n);
+        self.perm.add_witnesses_to_map(
+            constraint.w_a,
+            constraint.w_b,
+            constraint.w_o,
+            constraint.w_d,
+            n,
+        );
     }
 
     fn runtime(&mut self) -> &mut Runtime<P> {

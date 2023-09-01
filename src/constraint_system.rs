@@ -9,11 +9,9 @@
 //! tools and abstractions, used by the Composer to generate,
 //! build, preprocess circuits.
 
-pub(crate) mod constraint;
 pub(crate) mod ecc;
 pub(crate) mod witness;
 
 pub(crate) use witness::WireData;
 
-pub use constraint::Constraint;
 pub use ecc::WitnessPoint;
