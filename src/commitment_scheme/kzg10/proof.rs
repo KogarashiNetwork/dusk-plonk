@@ -4,13 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
 use poly_commit::{powers_of, Commitment};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use zksnarks::{Transcript, TranscriptProtocol};
-use zkstd::common::Pairing;
+use zkstd::common::{Pairing, Vec};
 
 /// Proof that a polynomial `p` was correctly evaluated at a point `z`
 /// producing the evaluated point p(z).

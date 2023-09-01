@@ -5,7 +5,6 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::constraint_system::WireData;
-use alloc::vec::Vec;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;

@@ -11,7 +11,6 @@ use crate::{
     commitment_scheme::{AggregateProof, OpeningKey},
     error::Error,
 };
-use ::alloc::vec::Vec;
 use codec::{Decode, Encode};
 use ec_pairing::msm_curve_addtion;
 use poly_commit::{batch_inversion, Coefficients, Commitment};
@@ -22,6 +21,7 @@ use zksnarks::{
     VerificationKey,
 };
 use zkstd::behave::{FftField, Group, Pairing, PrimeField, Ring};
+use zkstd::common::Vec;
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
 /// Quotient, Shifted and Opening polynomials as well as the

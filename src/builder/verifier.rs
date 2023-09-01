@@ -10,10 +10,9 @@ use crate::proof_system::Proof;
 
 use super::Builder;
 
-use alloc::vec::Vec;
 use core::marker::PhantomData;
 use zksnarks::{Transcript, TranscriptProtocol, VerificationKey};
-use zkstd::common::Pairing;
+use zkstd::common::{Pairing, Vec};
 
 /// Verify proofs of a given circuit
 pub struct Verifier<C, P: Pairing> {

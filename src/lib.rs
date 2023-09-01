@@ -51,13 +51,6 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// `macro_use` will declare `vec!`. However, if `libstd` is present, then this
-/// is declared in the prelude and there will be a conflicting implementation.
-///
-/// We might have `no_std + alloc` or `std + alloc`, but `macro_use` should be
-/// used only for `no_std`
-extern crate alloc;
-
 mod bit_iterator;
 mod permutation;
 

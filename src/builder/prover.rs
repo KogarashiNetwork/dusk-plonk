@@ -10,7 +10,6 @@ use crate::proof_system::{linearization_poly, quotient_poly};
 
 use super::{Builder, Circuit};
 
-use alloc::vec::Vec;
 use core::marker::PhantomData;
 use core::ops;
 use poly_commit::{Coefficients, Fft, KeyPair};
@@ -18,6 +17,7 @@ use rand_core::RngCore;
 use sp_std::vec;
 use zksnarks::{ProvingKey, Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::behave::{FftField, Group, Pairing};
+use zkstd::common::Vec;
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]
