@@ -10,7 +10,7 @@
 //! with the principal data structures of the plonk library.
 
 pub use crate::{
-    composer::{Builder, Circuit, Compiler, Composer, Prover, Verifier},
+    composer::{Builder, Circuit, Compiler, Prover, Verifier},
     constraint_system::WitnessPoint,
 };
 

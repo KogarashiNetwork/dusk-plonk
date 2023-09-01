@@ -11,10 +11,10 @@ use zero_plonk::prelude::*;
 struct EmptyCircuit;
 
 impl Circuit<TatePairing> for EmptyCircuit {
-    fn circuit<C>(&self, _composer: &mut C) -> Result<(), Error>
-    where
-        C: Composer<TatePairing>,
-    {
+    fn circuit(
+        &self,
+        _composer: &mut Builder<TatePairing>,
+    ) -> Result<(), Error> {
         Ok(())
     }
 }

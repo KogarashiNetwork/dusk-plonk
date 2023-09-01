@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{linearization_poly, quotient_poly};
 
-use super::{Builder, Circuit, Composer};
+use super::{Builder, Circuit};
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;

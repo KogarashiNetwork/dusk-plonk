@@ -41,10 +41,10 @@ fn mul_generator_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
             let w_x = composer.component_mul_generator(
@@ -136,10 +136,10 @@ fn add_point_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_point(self.a);
             let w_b = composer.append_point(self.b);
             let w_c = composer.append_point(self.c);
@@ -262,10 +262,10 @@ fn mul_point_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
             let w_c = composer.append_point(self.c);

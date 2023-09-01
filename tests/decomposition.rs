@@ -45,12 +45,12 @@ fn decomposition_works() {
     }
 
     impl<const N: usize> Circuit<TatePairing> for DummyCircuit<N, TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
-            let mut w_bits: [Witness; N] = [C::ZERO; N];
+            let mut w_bits: [Witness; N] = [Builder::<TatePairing>::ZERO; N];
 
             w_bits
                 .iter_mut()

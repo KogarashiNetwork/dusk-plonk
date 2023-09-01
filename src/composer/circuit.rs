@@ -10,14 +10,12 @@ use zkstd::common::Pairing;
 
 use crate::error::Error;
 
-use super::Composer;
+use super::Builder;
 
 /// Circuit implementation that can be proved by a Composer
 ///
 /// The default implementation will be used to generate the proving arguments.
 pub trait Circuit<P: Pairing>: Default + Debug {
     /// Circuit definition
-    fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-    where
-        C: Composer<P>;
+    fn circuit(&self, composer: &mut Builder<P>) -> Result<(), Error>;
 }

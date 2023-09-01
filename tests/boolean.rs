@@ -37,10 +37,10 @@ fn boolean_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
 
             composer.component_boolean(w_a);
@@ -221,10 +221,10 @@ fn select_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_bit = composer.append_witness(self.bit);
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);

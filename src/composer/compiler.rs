@@ -14,7 +14,7 @@ use zksnarks::key::{
 };
 use zkstd::common::{Group, Pairing, Ring};
 
-use super::{Builder, Circuit, Composer, Prover, Verifier};
+use super::{Builder, Circuit, Prover, Verifier};
 use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use sp_std::vec;

@@ -47,10 +47,10 @@ fn logic_and_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
             let w_c = composer.append_witness(self.c);
@@ -205,10 +205,10 @@ fn logic_xor_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit<C>(&self, composer: &mut C) -> Result<(), Error>
-        where
-            C: Composer<TatePairing>,
-        {
+        fn circuit(
+            &self,
+            composer: &mut Builder<TatePairing>,
+        ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
             let w_c = composer.append_witness(self.c);
