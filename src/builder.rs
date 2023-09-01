@@ -4,7 +4,18 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+//! PLONK turbo composer definitions
+
+mod compiler;
+mod prover;
+mod verifier;
+
+pub use compiler::Compiler;
+pub use prover::Prover;
+pub use verifier::Verifier;
+
 use bls_12_381::Fr as BlsScalar;
+use core::fmt::Debug;
 use core::{cmp, ops};
 use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
@@ -16,12 +27,19 @@ use zkstd::common::{
 };
 
 use crate::bit_iterator::BitIterator8;
-use crate::composer::Circuit;
 use crate::constraint_system::ecc::WnafRound;
 use crate::constraint_system::WitnessPoint;
 use crate::error::Error;
 use crate::permutation::Permutation;
 use crate::runtime::{Runtime, RuntimeEvent};
+
+/// Circuit implementation that can be proved by a Composer
+///
+/// The default implementation will be used to generate the proving arguments.
+pub trait Circuit<P: Pairing>: Default + Debug {
+    /// Circuit definition
+    fn circuit(&self, composer: &mut Builder<P>) -> Result<(), Error>;
+}
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
