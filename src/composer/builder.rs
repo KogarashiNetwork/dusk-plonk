@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use core::ops;
 use hashbrown::HashMap;
 use sp_std::vec;
-use zksnarks::{Gate, Witness};
+use zksnarks::{Constraint, Witness};
 use zkstd::{behave::Group, common::Pairing};
 
 use crate::permutation::Permutation;
@@ -20,7 +20,7 @@ use super::Composer;
 #[derive(Debug, Clone)]
 pub struct Builder<P: Pairing> {
     /// Constraint system gates
-    pub(crate) constraints: Vec<Gate<P::ScalarField>>,
+    pub(crate) constraints: Vec<Constraint<P::ScalarField>>,
 
     /// Sparse representation of the public inputs
     pub(crate) public_inputs: HashMap<usize, P::ScalarField>,
@@ -105,7 +105,7 @@ impl<P: Pairing> Composer<P> for Builder<P> {
 
     fn append_custom_gate_internal(
         &mut self,
-        constraint: Gate<P::ScalarField>,
+        constraint: Constraint<P::ScalarField>,
     ) {
         let n = self.constraints.len();
 
