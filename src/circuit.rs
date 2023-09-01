@@ -60,7 +60,30 @@ pub struct Builder<P: Pairing> {
     pub(crate) runtime: Runtime<P>,
 }
 
+impl<P: Pairing> ops::Index<Witness> for Builder<P> {
+    type Output = P::ScalarField;
+
+    fn index(&self, w: Witness) -> &Self::Output {
+        &self.witnesses[w.index()]
+    }
+}
+
 impl<P: Pairing> Builder<P> {
+    /// Zero representation inside the constraint system.
+    ///
+    /// A turbo composer expects the first witness to be always present and to
+    /// be zero.
+    pub const ZERO: Witness = Witness::new(0);
+
+    /// `One` representation inside the constraint system.
+    ///
+    /// A turbo composer expects the 2nd witness to be always present and to
+    /// be one.
+    const ONE: Witness = Witness::new(1);
+
+    /// Identity point representation inside the constraint system
+    const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
+
     pub(crate) fn public_input_indexes(&self) -> Vec<usize> {
         let mut public_input_indexes: Vec<_> =
             self.public_inputs.keys().copied().collect();
@@ -91,31 +114,6 @@ impl<P: Pairing> Builder<P> {
 
         dense_public_inputs
     }
-}
-
-impl<P: Pairing> ops::Index<Witness> for Builder<P> {
-    type Output = P::ScalarField;
-
-    fn index(&self, w: Witness) -> &Self::Output {
-        &self.witnesses[w.index()]
-    }
-}
-
-impl<P: Pairing> Builder<P> {
-    /// Zero representation inside the constraint system.
-    ///
-    /// A turbo composer expects the first witness to be always present and to
-    /// be zero.
-    pub const ZERO: Witness = Witness::new(0);
-
-    /// `One` representation inside the constraint system.
-    ///
-    /// A turbo composer expects the 2nd witness to be always present and to
-    /// be one.
-    const ONE: Witness = Witness::new(1);
-
-    /// Identity point representation inside the constraint system
-    const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
 
     fn uninitialized(capacity: usize) -> Self {
         Self {

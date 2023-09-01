@@ -54,7 +54,7 @@
 mod bit_iterator;
 mod permutation;
 
-pub mod builder;
+pub mod circuit;
 pub mod constraint_system;
 pub mod runtime;
 
