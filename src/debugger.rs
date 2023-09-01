@@ -11,12 +11,12 @@ use std::path::PathBuf;
 
 use dusk_cdf::{
     BaseConfig, Config, EncodableConstraint, EncodableSource, EncodableWitness,
-    Encoder, EncoderContextFileProvider, Polynomial, Selectors, WiredWitnesses,
+    Encoder, EncoderContextFileProvider, Polynomial, Selectors, Wirees,
 };
 use zksnarks::Witness;
 use zkstd::behave::{Group, Pairing, SigUtils};
 
-use crate::constraint_system::{Constraint, Selector, WiredWitness};
+use crate::constraint_system::{Constraint, Selector, Wire};
 use crate::runtime::RuntimeEvent;
 
 /// PLONK debugger
@@ -102,11 +102,11 @@ impl<P: Pairing> Debugger<P> {
                         c.coeff(Selector::GroupAddVariableBase);
                     let qfixed_add = c.coeff(Selector::GroupAddFixedBase);
 
-                    let witnesses = WiredWitnesses {
-                        a: c.witness(WiredWitness::A).index(),
-                        b: c.witness(WiredWitness::B).index(),
-                        d: c.witness(WiredWitness::D).index(),
-                        o: c.witness(WiredWitness::O).index(),
+                    let witnesses = Wirees {
+                        a: c.witness(Wire::A).index(),
+                        b: c.witness(Wire::B).index(),
+                        d: c.witness(Wire::D).index(),
+                        o: c.witness(Wire::O).index(),
                     };
 
                     let wa = self

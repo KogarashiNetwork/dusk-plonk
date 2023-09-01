@@ -8,10 +8,10 @@ use alloc::vec::Vec;
 use core::ops;
 use hashbrown::HashMap;
 use sp_std::vec;
-use zksnarks::{Gate, Witness};
+use zksnarks::{Gate, Selector, Wire, Witness};
 use zkstd::{behave::Group, common::Pairing};
 
-use crate::constraint_system::{Constraint, Selector, WiredWitness};
+use crate::constraint_system::Constraint;
 use crate::permutation::Permutation;
 use crate::runtime::Runtime;
 
@@ -107,10 +107,10 @@ impl<P: Pairing> Composer<P> for Builder<P> {
     fn append_custom_gate_internal(&mut self, constraint: Constraint<P>) {
         let n = self.constraints.len();
 
-        let w_a = constraint.witness(WiredWitness::A);
-        let w_b = constraint.witness(WiredWitness::B);
-        let w_o = constraint.witness(WiredWitness::O);
-        let w_d = constraint.witness(WiredWitness::D);
+        let w_a = constraint.witness(Wire::A);
+        let w_b = constraint.witness(Wire::B);
+        let w_o = constraint.witness(Wire::O);
+        let w_d = constraint.witness(Wire::D);
 
         let q_m = *constraint.coeff(Selector::Multiplication);
         let q_l = *constraint.coeff(Selector::Left);

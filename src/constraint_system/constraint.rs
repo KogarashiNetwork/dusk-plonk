@@ -5,52 +5,9 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::composer::{Builder, Composer};
-use zksnarks::Witness;
+use zksnarks::{Selector, Wire, Witness};
 use zkstd::behave::{Group, Ring};
 use zkstd::common::Pairing;
-
-/// Selectors used to address a coefficient inside of a [`Constraint`]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum Selector {
-    /// Multiplication coefficient `q_m`
-    Multiplication = 0x00,
-    /// Left coefficient `q_l`
-    Left = 0x01,
-    /// Right coefficient `q_r`
-    Right = 0x02,
-    /// Output coefficient `q_o`
-    Output = 0x03,
-    /// Fourth advice coefficient `q_4`
-    Fourth = 0x04,
-    /// Constant expression `q_c`
-    Constant = 0x05,
-    /// Public input `pi`
-    PublicInput = 0x06,
-
-    /// Arithmetic coefficient (internal use)
-    Arithmetic = 0x07,
-    /// Range coefficient (internal use)
-    Range = 0x08,
-    /// Logic coefficient (internal use)
-    Logic = 0x09,
-    /// Curve addition with fixed base coefficient (internal use)
-    GroupAddFixedBase = 0x0a,
-    /// Curve addition with variable base coefficient (internal use)
-    GroupAddVariableBase = 0x0b,
-}
-
-/// Wire used to address a witness inside of a [`Constraint`]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum WiredWitness {
-    /// `A` witness
-    A = 0x00,
-    /// `B` witness
-    B = 0x01,
-    /// `O` witness
-    O = 0x02,
-    /// `D` witness
-    D = 0x03,
-}
 
 /// Constraint representation containing the coefficients of a polynomial
 /// evaluation
@@ -126,7 +83,7 @@ impl<P: Pairing> Constraint<P> {
     }
 
     /// Replace the value of an indexed witness
-    pub(crate) fn set_witness(&mut self, index: WiredWitness, w: Witness) {
+    pub(crate) fn set_witness(&mut self, index: Wire, w: Witness) {
         self.witnesses[index as usize] = w;
     }
 
@@ -136,7 +93,7 @@ impl<P: Pairing> Constraint<P> {
     }
 
     /// Return the wired witness in the constraint
-    pub(crate) const fn witness(&self, w: WiredWitness) -> Witness {
+    pub(crate) const fn witness(&self, w: Wire) -> Witness {
         self.witnesses[w as usize]
     }
 
@@ -179,28 +136,28 @@ impl<P: Pairing> Constraint<P> {
 
     /// Set witness `a` wired to `qM` and `qL`
     pub fn a(mut self, w: Witness) -> Self {
-        self.set_witness(WiredWitness::A, w);
+        self.set_witness(Wire::A, w);
 
         self
     }
 
     /// Set witness `b` wired to `qM` and `qR`
     pub fn b(mut self, w: Witness) -> Self {
-        self.set_witness(WiredWitness::B, w);
+        self.set_witness(Wire::B, w);
 
         self
     }
 
     /// Set witness `o` wired to `qO`
     pub fn o(mut self, w: Witness) -> Self {
-        self.set_witness(WiredWitness::O, w);
+        self.set_witness(Wire::O, w);
 
         self
     }
 
     /// Set witness `d` wired to the fourth/advice `q4` coefficient
     pub fn d(mut self, w: Witness) -> Self {
-        self.set_witness(WiredWitness::D, w);
+        self.set_witness(Wire::D, w);
 
         self
     }

@@ -13,7 +13,7 @@ use jub_jub::compute_windowed_naf;
 
 use bls_12_381::Fr as BlsScalar;
 use sp_std::vec;
-use zksnarks::Witness;
+use zksnarks::{Selector, Wire, Witness};
 use zkstd::behave::{
     Curve, CurveGroup, FftField, Group, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, TwistedEdwardsExtended,
@@ -22,9 +22,7 @@ use zkstd::common::Pairing;
 
 use crate::bit_iterator::BitIterator8;
 use crate::constraint_system::ecc::WnafRound;
-use crate::constraint_system::{
-    Constraint, Selector, WiredWitness, WitnessPoint,
-};
+use crate::constraint_system::{Constraint, WitnessPoint};
 use crate::error::Error;
 use crate::runtime::{Runtime, RuntimeEvent};
 
@@ -214,9 +212,9 @@ pub trait Composer<PR: Pairing>:
 
         // pad last output with `0`
         // | an  | bn  | 0   | dn  |
-        let a = constraint.witness(WiredWitness::A);
-        let b = constraint.witness(WiredWitness::B);
-        let d = constraint.witness(WiredWitness::D);
+        let a = constraint.witness(Wire::A);
+        let b = constraint.witness(Wire::B);
+        let d = constraint.witness(Wire::D);
 
         let constraint = Constraint::new().a(a).b(b).d(d);
 
@@ -429,9 +427,9 @@ pub trait Composer<PR: Pairing>:
         &mut self,
         s: Constraint<PR>,
     ) -> Option<Witness> {
-        let a = s.witness(WiredWitness::A);
-        let b = s.witness(WiredWitness::B);
-        let d = s.witness(WiredWitness::D);
+        let a = s.witness(Wire::A);
+        let b = s.witness(Wire::B);
+        let d = s.witness(Wire::D);
 
         let a = self[a];
         let b = self[b];
@@ -1000,10 +998,10 @@ pub trait Composer<PR: Pairing>:
 
             let idx = i / 4;
             let witness = match i % 4 {
-                0 => WiredWitness::D,
-                1 => WiredWitness::O,
-                2 => WiredWitness::B,
-                3 => WiredWitness::A,
+                0 => Wire::D,
+                1 => Wire::O,
+                2 => Wire::B,
+                3 => Wire::A,
                 _ => unreachable!(),
             };
 
@@ -1022,7 +1020,7 @@ pub trait Composer<PR: Pairing>:
         // alone.
         if let Some(accumulator) = accumulators.last() {
             if let Some(c) = constraints.last_mut() {
-                c.set_witness(WiredWitness::D, *accumulator)
+                c.set_witness(Wire::D, *accumulator)
             }
         }
 
