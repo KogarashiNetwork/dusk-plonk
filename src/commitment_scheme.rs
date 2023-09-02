@@ -16,11 +16,4 @@
 
 mod kzg10;
 
-pub(crate) use kzg10::AggregateProof;
-pub(crate) use kzg10::OpeningKey;
-
-#[cfg(all(feature = "alloc", feature = "rkyv-impl"))]
-pub use kzg10::{
-    ArchivedCommitKey, ArchivedOpeningKey, ArchivedPublicParameters,
-    CommitKeyResolver, OpeningKeyResolver, PublicParametersResolver,
-};
+pub(crate) use kzg10::{batch_check, AggregateProof};

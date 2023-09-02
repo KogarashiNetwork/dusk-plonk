@@ -22,7 +22,7 @@ impl Circuit<TatePairing> for EmptyCircuit {
 #[test]
 #[cfg(debug_assertions)]
 fn generate_cdf_works() -> io::Result<()> {
-    use poly_commit::KeyPair;
+    use poly_commit::KzgParams;
 
     let mut rng = rand::thread_rng();
 
@@ -30,8 +30,8 @@ fn generate_cdf_works() -> io::Result<()> {
     let path = dir.path().canonicalize()?.join("test.cdf");
 
     let label = b"transcript-arguments";
-    let mut pp = KeyPair::setup(5, BlsScalar::random(&mut rng));
-    // let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = KzgParams::setup(5, BlsScalar::random(&mut rng));
+    // let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
 
     let (prover, _verifier) =
         Compiler::compile::<EmptyCircuit, TatePairing>(&mut pp, label)

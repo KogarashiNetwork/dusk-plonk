@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::KeyPair;
+use poly_commit::KzgParams;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
@@ -18,7 +18,7 @@ fn logic_and_works() {
 
     let n = 8;
     let label = b"demo";
-    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
@@ -176,7 +176,7 @@ fn logic_xor_works() {
 
     let n = 8;
     let label = b"demo";
-    let mut pp = KeyPair::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {

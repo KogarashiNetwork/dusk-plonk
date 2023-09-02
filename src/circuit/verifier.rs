@@ -4,20 +4,20 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use crate::proof_system::Proof;
 
 use super::Builder;
 
 use core::marker::PhantomData;
+use poly_commit::EvaluationKey;
 use zksnarks::{Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::common::{Pairing, Vec};
 
 /// Verify proofs of a given circuit
 pub struct Verifier<C, P: Pairing> {
     verifier_key: VerificationKey<P>,
-    opening_key: OpeningKey<P>,
+    opening_key: EvaluationKey<P>,
     public_input_indexes: Vec<usize>,
     transcript: Transcript,
     size: usize,
@@ -28,7 +28,7 @@ impl<C, P: Pairing> Verifier<C, P> {
     pub(crate) fn new(
         label: Vec<u8>,
         verifier_key: VerificationKey<P>,
-        opening_key: OpeningKey<P>,
+        opening_key: EvaluationKey<P>,
         public_input_indexes: Vec<usize>,
         size: usize,
         constraints: usize,

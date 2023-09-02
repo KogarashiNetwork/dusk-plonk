@@ -8,12 +8,12 @@
 //! are needed to univocally identify a prove of some statement.
 
 use crate::{
-    commitment_scheme::{AggregateProof, OpeningKey},
+    commitment_scheme::{batch_check, AggregateProof},
     error::Error,
 };
 use codec::{Decode, Encode};
 use ec_pairing::msm_curve_addtion;
-use poly_commit::{batch_inversion, Coefficients, Commitment};
+use poly_commit::{batch_inversion, Coefficients, Commitment, EvaluationKey};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use zksnarks::{
@@ -71,7 +71,7 @@ impl<P: Pairing> Proof<P> {
         &self,
         verifier_key: &VerificationKey<P>,
         transcript: &mut Transcript,
-        opening_key: &OpeningKey<P>,
+        opening_key: &EvaluationKey<P>,
         pub_inputs: &[P::ScalarField],
     ) -> Result<(), Error> {
         // Subgroup checks are done when the proof is deserialized.
@@ -372,13 +372,13 @@ impl<P: Pairing> Proof<P> {
             &self.w_z_chall_w_comm,
         );
         // Batch check
-        if opening_key
-            .batch_check(
-                &[z_challenge, (z_challenge * generator)],
-                &[flattened_proof_a, flattened_proof_b],
-                transcript,
-            )
-            .is_err()
+        if batch_check(
+            &opening_key,
+            &[z_challenge, (z_challenge * generator)],
+            &[flattened_proof_a, flattened_proof_b],
+            transcript,
+        )
+        .is_err()
         {
             return Err(Error::ProofVerificationError);
         }

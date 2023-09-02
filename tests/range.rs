@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::KeyPair;
+use poly_commit::KzgParams;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
@@ -18,7 +18,8 @@ fn range_works() {
 
     let n = 5;
     let label = b"demo";
-    let mut pp = KeyPair::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
+    let mut pp =
+        KzgParams::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
 
     const DEFAULT_BITS: usize = 76;
     #[derive(Debug)]

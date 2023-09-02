@@ -5,7 +5,8 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::{
-    Coefficients as Coeffs, Fft, KeyPair, PointsValue as Points,
+    Coefficients as Coeffs, EvaluationKey, Fft, KzgParams,
+    PointsValue as Points,
 };
 use zksnarks::key::{
     arithmetic,
@@ -15,7 +16,6 @@ use zksnarks::key::{
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Prover, Verifier};
-use crate::commitment_scheme::OpeningKey;
 use crate::error::Error;
 use sp_std::vec;
 
@@ -29,7 +29,7 @@ impl Compiler {
     ///
     /// Use the default implementation of the circuit
     pub fn compile<C, P>(
-        keypair: &mut KeyPair<P>,
+        keypair: &mut KzgParams<P>,
         label: &[u8],
     ) -> CompilerResult<C, P>
     where
@@ -43,7 +43,7 @@ impl Compiler {
     ///
     /// Use the provided circuit instead of the default implementation
     pub fn compile_with_circuit<C, P>(
-        keypair: &mut KeyPair<P>,
+        keypair: &mut KzgParams<P>,
         label: &[u8],
         circuit: &C,
     ) -> CompilerResult<C, P>
@@ -68,7 +68,7 @@ impl Compiler {
 
     fn preprocess<C, P>(
         label: &[u8],
-        keypair: &KeyPair<P>,
+        keypair: &KzgParams<P>,
         prover: &Builder<P>,
     ) -> CompilerResult<C, P>
     where
@@ -352,7 +352,7 @@ impl Compiler {
         let verifier = Verifier::new(
             label,
             verifier_key,
-            OpeningKey::new(
+            EvaluationKey::new(
                 keypair.commit_key()[0],
                 keypair.opening_key(),
                 keypair.beta_h(),
