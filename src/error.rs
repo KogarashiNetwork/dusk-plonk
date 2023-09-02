@@ -6,7 +6,6 @@
 
 //! A collection of all possible errors encountered in PLONK.
 
-use dusk_bytes::Error as DuskBytesError;
 use poly_commit::KzgError;
 
 /// Defines all possible errors that can be encountered in PLONK.
@@ -62,9 +61,6 @@ pub enum Error {
     /// Identity point.
     PairingCheckFailure,
 
-    // Serialization errors
-    /// Dusk-bytes serialization error
-    BytesError(DuskBytesError),
     /// This error occurs when there are not enough bytes to read out of a
     /// slice during deserialization.
     NotEnoughBytes,
@@ -141,7 +137,6 @@ impl core::fmt::Display for Error {
             Self::NotEnoughBytes => write!(f, "not enough bytes left to read"),
             Self::PointMalformed => write!(f, "BLS point bytes malformed"),
             Self::BlsScalarMalformed => write!(f, "BLS scalar bytes malformed"),
-            Self::BytesError(err) => write!(f, "{:?}", err),
             Self::UnsupportedWNAF2k => write!(
                 f,
                 "WNAF2k cannot hold values not contained in `[-1..1]`"
@@ -153,12 +148,6 @@ impl core::fmt::Display for Error {
                 expected, provided,
             } => write!(f, "The provided public inputs set of length {} doesn't match the processed verifier: {}", provided, expected),
         }
-    }
-}
-
-impl From<DuskBytesError> for Error {
-    fn from(bytes_err: DuskBytesError) -> Self {
-        Self::BytesError(bytes_err)
     }
 }
 
