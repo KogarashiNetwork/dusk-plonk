@@ -93,9 +93,8 @@ impl<P: Pairing> Debugger<P> {
                     let qd = c.q_d;
                     let qc = c.q_c;
                     let qo = c.q_o;
-                    let pi = c
-                        .public_input
-                        .unwrap_or_else(|| P::ScalarField::zero());
+                    let pi =
+                        c.public_input.unwrap_or_else(P::ScalarField::zero);
                     let qarith = c.q_arith;
                     let qlogic = c.q_logic;
                     let qrange = c.q_range;
