@@ -321,43 +321,39 @@ impl<P: Pairing> Proof<P> {
         // Compose the Aggregated Proof
         //
         let mut aggregate_proof =
-            AggregateProof::with_witness(self.w_z_chall_comm.clone());
+            AggregateProof::with_witness(self.w_z_chall_comm);
         aggregate_proof.add_part((t_eval, t_comm));
         aggregate_proof.add_part((self.evaluations.r_poly_eval, r_comm));
-        aggregate_proof
-            .add_part((self.evaluations.a_eval, self.a_comm.clone()));
-        aggregate_proof
-            .add_part((self.evaluations.b_eval, self.b_comm.clone()));
-        aggregate_proof
-            .add_part((self.evaluations.c_eval, self.c_comm.clone()));
-        aggregate_proof
-            .add_part((self.evaluations.d_eval, self.d_comm.clone()));
+        aggregate_proof.add_part((self.evaluations.a_eval, self.a_comm));
+        aggregate_proof.add_part((self.evaluations.b_eval, self.b_comm));
+        aggregate_proof.add_part((self.evaluations.c_eval, self.c_comm));
+        aggregate_proof.add_part((self.evaluations.d_eval, self.d_comm));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_1_eval,
-            verifier_key.permutation.s_sigma_1.clone(),
+            verifier_key.permutation.s_sigma_1,
         ));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_2_eval,
-            verifier_key.permutation.s_sigma_2.clone(),
+            verifier_key.permutation.s_sigma_2,
         ));
         aggregate_proof.add_part((
             self.evaluations.s_sigma_3_eval,
-            verifier_key.permutation.s_sigma_3.clone(),
+            verifier_key.permutation.s_sigma_3,
         ));
         // Flatten proof with opening challenge
         let flattened_proof_a = aggregate_proof.flatten(transcript);
 
         // Compose the shifted aggregate proof
         let mut shifted_aggregate_proof =
-            AggregateProof::with_witness(self.w_z_chall_w_comm.clone());
+            AggregateProof::with_witness(self.w_z_chall_w_comm);
         shifted_aggregate_proof
-            .add_part((self.evaluations.perm_eval, self.z_comm.clone()));
+            .add_part((self.evaluations.perm_eval, self.z_comm));
         shifted_aggregate_proof
-            .add_part((self.evaluations.a_next_eval, self.a_comm.clone()));
+            .add_part((self.evaluations.a_next_eval, self.a_comm));
         shifted_aggregate_proof
-            .add_part((self.evaluations.b_next_eval, self.b_comm.clone()));
+            .add_part((self.evaluations.b_next_eval, self.b_comm));
         shifted_aggregate_proof
-            .add_part((self.evaluations.d_next_eval, self.d_comm.clone()));
+            .add_part((self.evaluations.d_next_eval, self.d_comm));
 
         let flattened_proof_b = shifted_aggregate_proof.flatten(transcript);
         // Add commitment to openings to transcript
@@ -373,7 +369,7 @@ impl<P: Pairing> Proof<P> {
         );
         // Batch check
         if batch_check(
-            &opening_key,
+            opening_key,
             &[z_challenge, (z_challenge * generator)],
             &[flattened_proof_a, flattened_proof_b],
             transcript,

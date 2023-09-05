@@ -175,10 +175,10 @@ impl Compiler {
         // verifier Key for arithmetic circuits
         let arithmetic_verifier_key = arithmetic::VerificationKey {
             q_m: q_m_poly_commit,
-            q_l: q_l_poly_commit.clone(),
-            q_r: q_r_poly_commit.clone(),
+            q_l: q_l_poly_commit,
+            q_r: q_r_poly_commit,
             q_o: q_o_poly_commit,
-            q_c: q_c_poly_commit.clone(),
+            q_c: q_c_poly_commit,
             q_4: q_d_poly_commit,
             q_arith: q_arith_poly_commit,
         };

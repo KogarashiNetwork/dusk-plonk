@@ -143,7 +143,7 @@ impl<P: Pairing> AggregateProof<P> {
                 .sum();
 
         Proof {
-            commitment_to_witness: self.commitment_to_witness.clone(),
+            commitment_to_witness: self.commitment_to_witness,
             evaluated_point: flattened_poly_evaluations,
             commitment_to_polynomial: Commitment::new(
                 flattened_poly_commitments,

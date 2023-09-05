@@ -21,8 +21,12 @@ impl Circuit<TatePairing> for EmptyCircuit {
 
 #[test]
 #[cfg(debug_assertions)]
-fn generate_cdf_works() -> io::Result<()> {
+fn generate_cdf_works() -> std::io::Result<()> {
+    use std::{env, io};
+
+    use dusk_cdf::CircuitDescription;
     use poly_commit::KzgParams;
+    use zkstd::common::Group;
 
     let mut rng = rand::thread_rng();
 

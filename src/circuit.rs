@@ -152,9 +152,8 @@ impl<P: Pairing> Builder<P> {
         &mut self,
         constraint: Constraint<P::ScalarField>,
     ) {
-        self.runtime().event(RuntimeEvent::ConstraintAppended {
-            c: constraint.clone(),
-        });
+        self.runtime()
+            .event(RuntimeEvent::ConstraintAppended { c: constraint });
 
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
@@ -185,11 +184,8 @@ impl<P: Pairing> Builder<P> {
 
         self.constraints.push(constraint);
 
-        match constraint.public_input {
-            Some(pi) => {
-                self.public_inputs.insert(n, pi);
-            }
-            _ => {}
+        if let Some(pi) = constraint.public_input {
+            self.public_inputs.insert(n, pi);
         }
 
         self.perm.add_witnesses_to_map(
@@ -308,7 +304,7 @@ impl<P: Pairing> Builder<P> {
 
             constraint = constraint.o(wit_c);
 
-            self.append_custom_gate(constraint.clone());
+            self.append_custom_gate(constraint);
 
             constraint = constraint.a(wit_a).b(wit_b).d(wit_d);
         }
@@ -540,7 +536,7 @@ impl<P: Pairing> Builder<P> {
         let qr = s.q_r;
         let qd = s.q_d;
         let qc = s.q_c;
-        let pi = s.public_input.unwrap_or_else(|| P::ScalarField::zero());
+        let pi = s.public_input.unwrap_or_else(P::ScalarField::zero);
 
         let x = qm * a * b + ql * a + qr * b + qd * d + qc + pi;
 
@@ -745,9 +741,8 @@ impl<P: Pairing> Builder<P> {
     ) {
         let constant = constant.into();
         let constraint = Constraint::default().left(1).constant(-constant).a(a);
-        let constraint = public
-            .map(|p| constraint.clone().public(p))
-            .unwrap_or(constraint);
+        let constraint =
+            public.map(|p| constraint.public(p)).unwrap_or(constraint);
 
         self.append_gate(constraint);
     }
@@ -1147,11 +1142,11 @@ impl<P: Pairing> Builder<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_l · a + q_r · b + q_4 · d + q_c + PI`
-    fn gate_add(&mut self, s: Constraint<P::ScalarField>) -> Witness {
+    pub fn gate_add(&mut self, s: Constraint<P::ScalarField>) -> Witness {
         let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s.clone())
+            .append_evaluated_output(s)
             .expect("output selector is -1");
         let s = s.o(o);
 
@@ -1164,11 +1159,11 @@ impl<P: Pairing> Builder<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_m · a · b + q_4 · d + q_c + PI`
-    fn gate_mul(&mut self, s: Constraint<P::ScalarField>) -> Witness {
+    pub fn gate_mul(&mut self, s: Constraint<P::ScalarField>) -> Witness {
         let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
 
         let o = self
-            .append_evaluated_output(s.clone())
+            .append_evaluated_output(s)
             .expect("output selector is -1");
         let s = s.o(o);
 
