@@ -12,8 +12,9 @@ use crate::{
     error::Error,
 };
 use codec::{Decode, Encode};
-use ec_pairing::msm_curve_addtion;
-use poly_commit::{batch_inversion, Coefficients, Commitment, EvaluationKey};
+use poly_commit::{
+    batch_inversion, msm_curve_addtion, Coefficients, Commitment, EvaluationKey,
+};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use zksnarks::{
