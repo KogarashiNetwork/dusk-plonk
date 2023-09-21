@@ -31,7 +31,6 @@ use crate::constraint_system::ecc::WnafRound;
 use crate::constraint_system::WitnessPoint;
 use crate::error::Error;
 use crate::permutation::Permutation;
-use crate::runtime::{Runtime, RuntimeEvent};
 
 /// Circuit implementation that can be proved by a Composer
 ///
@@ -55,9 +54,6 @@ pub struct Builder<P: Pairing> {
 
     /// Permutation argument.
     pub(crate) perm: Permutation<P>,
-
-    /// PLONK runtime controller
-    pub(crate) runtime: Runtime<P>,
 }
 
 impl<P: Pairing> ops::Index<Witness> for Builder<P> {
@@ -121,7 +117,6 @@ impl<P: Pairing> Builder<P> {
             public_inputs: HashMap::new(),
             witnesses: Vec::with_capacity(capacity),
             perm: Permutation::new(),
-            runtime: Runtime::with_capacity(capacity),
         }
     }
 
@@ -134,15 +129,7 @@ impl<P: Pairing> Builder<P> {
         &mut self,
         witness: W,
     ) -> Witness {
-        let witness = witness.into();
-
-        #[allow(deprecated)]
-        let witness = self.append_witness_internal(witness);
-
-        let v = self[witness];
-
-        self.runtime()
-            .event(RuntimeEvent::WitnessAppended { w: witness, v });
+        let witness = self.append_witness_internal(witness.into());
 
         witness
     }
@@ -152,9 +139,6 @@ impl<P: Pairing> Builder<P> {
         &mut self,
         constraint: Constraint<P::ScalarField>,
     ) {
-        self.runtime()
-            .event(RuntimeEvent::ConstraintAppended { c: constraint });
-
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
     }
@@ -195,10 +179,6 @@ impl<P: Pairing> Builder<P> {
             constraint.w_d,
             n,
         );
-    }
-
-    fn runtime(&mut self) -> &mut Runtime<P> {
-        &mut self.runtime
     }
 
     /// Performs a logical AND or XOR op between the inputs provided for the
@@ -1186,8 +1166,6 @@ impl<P: Pairing> Builder<P> {
         let mut builder = Self::initialized(constraints);
 
         circuit.circuit(&mut builder)?;
-
-        builder.runtime().event(RuntimeEvent::<P>::ProofFinished);
 
         Ok(builder)
     }

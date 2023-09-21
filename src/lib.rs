@@ -56,10 +56,6 @@ mod permutation;
 
 pub mod circuit;
 pub mod constraint_system;
-pub mod runtime;
-
-#[cfg(feature = "debug")]
-pub(crate) mod debugger;
 
 pub mod commitment_scheme;
 pub mod error;
