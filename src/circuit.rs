@@ -22,8 +22,8 @@ use jub_jub::compute_windowed_naf;
 use sp_std::vec;
 use zksnarks::{Constraint, Witness};
 use zkstd::common::{
-    CurveAffine, CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring,
-    SigUtils, TwistedEdwardsAffine, Vec,
+    CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
+    TwistedEdwardsAffine, Vec,
 };
 
 use crate::bit_iterator::BitIterator8;
