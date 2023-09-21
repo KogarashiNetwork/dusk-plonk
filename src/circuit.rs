@@ -23,7 +23,7 @@ use sp_std::vec;
 use zksnarks::{Constraint, Witness};
 use zkstd::common::{
     Curve, CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring,
-    SigUtils, TwistedEdwardsAffine, TwistedEdwardsExtended, Vec,
+    SigUtils, TwistedEdwardsAffine, Vec,
 };
 
 use crate::bit_iterator::BitIterator8;
@@ -352,7 +352,10 @@ impl<P: Pairing> Builder<P> {
                 multiples[i] = multiples[i - 1].double();
             }
 
-            P::JubjubExtended::batch_normalize(&mut multiples).collect()
+            multiples
+                .iter()
+                .map(|point| P::JubjubAffine::from(*point))
+                .collect::<Vec<_>>()
         };
 
         wnaf_point_multiples.reverse();
