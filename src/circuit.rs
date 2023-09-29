@@ -422,7 +422,7 @@ impl<P: Pairing> Builder<P> {
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound::<Witness, P> {
+            let wnaf_round = WnafRound::<Witness, P::ScalarField> {
                 acc_x,
                 acc_y,
                 accumulated_bit,

@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use zksnarks::Witness;
-use zkstd::common::Pairing;
+use zkstd::common::PrimeField;
 
 /// Represents a JubJub point in the circuit
 #[derive(Debug, Clone, Copy)]
@@ -34,7 +34,7 @@ impl WitnessPoint {
 #[derive(Debug, Clone, Copy)]
 /// Contains all of the components needed to verify that a bit scalar
 /// multiplication was computed correctly
-pub(crate) struct WnafRound<T: Into<Witness>, P: Pairing> {
+pub(crate) struct WnafRound<T: Into<Witness>, F: PrimeField> {
     /// This is the accumulated x coordinate point that we wish to add (so
     /// far.. depends on where you are in the scalar mul) it is linked to
     /// the wnaf entry, so must not be revealed
@@ -52,10 +52,10 @@ pub(crate) struct WnafRound<T: Into<Witness>, P: Pairing> {
     pub xy_alpha: T,
     /// This is the possible x co-ordinate of the wnaf point we are going to
     /// add Actual x-co-ordinate = b_i * x_\beta
-    pub x_beta: P::ScalarField,
+    pub x_beta: F,
     /// This is the possible y co-ordinate of the wnaf point we are going to
     /// add Actual y coordinate = (b_i)^2 [y_\beta -1] + 1
-    pub y_beta: P::ScalarField,
+    pub y_beta: F,
     /// This is the multiplication of x_\beta * y_\beta
-    pub xy_beta: P::ScalarField,
+    pub xy_beta: F,
 }
