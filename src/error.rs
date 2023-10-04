@@ -6,7 +6,7 @@
 
 //! A collection of all possible errors encountered in PLONK.
 
-use poly_commit::KzgError;
+use zksnarks::PlonkError;
 
 /// Defines all possible errors that can be encountered in PLONK.
 #[derive(Debug, Clone, Copy)]
@@ -151,11 +151,13 @@ impl core::fmt::Display for Error {
     }
 }
 
-impl From<KzgError> for Error {
-    fn from(err: KzgError) -> Self {
+impl From<PlonkError> for Error {
+    fn from(err: PlonkError) -> Self {
         match err {
-            KzgError::CoefficientsDegreeIsZero => Self::PolynomialDegreeIsZero,
-            KzgError::CoefficientsDegreeTooLarge => {
+            PlonkError::CoefficientsDegreeIsZero => {
+                Self::PolynomialDegreeIsZero
+            }
+            PlonkError::CoefficientsDegreeTooLarge => {
                 Self::PolynomialDegreeTooLarge
             }
         }

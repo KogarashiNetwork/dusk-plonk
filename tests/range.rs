@@ -5,10 +5,11 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::KzgParams;
+use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::PlonkParams;
 use zkstd::behave::{FftField, Group};
 use zkstd::common::Pairing;
 
@@ -19,7 +20,7 @@ fn range_works() {
     let n = 5;
     let label = b"demo";
     let mut pp =
-        KzgParams::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
+        PlonkParams::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
 
     const DEFAULT_BITS: usize = 76;
     #[derive(Debug)]

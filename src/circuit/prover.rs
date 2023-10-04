@@ -12,9 +12,10 @@ use super::{Builder, Circuit};
 
 use core::marker::PhantomData;
 use core::ops;
-use poly_commit::{Coefficients, Fft, KzgParams};
+use poly_commit::{Coefficients, Fft};
 use rand_core::RngCore;
 use sp_std::vec;
+use zksnarks::PlonkParams;
 use zksnarks::{ProvingKey, Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::behave::{FftField, Group, Pairing};
 use zkstd::common::Vec;
@@ -27,7 +28,7 @@ where
     P: Pairing,
 {
     pub(crate) prover_key: ProvingKey<P>,
-    pub(crate) keypair: KzgParams<P>,
+    pub(crate) keypair: PlonkParams<P>,
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
     pub(crate) constraints: usize,
@@ -54,7 +55,7 @@ where
 {
     pub(crate) fn new(
         label: Vec<u8>,
-        keypair: KzgParams<P>,
+        keypair: PlonkParams<P>,
         prover_key: ProvingKey<P>,
         verifier_key: VerificationKey<P>,
         size: usize,

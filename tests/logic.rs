@@ -5,10 +5,11 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::KzgParams;
+use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::PlonkParams;
 use zkstd::behave::{FftField, Group};
 use zkstd::common::Pairing;
 
@@ -18,7 +19,7 @@ fn logic_and_works() {
 
     let n = 8;
     let label = b"demo";
-    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
@@ -176,7 +177,7 @@ fn logic_xor_works() {
 
     let n = 8;
     let label = b"demo";
-    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {

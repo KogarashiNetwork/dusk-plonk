@@ -5,10 +5,11 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::KzgParams;
+use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::PlonkParams;
 use zkstd::common::{CurveGroup, Group, Pairing};
 
 #[test]
@@ -17,7 +18,7 @@ fn boolean_works() {
 
     let n = 4;
     let label = b"demo";
-    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
@@ -94,7 +95,7 @@ fn select_works() {
 
     let n = 6;
     let label = b"demo";
-    let mut pp = KzgParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
 
     #[derive(Clone, Debug)]
     pub struct DummyCircuit<P: Pairing> {

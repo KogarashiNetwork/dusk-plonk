@@ -4,14 +4,13 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use poly_commit::{
-    Coefficients as Coeffs, Fft, KzgParams, PointsValue as Points,
-};
+use poly_commit::{Coefficients as Coeffs, Fft, PointsValue as Points};
 use zksnarks::key::{
     arithmetic,
     curve::{add, scalar},
     logic, permutation, range, ProvingKey, VerificationKey,
 };
+use zksnarks::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Prover, Verifier};
@@ -28,7 +27,7 @@ impl Compiler {
     ///
     /// Use the default implementation of the circuit
     pub fn compile<C, P>(
-        keypair: &mut KzgParams<P>,
+        keypair: &mut PlonkParams<P>,
         label: &[u8],
     ) -> CompilerResult<C, P>
     where
@@ -42,7 +41,7 @@ impl Compiler {
     ///
     /// Use the provided circuit instead of the default implementation
     pub fn compile_with_circuit<C, P>(
-        keypair: &mut KzgParams<P>,
+        keypair: &mut PlonkParams<P>,
         label: &[u8],
         circuit: &C,
     ) -> CompilerResult<C, P>
@@ -67,7 +66,7 @@ impl Compiler {
 
     fn preprocess<C, P>(
         label: &[u8],
-        keypair: &KzgParams<P>,
+        keypair: &PlonkParams<P>,
         prover: &Builder<P>,
     ) -> CompilerResult<C, P>
     where
