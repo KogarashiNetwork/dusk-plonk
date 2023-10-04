@@ -505,7 +505,7 @@ impl<P: Pairing> Proof<P> {
                 &self.evaluations,
             );
 
-        Commitment::new(msm_curve_addtion::<P>(
+        Commitment::new(msm_curve_addtion::<P::G1Affine>(
             &[
                 arithmetic_points,
                 range_points,
