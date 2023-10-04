@@ -6,7 +6,7 @@
 
 //! A collection of all possible errors encountered in PLONK.
 
-use zksnarks::PlonkError;
+use zksnarks::plonk::PlonkError;
 
 /// Defines all possible errors that can be encountered in PLONK.
 #[derive(Debug, Clone, Copy)]

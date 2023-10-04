@@ -9,7 +9,7 @@ use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
-use zksnarks::PlonkParams;
+use zksnarks::plonk::PlonkParams;
 use zkstd::common::{CurveGroup, Group, Pairing};
 
 #[test]

@@ -18,7 +18,7 @@ use crate::error::Error;
 use poly_commit::{powers_of, Commitment, EvaluationKey, Proof};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zksnarks::{Transcript, TranscriptProtocol};
+use zksnarks::plonk::{Transcript, TranscriptProtocol};
 use zkstd::common::{CurveGroup, Group, Pairing, PairingRange, Vec};
 
 pub(crate) fn batch_check<P: Pairing>(

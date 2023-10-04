@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::Coefficients;
-use zksnarks::{Evaluations as ProofEvaluations, ProvingKey};
+use zksnarks::plonk::{Evaluations as ProofEvaluations, ProvingKey};
 use zkstd::common::Pairing;
 
 /// Evaluations at points `z` or and `z * root of unity`

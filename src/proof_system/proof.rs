@@ -17,7 +17,7 @@ use poly_commit::{
 };
 #[cfg(feature = "std")]
 use rayon::prelude::*;
-use zksnarks::{
+use zksnarks::plonk::{
     Evaluations as ProofEvaluations, Transcript, TranscriptProtocol,
     VerificationKey,
 };

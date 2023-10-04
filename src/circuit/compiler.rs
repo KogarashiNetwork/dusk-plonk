@@ -5,12 +5,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::{Coefficients as Coeffs, Fft, PointsValue as Points};
-use zksnarks::key::{
+use zksnarks::plonk::key::{
     arithmetic,
     curve::{add, scalar},
     logic, permutation, range, ProvingKey, VerificationKey,
 };
-use zksnarks::PlonkParams;
+use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
 use super::{Builder, Circuit, Prover, Verifier};

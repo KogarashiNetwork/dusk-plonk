@@ -15,8 +15,9 @@ use core::ops;
 use poly_commit::{Coefficients, Fft};
 use rand_core::RngCore;
 use sp_std::vec;
-use zksnarks::PlonkParams;
-use zksnarks::{ProvingKey, Transcript, TranscriptProtocol, VerificationKey};
+use zksnarks::plonk::{
+    PlonkParams, ProvingKey, Transcript, TranscriptProtocol, VerificationKey,
+};
 use zkstd::behave::{FftField, Group, Pairing};
 use zkstd::common::Vec;
 

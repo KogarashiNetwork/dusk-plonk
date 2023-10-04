@@ -12,7 +12,7 @@ use sp_std::vec;
 use sp_std::vec::Vec;
 
 use poly_commit::{Coefficients, Fft};
-use zksnarks::ProvingKey;
+use zksnarks::plonk::ProvingKey;
 use zkstd::behave::*;
 
 /// Computes the Quotient [`Coefficients`] given the [`EvaluationDomain`], a

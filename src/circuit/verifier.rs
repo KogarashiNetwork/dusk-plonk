@@ -11,7 +11,7 @@ use super::Builder;
 
 use core::marker::PhantomData;
 use poly_commit::EvaluationKey;
-use zksnarks::{Transcript, TranscriptProtocol, VerificationKey};
+use zksnarks::plonk::{Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::common::{Pairing, Vec};
 
 /// Verify proofs of a given circuit
