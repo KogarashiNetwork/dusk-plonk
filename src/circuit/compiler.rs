@@ -5,8 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use poly_commit::{
-    Coefficients as Coeffs, EvaluationKey, Fft, KzgParams,
-    PointsValue as Points,
+    Coefficients as Coeffs, Fft, KzgParams, PointsValue as Points,
 };
 use zksnarks::key::{
     arithmetic,
@@ -51,7 +50,7 @@ impl Compiler {
         C: Circuit<P>,
         P: Pairing,
     {
-        let max_size = (keypair.commit_key().len() - 1) >> 1;
+        let max_size = keypair.max_degree() >> 1;
         let mut prover = Builder::initialized(max_size);
 
         circuit.circuit(&mut prover)?;
@@ -352,11 +351,7 @@ impl Compiler {
         let verifier = Verifier::new(
             label,
             verifier_key,
-            EvaluationKey::new(
-                keypair.commit_key()[0],
-                keypair.opening_key(),
-                keypair.beta_h(),
-            ),
+            keypair.verification_key(),
             public_input_indexes,
             n,
             constraints,
