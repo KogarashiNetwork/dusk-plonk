@@ -10,7 +10,7 @@ use hashbrown::HashMap;
 use itertools::izip;
 use poly_commit::{Coefficients, Fft};
 use sp_std::vec;
-use zksnarks::Wire;
+use zksnarks::{Index, Wire};
 use zkstd::behave::*;
 use zkstd::common::Vec;
 
@@ -49,7 +49,8 @@ impl<P: Pairing> Permutation<P> {
     /// is always allocated in the `witness_map`.
     pub(crate) fn new_witness(&mut self) -> Wire {
         // Generate the Witness
-        let var = Wire::new(self.witness_map.keys().len());
+        let var =
+            Wire::new_unchecked(Index::Aux(self.witness_map.keys().len()));
 
         // Allocate space for the Witness on the witness_map
         // Each vector is initialized with a capacity of 16.
@@ -713,7 +714,11 @@ mod test {
         let num_witnesses = 10u8;
         for i in 0..num_witnesses {
             let var = perm.new_witness();
-            assert_eq!(var.index(), i as usize);
+            if let Index::Aux(x) = var.get_unchecked() {
+                assert_eq!(x, i as usize);
+            } else {
+                panic!("Incorrect index");
+            }
             assert_eq!(perm.witness_map.len(), (i as usize) + 1);
         }
 

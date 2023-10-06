@@ -20,7 +20,7 @@ use core::{cmp, ops};
 use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
 use sp_std::vec;
-use zksnarks::{Constraint, Wire};
+use zksnarks::{Constraint, Index, Wire};
 use zkstd::common::{
     CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, Vec,
@@ -60,7 +60,10 @@ impl<P: Pairing> ops::Index<Wire> for Builder<P> {
     type Output = P::ScalarField;
 
     fn index(&self, w: Wire) -> &Self::Output {
-        &self.witness[w.index()]
+        match w.get_unchecked() {
+            Index::Input(i) => &self.instance[&i],
+            Index::Aux(i) => &self.witness[i],
+        }
     }
 }
 
@@ -69,13 +72,13 @@ impl<P: Pairing> Builder<P> {
     ///
     /// A turbo composer expects the first witness to be always present and to
     /// be zero.
-    pub const ZERO: Wire = Wire::new(0);
+    pub const ZERO: Wire = Wire::new_unchecked(Index::Input(0));
 
     /// `One` representation inside the constraint system.
     ///
     /// A turbo composer expects the 2nd witness to be always present and to
     /// be one.
-    const ONE: Wire = Wire::new(1);
+    const ONE: Wire = Wire::new_unchecked(Index::Input(1));
 
     /// Identity point representation inside the constraint system
     const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
@@ -129,9 +132,7 @@ impl<P: Pairing> Builder<P> {
         &mut self,
         witness: W,
     ) -> Wire {
-        let witness = self.append_witness_internal(witness.into());
-
-        witness
+        self.append_witness_internal(witness.into())
     }
 
     /// Append a new width-4 poly gate/constraint.
@@ -153,7 +154,7 @@ impl<P: Pairing> Builder<P> {
         // Bind the allocated witness
         self.witness.push(witness);
 
-        Wire::new(n)
+        Wire::new_unchecked(Index::Aux(n))
     }
 
     ///
