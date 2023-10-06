@@ -10,7 +10,7 @@ use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::plonk::PlonkParams;
-use zksnarks::Witness;
+use zksnarks::Wire;
 use zkstd::common::*;
 
 #[test]
@@ -51,14 +51,14 @@ fn decomposition_works() {
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
-            let mut w_bits: [Witness; N] = [Builder::<TatePairing>::ZERO; N];
+            let mut w_bits: [Wire; N] = [Builder::<TatePairing>::ZERO; N];
 
             w_bits
                 .iter_mut()
                 .zip(self.bits.iter())
                 .for_each(|(w, b)| *w = composer.append_witness(*b));
 
-            let w_x: [Witness; N] = composer.component_decomposition(w_a);
+            let w_x: [Wire; N] = composer.component_decomposition(w_a);
 
             w_bits.iter().zip(w_x.iter()).for_each(|(w, b)| {
                 composer.assert_equal(*w, *b);

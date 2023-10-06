@@ -4,13 +4,13 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::constraint_system::WireData;
+use crate::constraint_system::WireType;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
 use poly_commit::{Coefficients, Fft};
 use sp_std::vec;
-use zksnarks::Witness;
+use zksnarks::Wire;
 use zkstd::behave::*;
 use zkstd::common::Vec;
 
@@ -20,7 +20,7 @@ use zkstd::common::Vec;
 #[derive(Debug, Clone)]
 pub(crate) struct Permutation<P: Pairing> {
     // Maps a witness to the wires that it is associated to.
-    pub(crate) witness_map: HashMap<Witness, Vec<WireData>>,
+    pub(crate) witness_map: HashMap<Wire, Vec<WireType>>,
     _marker: PhantomData<P>,
 }
 
@@ -42,14 +42,14 @@ impl<P: Pairing> Permutation<P> {
         }
     }
 
-    /// Creates a new [`Witness`] by incrementing the index of the
+    /// Creates a new [`Wire`] by incrementing the index of the
     /// `witness_map`.
     ///
-    /// This is correct as whenever we add a new [`Witness`] into the system It
+    /// This is correct as whenever we add a new [`Wire`] into the system It
     /// is always allocated in the `witness_map`.
-    pub(crate) fn new_witness(&mut self) -> Witness {
+    pub(crate) fn new_witness(&mut self) -> Wire {
         // Generate the Witness
-        let var = Witness::new(self.witness_map.keys().len());
+        let var = Wire::new(self.witness_map.keys().len());
 
         // Allocate space for the Witness on the witness_map
         // Each vector is initialized with a capacity of 16.
@@ -59,17 +59,17 @@ impl<P: Pairing> Permutation<P> {
         var
     }
 
-    /// Checks that the [`Witness`]s are valid by determining if they have been
+    /// Checks that the [`Wire`]s are valid by determining if they have been
     /// added to the system
-    fn valid_witnesses(&self, witnesses: &[Witness]) -> bool {
+    fn valid_witnesses(&self, witnesses: &[Wire]) -> bool {
         witnesses
             .iter()
             .all(|var| self.witness_map.contains_key(var))
     }
 
-    /// Maps a set of [`Witness`]s (a,b,c,d) to a set of [`Wire`](WireData)s
+    /// Maps a set of [`Wire`]s (a,b,c,d) to a set of [`Wire`](WireType)s
     /// (left, right, out, fourth) with the corresponding gate index
-    pub fn add_witnesses_to_map<T: Into<Witness>>(
+    pub fn add_witnesses_to_map<T: Into<Wire>>(
         &mut self,
         a: T,
         b: T,
@@ -77,10 +77,10 @@ impl<P: Pairing> Permutation<P> {
         d: T,
         gate_index: usize,
     ) {
-        let left: WireData = WireData::Left(gate_index);
-        let right: WireData = WireData::Right(gate_index);
-        let output: WireData = WireData::Output(gate_index);
-        let fourth: WireData = WireData::Fourth(gate_index);
+        let left: WireType = WireType::Left(gate_index);
+        let right: WireType = WireType::Right(gate_index);
+        let output: WireType = WireType::Output(gate_index);
+        let fourth: WireType = WireType::Fourth(gate_index);
 
         // Map each witness to the wire it is associated with
         // This essentially tells us that:
@@ -90,10 +90,10 @@ impl<P: Pairing> Permutation<P> {
         self.add_witness_to_map(d.into(), fourth);
     }
 
-    pub(crate) fn add_witness_to_map<T: Into<Witness> + Copy>(
+    pub(crate) fn add_witness_to_map<T: Into<Wire> + Copy>(
         &mut self,
         var: T,
-        wire_data: WireData,
+        wire_data: WireType,
     ) {
         assert!(self.valid_witnesses(&[var.into()]));
 
@@ -108,11 +108,11 @@ impl<P: Pairing> Permutation<P> {
     pub(super) fn compute_sigma_permutations(
         &mut self,
         n: usize,
-    ) -> [Vec<WireData>; 4] {
-        let sigma_1: Vec<_> = (0..n).map(WireData::Left).collect();
-        let sigma_2: Vec<_> = (0..n).map(WireData::Right).collect();
-        let sigma_3: Vec<_> = (0..n).map(WireData::Output).collect();
-        let sigma_4: Vec<_> = (0..n).map(WireData::Fourth).collect();
+    ) -> [Vec<WireType>; 4] {
+        let sigma_1: Vec<_> = (0..n).map(WireType::Left).collect();
+        let sigma_2: Vec<_> = (0..n).map(WireType::Right).collect();
+        let sigma_3: Vec<_> = (0..n).map(WireType::Output).collect();
+        let sigma_4: Vec<_> = (0..n).map(WireType::Fourth).collect();
 
         let mut sigmas = [sigma_1, sigma_2, sigma_3, sigma_4];
 
@@ -131,10 +131,10 @@ impl<P: Pairing> Permutation<P> {
 
                 // Map current wire to next wire
                 match current_wire {
-                    WireData::Left(index) => sigmas[0][*index] = *next_wire,
-                    WireData::Right(index) => sigmas[1][*index] = *next_wire,
-                    WireData::Output(index) => sigmas[2][*index] = *next_wire,
-                    WireData::Fourth(index) => sigmas[3][*index] = *next_wire,
+                    WireType::Left(index) => sigmas[0][*index] = *next_wire,
+                    WireType::Right(index) => sigmas[1][*index] = *next_wire,
+                    WireType::Output(index) => sigmas[2][*index] = *next_wire,
+                    WireType::Fourth(index) => sigmas[3][*index] = *next_wire,
                 };
             }
         }
@@ -144,7 +144,7 @@ impl<P: Pairing> Permutation<P> {
 
     fn compute_permutation_lagrange(
         &self,
-        sigma_mapping: &[WireData],
+        sigma_mapping: &[WireType],
         fft: &Fft<P::ScalarField>,
     ) -> Vec<P::ScalarField> {
         let roots: Vec<_> = fft.elements.clone();
@@ -152,19 +152,19 @@ impl<P: Pairing> Permutation<P> {
         let lagrange_poly: Vec<P::ScalarField> = sigma_mapping
             .iter()
             .map(|x| match x {
-                WireData::Left(index) => {
+                WireType::Left(index) => {
                     let root = &roots[*index];
                     *root
                 }
-                WireData::Right(index) => {
+                WireType::Right(index) => {
                     let root = &roots[*index];
                     P::ScalarField::from(Self::K1) * root
                 }
-                WireData::Output(index) => {
+                WireType::Output(index) => {
                     let root = &roots[*index];
                     P::ScalarField::from(Self::K2) * root
                 }
-                WireData::Fourth(index) => {
+                WireType::Fourth(index) => {
                     let root = &roots[*index];
                     P::ScalarField::from(Self::K3) * root
                 }
@@ -730,10 +730,10 @@ mod test {
         for (_, wire_data) in perm.witness_map.iter() {
             for wire in wire_data.iter() {
                 match wire {
-                    WireData::Left(index)
-                    | WireData::Right(index)
-                    | WireData::Output(index)
-                    | WireData::Fourth(index) => assert!(*index < gate_size),
+                    WireType::Left(index)
+                    | WireType::Right(index)
+                    | WireType::Output(index)
+                    | WireType::Fourth(index) => assert!(*index < gate_size),
                 };
             }
         }
@@ -784,28 +784,28 @@ mod test {
         let s_sigma_4 = &sigmas[3];
 
         // Check the left sigma polynomial
-        assert_eq!(s_sigma_1[0], WireData::Right(0));
-        assert_eq!(s_sigma_1[1], WireData::Left(2));
-        assert_eq!(s_sigma_1[2], WireData::Left(3));
-        assert_eq!(s_sigma_1[3], WireData::Left(0));
+        assert_eq!(s_sigma_1[0], WireType::Right(0));
+        assert_eq!(s_sigma_1[1], WireType::Left(2));
+        assert_eq!(s_sigma_1[2], WireType::Left(3));
+        assert_eq!(s_sigma_1[3], WireType::Left(0));
 
         // Check the right sigma polynomial
-        assert_eq!(s_sigma_2[0], WireData::Left(1));
-        assert_eq!(s_sigma_2[1], WireData::Right(1));
-        assert_eq!(s_sigma_2[2], WireData::Right(2));
-        assert_eq!(s_sigma_2[3], WireData::Right(3));
+        assert_eq!(s_sigma_2[0], WireType::Left(1));
+        assert_eq!(s_sigma_2[1], WireType::Right(1));
+        assert_eq!(s_sigma_2[2], WireType::Right(2));
+        assert_eq!(s_sigma_2[3], WireType::Right(3));
 
         // Check the output sigma polynomial
-        assert_eq!(s_sigma_3[0], WireData::Output(0));
-        assert_eq!(s_sigma_3[1], WireData::Output(1));
-        assert_eq!(s_sigma_3[2], WireData::Output(2));
-        assert_eq!(s_sigma_3[3], WireData::Output(3));
+        assert_eq!(s_sigma_3[0], WireType::Output(0));
+        assert_eq!(s_sigma_3[1], WireType::Output(1));
+        assert_eq!(s_sigma_3[2], WireType::Output(2));
+        assert_eq!(s_sigma_3[3], WireType::Output(3));
 
         // Check the output sigma polynomial
-        assert_eq!(s_sigma_4[0], WireData::Fourth(1));
-        assert_eq!(s_sigma_4[1], WireData::Fourth(2));
-        assert_eq!(s_sigma_4[2], WireData::Fourth(3));
-        assert_eq!(s_sigma_4[3], WireData::Fourth(0));
+        assert_eq!(s_sigma_4[0], WireType::Fourth(1));
+        assert_eq!(s_sigma_4[1], WireType::Fourth(2));
+        assert_eq!(s_sigma_4[2], WireType::Fourth(3));
+        assert_eq!(s_sigma_4[3], WireType::Fourth(0));
 
         let domain = Fft::new(k);
         let fft = Fft::<BlsScalar>::new(k);
@@ -925,28 +925,28 @@ mod test {
         let s_sigma_4 = &sigmas[3];
 
         // Check the left sigma polynomial
-        assert_eq!(s_sigma_1[0], WireData::Right(0));
-        assert_eq!(s_sigma_1[1], WireData::Output(1));
-        assert_eq!(s_sigma_1[2], WireData::Right(2));
-        assert_eq!(s_sigma_1[3], WireData::Output(0));
+        assert_eq!(s_sigma_1[0], WireType::Right(0));
+        assert_eq!(s_sigma_1[1], WireType::Output(1));
+        assert_eq!(s_sigma_1[2], WireType::Right(2));
+        assert_eq!(s_sigma_1[3], WireType::Output(0));
 
         // Check the right sigma polynomial
-        assert_eq!(s_sigma_2[0], WireData::Right(1));
-        assert_eq!(s_sigma_2[1], WireData::Output(2));
-        assert_eq!(s_sigma_2[2], WireData::Output(3));
-        assert_eq!(s_sigma_2[3], WireData::Left(0));
+        assert_eq!(s_sigma_2[0], WireType::Right(1));
+        assert_eq!(s_sigma_2[1], WireType::Output(2));
+        assert_eq!(s_sigma_2[2], WireType::Output(3));
+        assert_eq!(s_sigma_2[3], WireType::Left(0));
 
         // Check the output sigma polynomial
-        assert_eq!(s_sigma_3[0], WireData::Left(1));
-        assert_eq!(s_sigma_3[1], WireData::Left(3));
-        assert_eq!(s_sigma_3[2], WireData::Right(3));
-        assert_eq!(s_sigma_3[3], WireData::Left(2));
+        assert_eq!(s_sigma_3[0], WireType::Left(1));
+        assert_eq!(s_sigma_3[1], WireType::Left(3));
+        assert_eq!(s_sigma_3[2], WireType::Right(3));
+        assert_eq!(s_sigma_3[3], WireType::Left(2));
 
         // Check the fourth sigma polynomial
-        assert_eq!(s_sigma_4[0], WireData::Fourth(1));
-        assert_eq!(s_sigma_4[1], WireData::Fourth(2));
-        assert_eq!(s_sigma_4[2], WireData::Fourth(3));
-        assert_eq!(s_sigma_4[3], WireData::Fourth(0));
+        assert_eq!(s_sigma_4[0], WireType::Fourth(1));
+        assert_eq!(s_sigma_4[1], WireType::Fourth(2));
+        assert_eq!(s_sigma_4[2], WireType::Fourth(3));
+        assert_eq!(s_sigma_4[3], WireType::Fourth(0));
 
         /*
         Check that the unique encodings of the sigma polynomials have been computed properly

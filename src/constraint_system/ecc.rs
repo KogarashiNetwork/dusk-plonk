@@ -4,29 +4,29 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zksnarks::Witness;
+use zksnarks::Wire;
 use zkstd::common::PrimeField;
 
 /// Represents a JubJub point in the circuit
 #[derive(Debug, Clone, Copy)]
 pub struct WitnessPoint {
-    x: Witness,
-    y: Witness,
+    x: Wire,
+    y: Wire,
 }
 
 impl WitnessPoint {
     #[allow(dead_code)]
-    pub(crate) const fn new(x: Witness, y: Witness) -> Self {
+    pub(crate) const fn new(x: Wire, y: Wire) -> Self {
         Self { x, y }
     }
 
     /// Return the X coordinate of the point
-    pub const fn x(&self) -> &Witness {
+    pub const fn x(&self) -> &Wire {
         &self.x
     }
 
     /// Return the Y coordinate of the point
-    pub const fn y(&self) -> &Witness {
+    pub const fn y(&self) -> &Wire {
         &self.y
     }
 }
@@ -34,7 +34,7 @@ impl WitnessPoint {
 #[derive(Debug, Clone, Copy)]
 /// Contains all of the components needed to verify that a bit scalar
 /// multiplication was computed correctly
-pub(crate) struct WnafRound<T: Into<Witness>, F: PrimeField> {
+pub(crate) struct WnafRound<T: Into<Wire>, F: PrimeField> {
     /// This is the accumulated x coordinate point that we wish to add (so
     /// far.. depends on where you are in the scalar mul) it is linked to
     /// the wnaf entry, so must not be revealed

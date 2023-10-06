@@ -12,6 +12,6 @@
 pub(crate) mod ecc;
 pub(crate) mod witness;
 
-pub(crate) use witness::WireData;
+pub(crate) use witness::WireType;
 
 pub use ecc::WitnessPoint;

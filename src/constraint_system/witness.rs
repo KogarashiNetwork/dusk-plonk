@@ -12,7 +12,7 @@
 /// Left(1) signifies that this wire belongs to the first gate and is the left
 /// wire
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub(crate) enum WireData {
+pub(crate) enum WireType {
     /// Left Wire of n'th gate
     Left(usize),
     /// Right Wire of n'th gate
