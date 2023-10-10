@@ -60,6 +60,24 @@ impl<P: Pairing> Permutation<P> {
         var
     }
 
+    /// Creates a new [`Wire`] for input by incrementing the index of the
+    /// `witness_map`.
+    ///
+    /// This is correct as whenever we add a new [`Wire`] into the system It
+    /// is always allocated in the `witness_map`.
+    pub(crate) fn new_input(&mut self) -> Wire {
+        // Generate the Witness
+        let var =
+            Wire::new_unchecked(Index::Input(self.witness_map.keys().len()));
+
+        // Allocate space for the Witness on the witness_map
+        // Each vector is initialized with a capacity of 16.
+        // This number is a best guess estimate.
+        self.witness_map.insert(var, Vec::with_capacity(16usize));
+
+        var
+    }
+
     /// Checks that the [`Wire`]s are valid by determining if they have been
     /// added to the system
     fn valid_witnesses(&self, witnesses: &[Wire]) -> bool {

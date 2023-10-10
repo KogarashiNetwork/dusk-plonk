@@ -103,7 +103,7 @@ impl Compiler {
             q_l.0[i] = c.q_l;
             q_r.0[i] = c.q_r;
             q_o.0[i] = c.q_o;
-            q_c.0[i] = c.q_c;
+            q_c.0[i] = prover[c.q_c];
             q_d.0[i] = c.q_d;
             q_arith.0[i] = c.q_arith;
             q_range.0[i] = c.q_range;

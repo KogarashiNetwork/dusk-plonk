@@ -72,13 +72,13 @@ impl<P: Pairing> Builder<P> {
     ///
     /// A turbo composer expects the first witness to be always present and to
     /// be zero.
-    pub const ZERO: Wire = Wire::new_unchecked(Index::Input(0));
+    pub const ZERO: Wire = Wire::new_unchecked(Index::Aux(0));
 
     /// `One` representation inside the constraint system.
     ///
     /// A turbo composer expects the 2nd witness to be always present and to
     /// be one.
-    const ONE: Wire = Wire::new_unchecked(Index::Input(1));
+    const ONE: Wire = Wire::new_unchecked(Index::Aux(1));
 
     /// Identity point representation inside the constraint system
     const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
@@ -135,6 +135,11 @@ impl<P: Pairing> Builder<P> {
         self.append_witness_internal(witness.into())
     }
 
+    /// Allocate an input value into the composer and return its index.
+    pub fn append_input<I: Into<P::ScalarField>>(&mut self, input: I) -> Wire {
+        self.append_input_internal(input.into())
+    }
+
     /// Append a new width-4 poly gate/constraint.
     pub fn append_custom_gate(
         &mut self,
@@ -158,6 +163,19 @@ impl<P: Pairing> Builder<P> {
     }
 
     ///
+    pub fn append_input_internal(&mut self, input: P::ScalarField) -> Wire {
+        let n = self.instance.len();
+
+        // Get a new Witness from the permutation
+        self.perm.new_input();
+
+        // Bind the allocated witness
+        self.instance.insert(n, input);
+
+        Wire::new_unchecked(Index::Input(n))
+    }
+
+    ///
     pub fn append_custom_gate_internal(
         &mut self,
         constraint: Constraint<P::ScalarField>,
@@ -165,10 +183,6 @@ impl<P: Pairing> Builder<P> {
         let n = self.constraints.len();
 
         self.constraints.push(constraint);
-
-        if let Some(pi) = constraint.public_input {
-            self.instance.insert(n, pi);
-        }
 
         self.perm.add_witnesses_to_map(
             constraint.w_a,
@@ -232,11 +246,7 @@ impl<P: Pairing> Builder<P> {
         //
         // `wn` product accumulators will safeguard the quotient polynomial.
 
-        let mut constraint = if is_component_xor {
-            Constraint::logic_xor(Constraint::default())
-        } else {
-            Constraint::logic(Constraint::default())
-        };
+        let mut constraint = Constraint::logic(Constraint::default());
 
         for i in 0..num_quads {
             // commit every accumulator
@@ -281,6 +291,12 @@ impl<P: Pairing> Builder<P> {
             let wit_d = self.append_witness(out_acc);
 
             constraint = constraint.o(wit_c);
+
+            constraint = if is_component_xor {
+                constraint.constant(self.append_witness(-P::ScalarField::one()))
+            } else {
+                constraint.constant(self.append_witness(P::ScalarField::one()))
+            };
 
             self.append_custom_gate(constraint);
 
@@ -405,13 +421,9 @@ impl<P: Pairing> Builder<P> {
             // the point accumulator must start from identity and its scalar
             // from zero
             if i == 0 {
-                self.assert_equal_constant(acc_x, P::ScalarField::zero(), None);
-                self.assert_equal_constant(acc_y, P::ScalarField::one(), None);
-                self.assert_equal_constant(
-                    accumulated_bit,
-                    P::ScalarField::zero(),
-                    None,
-                );
+                self.assert_equal_constant(acc_x, Self::ZERO);
+                self.assert_equal_constant(acc_y, Self::ONE);
+                self.assert_equal_constant(accumulated_bit, Self::ZERO);
             }
 
             let x_beta = wnaf_point_multiples[i].get_x();
@@ -430,11 +442,13 @@ impl<P: Pairing> Builder<P> {
                 xy_beta: xy_beta.into(),
             };
 
+            let xy_beta = self.append_witness(wnaf_round.xy_beta);
+
             let constraint =
                 Constraint::group_add_curve_scalar(Constraint::default())
                     .left(wnaf_round.x_beta)
                     .right(wnaf_round.y_beta)
-                    .constant(wnaf_round.xy_beta)
+                    .constant(xy_beta)
                     .a(wnaf_round.acc_x)
                     .b(wnaf_round.acc_y)
                     .o(wnaf_round.xy_alpha)
@@ -475,11 +489,8 @@ impl<P: Pairing> Builder<P> {
         #[allow(deprecated)]
         let mut slf = Self::uninitialized(capacity);
 
-        let zero = slf.append_witness(0);
-        let one = slf.append_witness(1);
-
-        slf.assert_equal_constant(zero, 0, None);
-        slf.assert_equal_constant(one, 1, None);
+        slf.append_witness(0);
+        slf.append_witness(1);
 
         slf.append_dummy_gates();
         slf.append_dummy_gates();
@@ -516,10 +527,9 @@ impl<P: Pairing> Builder<P> {
         let ql = s.q_l;
         let qr = s.q_r;
         let qd = s.q_d;
-        let qc = s.q_c;
-        let pi = s.public_input.unwrap_or_else(P::ScalarField::zero);
+        let qc = self[s.q_c];
 
-        let x = qm * a * b + ql * a + qr * b + qd * d + qc + pi;
+        let x = qm * a * b + ql * a + qr * b + qd * d + qc;
 
         let y = s.q_o;
 
@@ -553,9 +563,12 @@ impl<P: Pairing> Builder<P> {
     /// arithmetic constraints
     pub fn append_dummy_gates(&mut self) {
         let six = self.append_witness(P::ScalarField::from(6));
+        let four = self.append_witness(P::ScalarField::from(4));
         let one = self.append_witness(P::ScalarField::from(1));
         let seven = self.append_witness(P::ScalarField::from(7));
         let min_twenty = self.append_witness(-P::ScalarField::from(20));
+        let hundred_twenty_seven =
+            self.append_witness(P::ScalarField::from(127));
 
         // Add a dummy constraint so that we do not have zero polynomials
         let constraint = Constraint::default()
@@ -563,7 +576,7 @@ impl<P: Pairing> Builder<P> {
             .left(2)
             .right(3)
             .fourth(1)
-            .constant(4)
+            .constant(four)
             .output(4)
             .a(six)
             .b(seven)
@@ -578,7 +591,7 @@ impl<P: Pairing> Builder<P> {
             .mult(1)
             .left(1)
             .right(1)
-            .constant(127)
+            .constant(hundred_twenty_seven)
             .output(1)
             .a(min_twenty)
             .b(six)
@@ -594,11 +607,7 @@ impl<P: Pairing> Builder<P> {
         constant: C,
     ) -> Wire {
         let constant = constant.into();
-        let witness = self.append_witness(constant);
-
-        self.assert_equal_constant(witness, constant, None);
-
-        witness
+        self.append_witness(constant)
     }
 
     /// Appends a point in affine form as [`WitnessPoint`]
@@ -637,18 +646,11 @@ impl<P: Pairing> Builder<P> {
     ) -> WitnessPoint {
         let affine = affine.into();
         let point = self.append_point(affine);
+        let x = self.append_input(affine.get_x());
+        let y = self.append_input(affine.get_y());
 
-        self.assert_equal_constant(
-            *point.x(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-affine.get_x())),
-        );
-
-        self.assert_equal_constant(
-            *point.y(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-affine.get_y())),
-        );
+        self.assert_equal_constant(*point.x(), x);
+        self.assert_equal_constant(*point.y(), y);
 
         point
     }
@@ -661,11 +663,7 @@ impl<P: Pairing> Builder<P> {
         public: A,
     ) -> Wire {
         let public = public.into();
-        let witness = self.append_witness(public);
-
-        self.assert_equal_constant(witness, 0, Some(-public));
-
-        witness
+        self.append_input(public)
     }
 
     /// Asserts `a == b` by appending a gate
@@ -714,16 +712,8 @@ impl<P: Pairing> Builder<P> {
     /// Constrain `a` to be equal to `constant + pi`.
     ///
     /// `constant` will be defined as part of the public circuit description.
-    pub fn assert_equal_constant<C: Into<P::ScalarField>>(
-        &mut self,
-        a: Wire,
-        constant: C,
-        public: Option<P::ScalarField>,
-    ) {
-        let constant = constant.into();
-        let constraint = Constraint::default().left(1).constant(-constant).a(a);
-        let constraint =
-            public.map(|p| constraint.public(p)).unwrap_or(constraint);
+    pub fn assert_equal_constant(&mut self, a: Wire, constant: Wire) {
+        let constraint = Constraint::default().left(1).constant(constant).a(a);
 
         self.append_gate(constraint);
     }
@@ -743,18 +733,12 @@ impl<P: Pairing> Builder<P> {
         public: A,
     ) {
         let public = public.into();
+        let x = self.append_input(public.get_x());
+        let y = self.append_input(public.get_y());
 
-        self.assert_equal_constant(
-            *point.x(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-public.get_x())),
-        );
+        self.assert_equal_constant(*point.x(), x);
 
-        self.assert_equal_constant(
-            *point.y(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-public.get_y())),
-        );
+        self.assert_equal_constant(*point.y(), y);
     }
 
     /// Adds two curve points by consuming 2 gates.
@@ -921,7 +905,7 @@ impl<P: Pairing> Builder<P> {
         // 1 - bit
         let constraint = Constraint::default()
             .left(-P::ScalarField::one())
-            .constant(1)
+            .constant(Self::ONE)
             .a(bit);
         let one_min_bit = self.gate_add(constraint);
 
@@ -956,7 +940,7 @@ impl<P: Pairing> Builder<P> {
             .mult(1)
             .left(-P::ScalarField::one())
             .output(-P::ScalarField::one())
-            .constant(1)
+            .constant(Self::ONE)
             .a(bit)
             .b(value)
             .o(f_x);
