@@ -78,7 +78,13 @@ impl<P: Pairing> Builder<P> {
     ///
     /// A turbo composer expects the 2nd witness to be always present and to
     /// be one.
-    const ONE: Wire = Wire::new_unchecked(Index::Aux(1));
+    pub const ONE: Wire = Wire::new_unchecked(Index::Aux(1));
+
+    /// `Neg One` representation inside the constraint system.
+    ///
+    /// A turbo composer expects the 3nd witness to be always present and to
+    /// be neg one.
+    pub const NEG_ONE: Wire = Wire::new_unchecked(Index::Aux(2));
 
     /// Identity point representation inside the constraint system
     const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
@@ -246,7 +252,12 @@ impl<P: Pairing> Builder<P> {
         //
         // `wn` product accumulators will safeguard the quotient polynomial.
 
-        let mut constraint = Constraint::logic(Constraint::default());
+        let mut constraint = if is_component_xor {
+            Constraint::logic_xor(Constraint::default())
+                .constant(self.append_witness(-P::ScalarField::one()))
+        } else {
+            Constraint::logic(Constraint::default()).constant(Self::ONE)
+        };
 
         for i in 0..num_quads {
             // commit every accumulator
@@ -291,12 +302,6 @@ impl<P: Pairing> Builder<P> {
             let wit_d = self.append_witness(out_acc);
 
             constraint = constraint.o(wit_c);
-
-            constraint = if is_component_xor {
-                constraint.constant(self.append_witness(-P::ScalarField::one()))
-            } else {
-                constraint.constant(self.append_witness(P::ScalarField::one()))
-            };
 
             self.append_custom_gate(constraint);
 
@@ -422,7 +427,7 @@ impl<P: Pairing> Builder<P> {
             // from zero
             if i == 0 {
                 self.assert_equal_constant(acc_x, Self::ZERO);
-                self.assert_equal_constant(acc_y, Self::ONE);
+                self.assert_equal_constant(acc_y, Self::NEG_ONE);
                 self.assert_equal_constant(accumulated_bit, Self::ZERO);
             }
 
@@ -491,6 +496,7 @@ impl<P: Pairing> Builder<P> {
 
         slf.append_witness(0);
         slf.append_witness(1);
+        slf.append_witness(-P::ScalarField::one());
 
         slf.append_dummy_gates();
         slf.append_dummy_gates();
@@ -501,7 +507,7 @@ impl<P: Pairing> Builder<P> {
     /// Append a new width-4 poly gate/constraint.
     ///
     /// The constraint added will enforce the following:
-    /// `q_m · a · b  + q_l · a + q_r · b + q_o · o + q_4 · d + q_c + PI = 0`.
+    /// `q_m · a · b  + q_l · a + q_r · b + q_o · o + q_4 · d + q_c = 0`.
     pub fn append_gate(&mut self, constraint: Constraint<P::ScalarField>) {
         let constraint = Constraint::arithmetic(constraint);
 
@@ -646,8 +652,8 @@ impl<P: Pairing> Builder<P> {
     ) -> WitnessPoint {
         let affine = affine.into();
         let point = self.append_point(affine);
-        let x = self.append_input(affine.get_x());
-        let y = self.append_input(affine.get_y());
+        let x = self.append_input(-affine.get_x());
+        let y = self.append_input(-affine.get_y());
 
         self.assert_equal_constant(*point.x(), x);
         self.assert_equal_constant(*point.y(), y);
@@ -709,7 +715,8 @@ impl<P: Pairing> Builder<P> {
         self.append_logic_component(a, b, num_bits, true)
     }
 
-    /// Constrain `a` to be equal to `constant + pi`.
+    /// Constrain `a` to be equal to `constant`. Should be passed a negative
+    /// value of the constant.
     ///
     /// `constant` will be defined as part of the public circuit description.
     pub fn assert_equal_constant(&mut self, a: Wire, constant: Wire) {
@@ -733,11 +740,11 @@ impl<P: Pairing> Builder<P> {
         public: A,
     ) {
         let public = public.into();
-        let x = self.append_input(public.get_x());
-        let y = self.append_input(public.get_y());
+
+        let x = self.append_input(-public.get_x());
+        let y = self.append_input(-public.get_y());
 
         self.assert_equal_constant(*point.x(), x);
-
         self.assert_equal_constant(*point.y(), y);
     }
 
