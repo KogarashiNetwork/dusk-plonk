@@ -9,8 +9,8 @@ use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::plonk::wire::Wire;
 use zksnarks::plonk::PlonkParams;
-use zksnarks::Wire;
 use zkstd::common::*;
 
 #[test]

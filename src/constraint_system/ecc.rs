@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use zksnarks::Wire;
+use zksnarks::plonk::wire::Wire;
 use zkstd::common::PrimeField;
 
 /// Represents a JubJub point in the circuit

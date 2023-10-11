@@ -10,7 +10,7 @@ use hashbrown::HashMap;
 use itertools::izip;
 use poly_commit::{Coefficients, Fft};
 use sp_std::vec;
-use zksnarks::Wire;
+use zksnarks::plonk::wire::Wire;
 use zkstd::behave::*;
 use zkstd::common::Vec;
 

@@ -20,7 +20,7 @@ use core::{cmp, ops};
 use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
 use sp_std::vec;
-use zksnarks::{Constraint, Wire};
+use zksnarks::{plonk::wire::Wire, Constraint};
 use zkstd::common::{
     CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, Vec,
