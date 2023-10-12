@@ -27,9 +27,9 @@ use zkstd::common::{
 };
 
 use crate::bit_iterator::BitIterator8;
-use crate::constraint_system::ecc::WnafRound;
-use crate::constraint_system::WitnessPoint;
 use crate::error::Error;
+use crate::gadget::ecc::WnafRound;
+use crate::gadget::WitnessPoint;
 use crate::permutation::Permutation;
 
 /// Circuit implementation that can be proved by a Composer

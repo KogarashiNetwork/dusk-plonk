@@ -4,7 +4,7 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::constraint_system::WireType;
+use crate::gadget::WireType;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;

@@ -11,7 +11,7 @@
 
 pub use crate::{
     circuit::{Circuit, Compiler, ConstraintSystem, Prover, Verifier},
-    constraint_system::WitnessPoint,
+    gadget::WitnessPoint,
 };
 
 pub use crate::error::Error;
