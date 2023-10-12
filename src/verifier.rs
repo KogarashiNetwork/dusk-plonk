@@ -5,7 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use crate::error::Error;
-use crate::proof_system::Proof;
+use crate::prover::Proof;
 
 use crate::circuit::ConstraintSystem;
 

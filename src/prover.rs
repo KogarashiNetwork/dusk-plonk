@@ -4,11 +4,13 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::error::Error;
-use crate::proof_system::proof::Proof;
-use crate::proof_system::{linearization_poly, quotient_poly};
+mod linearization_poly;
+mod proof;
+mod quotient_poly;
 
 use crate::circuit::{Circuit, ConstraintSystem};
+use crate::error::Error;
+pub use proof::Proof;
 
 use core::marker::PhantomData;
 use core::ops;

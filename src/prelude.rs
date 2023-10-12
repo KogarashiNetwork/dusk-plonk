@@ -15,7 +15,7 @@ pub use crate::{
 };
 
 pub use crate::error::Error;
-pub use crate::proof_system::Proof;
+pub use crate::prover::Proof;
 pub use bls_12_381::Fr as BlsScalar;
 pub use jub_jub::{Fp as JubjubScalar, JubjubAffine, JubjubExtended};
 pub use zksnarks::Constraint;
