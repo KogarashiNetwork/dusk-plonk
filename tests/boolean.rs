@@ -40,7 +40,7 @@ fn boolean_works() {
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut Builder<TatePairing>,
+            composer: &mut ConstraintSystem<TatePairing>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
 
@@ -224,7 +224,7 @@ fn select_works() {
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut Builder<TatePairing>,
+            composer: &mut ConstraintSystem<TatePairing>,
         ) -> Result<(), Error> {
             let w_bit = composer.append_witness(self.bit);
             let w_a = composer.append_witness(self.a);

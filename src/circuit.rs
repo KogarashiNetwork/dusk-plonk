@@ -37,12 +37,15 @@ use crate::permutation::Permutation;
 /// The default implementation will be used to generate the proving arguments.
 pub trait Circuit<P: Pairing>: Default + Debug {
     /// Circuit definition
-    fn synthesize(&self, composer: &mut Builder<P>) -> Result<(), Error>;
+    fn synthesize(
+        &self,
+        composer: &mut ConstraintSystem<P>,
+    ) -> Result<(), Error>;
 }
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
-pub struct Builder<P: Pairing> {
+pub struct ConstraintSystem<P: Pairing> {
     /// Constraint system gates
     pub(crate) constraints: Vec<Constraint<P::ScalarField>>,
 
@@ -56,7 +59,7 @@ pub struct Builder<P: Pairing> {
     pub(crate) perm: Permutation<P>,
 }
 
-impl<P: Pairing> ops::Index<PrivateWire> for Builder<P> {
+impl<P: Pairing> ops::Index<PrivateWire> for ConstraintSystem<P> {
     type Output = P::ScalarField;
 
     fn index(&self, w: PrivateWire) -> &Self::Output {
@@ -64,7 +67,7 @@ impl<P: Pairing> ops::Index<PrivateWire> for Builder<P> {
     }
 }
 
-impl<P: Pairing> Builder<P> {
+impl<P: Pairing> ConstraintSystem<P> {
     /// Zero representation inside the constraint system.
     ///
     /// A turbo composer expects the first witness to be always present and to

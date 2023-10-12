@@ -13,7 +13,7 @@ use zksnarks::plonk::key::{
 use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
-use super::{Builder, Circuit, Prover, Verifier};
+use super::{Circuit, ConstraintSystem, Prover, Verifier};
 use crate::error::Error;
 use sp_std::vec;
 
@@ -50,7 +50,7 @@ impl Compiler {
         P: Pairing,
     {
         let max_size = keypair.max_degree() >> 1;
-        let mut prover = Builder::initialized(max_size);
+        let mut prover = ConstraintSystem::initialized(max_size);
 
         circuit.synthesize(&mut prover)?;
 
@@ -67,7 +67,7 @@ impl Compiler {
     fn preprocess<C, P>(
         label: &[u8],
         keypair: &PlonkParams<P>,
-        prover: &Builder<P>,
+        prover: &ConstraintSystem<P>,
     ) -> CompilerResult<C, P>
     where
         C: Circuit<P>,

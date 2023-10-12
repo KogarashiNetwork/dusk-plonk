@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{linearization_poly, quotient_poly};
 
-use super::{Builder, Circuit};
+use super::{Circuit, ConstraintSystem};
 
 use core::marker::PhantomData;
 use core::ops;
@@ -113,7 +113,7 @@ where
         C: Circuit<P>,
         R: RngCore,
     {
-        let prover = Builder::<P>::prove(self.constraints, circuit)?;
+        let prover = ConstraintSystem::<P>::prove(self.constraints, circuit)?;
 
         let size = self.size;
         let k = size.trailing_zeros();
@@ -125,7 +125,7 @@ where
         let public_inputs = prover.public_inputs();
         let public_input_indexes = prover.public_input_indexes();
         let mut dense_public_inputs =
-            Coefficients::new(Builder::<P>::dense_public_inputs(
+            Coefficients::new(ConstraintSystem::<P>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
                 self.size,

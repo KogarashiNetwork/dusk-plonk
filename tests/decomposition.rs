@@ -48,11 +48,11 @@ fn decomposition_works() {
     impl<const N: usize> Circuit<TatePairing> for DummyCircuit<N, TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut Builder<TatePairing>,
+            composer: &mut ConstraintSystem<TatePairing>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let mut w_bits: [PrivateWire; N] =
-                [Builder::<TatePairing>::ZERO; N];
+                [ConstraintSystem::<TatePairing>::ZERO; N];
 
             w_bits
                 .iter_mut()

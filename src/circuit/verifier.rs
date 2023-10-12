@@ -7,7 +7,7 @@
 use crate::error::Error;
 use crate::proof_system::Proof;
 
-use super::Builder;
+use super::ConstraintSystem;
 
 use core::marker::PhantomData;
 use poly_commit::EvaluationKey;
@@ -69,7 +69,7 @@ impl<C, P: Pairing> Verifier<C, P> {
             )
         });
 
-        let dense_public_inputs = Builder::<P>::dense_public_inputs(
+        let dense_public_inputs = ConstraintSystem::<P>::dense_public_inputs(
             &self.public_input_indexes,
             public_inputs,
             self.size,
