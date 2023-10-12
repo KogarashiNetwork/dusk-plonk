@@ -52,7 +52,7 @@ pub struct ConstraintSystem<P: Pairing> {
     pub(crate) witness: Vec<P::ScalarField>,
 
     /// Permutation argument.
-    pub(crate) perm: Permutation<P>,
+    pub(crate) perm: Permutation<P::ScalarField>,
 }
 
 impl<P: Pairing> ops::Index<PrivateWire> for ConstraintSystem<P> {
