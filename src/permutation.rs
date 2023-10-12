@@ -69,12 +69,12 @@ impl<P: Pairing> Permutation<P> {
 
     /// Maps a set of [`PrivateWire`]s (a,b,c,d) to a set of [`Wire`](WireType)s
     /// (left, right, out, fourth) with the corresponding gate index
-    pub fn add_witnesses_to_map<T: Into<PrivateWire>>(
+    pub fn add_witnesses_to_map(
         &mut self,
-        a: T,
-        b: T,
-        c: T,
-        d: T,
+        a: PrivateWire,
+        b: PrivateWire,
+        c: PrivateWire,
+        d: PrivateWire,
         gate_index: usize,
     ) {
         let left: WireType = WireType::Left(gate_index);
@@ -84,22 +84,22 @@ impl<P: Pairing> Permutation<P> {
 
         // Map each witness to the wire it is associated with
         // This essentially tells us that:
-        self.add_witness_to_map(a.into(), left);
-        self.add_witness_to_map(b.into(), right);
-        self.add_witness_to_map(c.into(), output);
-        self.add_witness_to_map(d.into(), fourth);
+        self.add_witness_to_map(a, left);
+        self.add_witness_to_map(b, right);
+        self.add_witness_to_map(c, output);
+        self.add_witness_to_map(d, fourth);
     }
 
-    pub(crate) fn add_witness_to_map<T: Into<PrivateWire> + Copy>(
+    pub(crate) fn add_witness_to_map(
         &mut self,
-        var: T,
+        var: PrivateWire,
         wire_data: WireType,
     ) {
-        assert!(self.valid_witnesses(&[var.into()]));
+        assert!(self.valid_witnesses(&[var]));
 
         // Since we always allocate space for the Vec of WireData when a
         // Witness is added to the witness_map, this should never fail
-        let vec_wire_data = self.witness_map.get_mut(&var.into()).unwrap();
+        let vec_wire_data = self.witness_map.get_mut(&var).unwrap();
         vec_wire_data.push(wire_data);
     }
 
