@@ -42,7 +42,7 @@ fn mul_generator_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {
@@ -137,7 +137,7 @@ fn add_point_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {
@@ -263,7 +263,7 @@ fn mul_point_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {

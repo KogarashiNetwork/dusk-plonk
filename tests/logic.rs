@@ -48,7 +48,7 @@ fn logic_and_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {
@@ -206,7 +206,7 @@ fn logic_xor_works() {
     }
 
     impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {

@@ -37,7 +37,7 @@ use crate::permutation::Permutation;
 /// The default implementation will be used to generate the proving arguments.
 pub trait Circuit<P: Pairing>: Default + Debug {
     /// Circuit definition
-    fn circuit(&self, composer: &mut Builder<P>) -> Result<(), Error>;
+    fn synthesize(&self, composer: &mut Builder<P>) -> Result<(), Error>;
 }
 
 /// Construct and prove circuits
@@ -1163,7 +1163,7 @@ impl<P: Pairing> Builder<P> {
     {
         let mut builder = Self::initialized(constraints);
 
-        circuit.circuit(&mut builder)?;
+        circuit.synthesize(&mut builder)?;
 
         Ok(builder)
     }

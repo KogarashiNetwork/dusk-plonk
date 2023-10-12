@@ -46,7 +46,7 @@ fn decomposition_works() {
     }
 
     impl<const N: usize> Circuit<TatePairing> for DummyCircuit<N, TatePairing> {
-        fn circuit(
+        fn synthesize(
             &self,
             composer: &mut Builder<TatePairing>,
         ) -> Result<(), Error> {

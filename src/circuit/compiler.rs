@@ -52,7 +52,7 @@ impl Compiler {
         let max_size = keypair.max_degree() >> 1;
         let mut prover = Builder::initialized(max_size);
 
-        circuit.circuit(&mut prover)?;
+        circuit.synthesize(&mut prover)?;
 
         let n = (prover.constraints() + 6).next_power_of_two();
 
