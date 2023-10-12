@@ -1151,19 +1151,4 @@ impl<P: Pairing> ConstraintSystem<P> {
 
         o
     }
-
-    /// Prove a circuit with a builder initialized with `constraints` capacity.
-    pub(crate) fn prove<C>(
-        constraints: usize,
-        circuit: &C,
-    ) -> Result<Self, Error>
-    where
-        C: Circuit<P>,
-    {
-        let mut builder = Self::initialized(constraints);
-
-        circuit.synthesize(&mut builder)?;
-
-        Ok(builder)
-    }
 }

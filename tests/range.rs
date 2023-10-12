@@ -65,7 +65,7 @@ fn range_works() {
         let a = BlsScalar::from(u64::MAX);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
+            .create_proof(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
             .expect("failed to prove");
 
         verifier
@@ -78,7 +78,7 @@ fn range_works() {
         let a = -BlsScalar::pow_of_2(DEFAULT_BITS as u64 + 1);
 
         prover
-            .prove(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
+            .create_proof(&mut rng, &DummyCircuit::new(a, DEFAULT_BITS))
             .expect_err("bits aren't in range");
     }
 

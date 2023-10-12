@@ -80,7 +80,7 @@ fn decomposition_works() {
         let a = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::<256, TatePairing>::new(a))
+            .create_proof(&mut rng, &DummyCircuit::<256, TatePairing>::new(a))
             .expect("failed to prove");
 
         verifier
@@ -96,6 +96,8 @@ fn decomposition_works() {
 
         circuit.bits[10] = circuit.bits[10] ^ BlsScalar::one();
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 }

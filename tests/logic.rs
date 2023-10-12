@@ -76,7 +76,7 @@ fn logic_and_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, 256))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, 256))
             .expect("failed to prove");
 
         verifier
@@ -103,7 +103,7 @@ fn logic_and_works() {
         assert_ne!(c, n);
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b, c: n, bits })
+            .create_proof(&mut rng, &DummyCircuit { a, b, c: n, bits })
             .expect_err("the provided proof isn't valid");
     }
 
@@ -124,7 +124,7 @@ fn logic_and_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, bits))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, bits))
             .expect("failed to prove");
 
         verifier
@@ -149,7 +149,7 @@ fn logic_and_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, bits))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, bits))
             .expect("failed to prove");
 
         verifier
@@ -234,7 +234,7 @@ fn logic_xor_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, 256))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, 256))
             .expect("failed to prove");
 
         verifier
@@ -261,7 +261,7 @@ fn logic_xor_works() {
         assert_ne!(c, n);
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b, c: n, bits })
+            .create_proof(&mut rng, &DummyCircuit { a, b, c: n, bits })
             .expect_err("the provided proof isn't valid");
     }
 
@@ -282,7 +282,7 @@ fn logic_xor_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, bits))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, bits))
             .expect("failed to prove");
 
         verifier
@@ -307,7 +307,7 @@ fn logic_xor_works() {
         let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b, bits))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b, bits))
             .expect("failed to prove");
 
         verifier

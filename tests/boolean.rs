@@ -61,7 +61,7 @@ fn boolean_works() {
         let a = BlsScalar::one();
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a))
+            .create_proof(&mut rng, &DummyCircuit::new(a))
             .expect("failed to prove");
 
         verifier
@@ -71,7 +71,7 @@ fn boolean_works() {
         let a = BlsScalar::zero();
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a))
+            .create_proof(&mut rng, &DummyCircuit::new(a))
             .expect("failed to prove");
 
         verifier
@@ -84,7 +84,7 @@ fn boolean_works() {
         let a = BlsScalar::from(2u64);
 
         prover
-            .prove(&mut rng, &DummyCircuit::new(a))
+            .create_proof(&mut rng, &DummyCircuit::new(a))
             .expect_err("invalid circuit");
     }
 }
@@ -308,8 +308,9 @@ fn select_works() {
             identity_a,
         );
 
-        let (proof, public_inputs) =
-            prover.prove(&mut rng, &circuit).expect("failed to prove");
+        let (proof, public_inputs) = prover
+            .create_proof(&mut rng, &circuit)
+            .expect("failed to prove");
 
         verifier
             .verify(&proof, &public_inputs)
@@ -347,8 +348,9 @@ fn select_works() {
             identity_a,
         );
 
-        let (proof, public_inputs) =
-            prover.prove(&mut rng, &circuit).expect("failed to prove");
+        let (proof, public_inputs) = prover
+            .create_proof(&mut rng, &circuit)
+            .expect("failed to prove");
 
         verifier
             .verify(&proof, &public_inputs)
@@ -393,7 +395,9 @@ fn select_works() {
 
         circuit.res = -circuit.res;
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 
     // negative select zero works
@@ -402,7 +406,9 @@ fn select_works() {
 
         circuit.zero_res = -circuit.zero_res;
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 
     // negative select one works
@@ -411,7 +417,9 @@ fn select_works() {
 
         circuit.one_res = -circuit.one_res;
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 
     // negative select point works
@@ -422,7 +430,9 @@ fn select_works() {
 
         circuit.point_res += x;
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 
     // negative select identity works
@@ -433,6 +443,8 @@ fn select_works() {
 
         circuit.identity_res += x;
 
-        prover.prove(&mut rng, &circuit).expect_err("invalid proof");
+        prover
+            .create_proof(&mut rng, &circuit)
+            .expect_err("invalid proof");
     }
 }

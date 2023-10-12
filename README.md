@@ -79,7 +79,7 @@ let (prover, verifier) = Compiler::compile::<TestCircuit>(&pp, label)
 
 // Generate the proof and its public inputs
 let (proof, public_inputs) = prover
-    .prove(&mut OsRng, &TestCircuit::default())
+    .create_proof(&mut OsRng, &TestCircuit::default())
     .expect("failed to prove");
 
 // Verify the generated proof

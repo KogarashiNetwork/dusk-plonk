@@ -69,7 +69,7 @@ fn mul_generator_works() {
     {
         let a = JubjubScalar::random(&mut rng);
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a))
+            .create_proof(&mut rng, &DummyCircuit::new(a))
             .expect("failed to prove");
 
         verifier
@@ -88,7 +88,7 @@ fn mul_generator_works() {
         assert_ne!(b, y);
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b: y })
+            .create_proof(&mut rng, &DummyCircuit { a, b: y })
             .expect_err("invalid ecc proof isn't feasible");
     }
 
@@ -101,7 +101,7 @@ fn mul_generator_works() {
         let y = JubjubExtended::ADDITIVE_GENERATOR * x;
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b: y })
+            .create_proof(&mut rng, &DummyCircuit { a, b: y })
             .expect_err("invalid ecc proof isn't feasible");
     }
 }
@@ -165,7 +165,7 @@ fn add_point_works() {
         let b = JubjubScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(&a, &b))
+            .create_proof(&mut rng, &DummyCircuit::new(&a, &b))
             .expect("failed to prove");
 
         verifier
@@ -179,7 +179,7 @@ fn add_point_works() {
         let a = JubjubExtended::ADDITIVE_GENERATOR * a;
 
         let (proof, public_inputs) = prover
-            .prove(
+            .create_proof(
                 &mut rng,
                 &DummyCircuit {
                     a,
@@ -197,7 +197,7 @@ fn add_point_works() {
     // zero works
     {
         let (proof, public_inputs) = prover
-            .prove(
+            .create_proof(
                 &mut rng,
                 &DummyCircuit {
                     a: JubjubExtended::ADDITIVE_IDENTITY,
@@ -226,7 +226,7 @@ fn add_point_works() {
         assert_ne!(c, a + b);
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b, c })
+            .create_proof(&mut rng, &DummyCircuit { a, b, c })
             .expect_err("invalid ecc proof isn't feasible");
     }
 }
@@ -292,7 +292,7 @@ fn mul_point_works() {
         let b = JubjubExtended::ADDITIVE_GENERATOR * b;
 
         let (proof, public_inputs) = prover
-            .prove(&mut rng, &DummyCircuit::new(a, b))
+            .create_proof(&mut rng, &DummyCircuit::new(a, b))
             .expect("failed to prove");
 
         verifier
@@ -313,7 +313,7 @@ fn mul_point_works() {
         assert_ne!(c, x);
 
         prover
-            .prove(&mut rng, &DummyCircuit { a, b, c: x })
+            .create_proof(&mut rng, &DummyCircuit { a, b, c: x })
             .expect_err("circuit is not satisfied");
     }
 }

@@ -106,7 +106,7 @@ where
     }
 
     /// Prove the circuit
-    pub fn prove<R>(
+    pub fn create_proof<R>(
         &self,
         rng: &mut R,
         circuit: &C,
@@ -115,7 +115,9 @@ where
         C: Circuit<P>,
         R: RngCore,
     {
-        let prover = ConstraintSystem::<P>::prove(self.constraints, circuit)?;
+        let mut prover = ConstraintSystem::initialized(self.constraints);
+
+        circuit.synthesize(&mut prover)?;
 
         let size = self.size;
         let k = size.trailing_zeros();
