@@ -10,7 +10,7 @@ use hashbrown::HashMap;
 use itertools::izip;
 use poly_commit::{Coefficients, Fft};
 use sp_std::vec;
-use zksnarks::plonk::wire::Wire;
+use zksnarks::plonk::wire::PrivateWire;
 use zkstd::behave::*;
 use zkstd::common::Vec;
 
@@ -20,7 +20,7 @@ use zkstd::common::Vec;
 #[derive(Debug, Clone)]
 pub(crate) struct Permutation<P: Pairing> {
     // Maps a witness to the wires that it is associated to.
-    pub(crate) witness_map: HashMap<Wire, Vec<WireType>>,
+    pub(crate) witness_map: HashMap<PrivateWire, Vec<WireType>>,
     _marker: PhantomData<P>,
 }
 
@@ -42,14 +42,14 @@ impl<P: Pairing> Permutation<P> {
         }
     }
 
-    /// Creates a new [`Wire`] by incrementing the index of the
+    /// Creates a new [`PrivateWire`] by incrementing the index of the
     /// `witness_map`.
     ///
-    /// This is correct as whenever we add a new [`Wire`] into the system It
-    /// is always allocated in the `witness_map`.
-    pub(crate) fn new_witness(&mut self) -> Wire {
+    /// This is correct as whenever we add a new [`PrivateWire`] into the system
+    /// It is always allocated in the `witness_map`.
+    pub(crate) fn new_witness(&mut self) -> PrivateWire {
         // Generate the Witness
-        let var = Wire::new(self.witness_map.keys().len());
+        let var = PrivateWire::new(self.witness_map.keys().len());
 
         // Allocate space for the Witness on the witness_map
         // Each vector is initialized with a capacity of 16.
@@ -59,17 +59,17 @@ impl<P: Pairing> Permutation<P> {
         var
     }
 
-    /// Checks that the [`Wire`]s are valid by determining if they have been
-    /// added to the system
-    fn valid_witnesses(&self, witnesses: &[Wire]) -> bool {
+    /// Checks that the [`PrivateWire`]s are valid by determining if they have
+    /// been added to the system
+    fn valid_witnesses(&self, witnesses: &[PrivateWire]) -> bool {
         witnesses
             .iter()
             .all(|var| self.witness_map.contains_key(var))
     }
 
-    /// Maps a set of [`Wire`]s (a,b,c,d) to a set of [`Wire`](WireType)s
+    /// Maps a set of [`PrivateWire`]s (a,b,c,d) to a set of [`Wire`](WireType)s
     /// (left, right, out, fourth) with the corresponding gate index
-    pub fn add_witnesses_to_map<T: Into<Wire>>(
+    pub fn add_witnesses_to_map<T: Into<PrivateWire>>(
         &mut self,
         a: T,
         b: T,
@@ -90,7 +90,7 @@ impl<P: Pairing> Permutation<P> {
         self.add_witness_to_map(d.into(), fourth);
     }
 
-    pub(crate) fn add_witness_to_map<T: Into<Wire> + Copy>(
+    pub(crate) fn add_witness_to_map<T: Into<PrivateWire> + Copy>(
         &mut self,
         var: T,
         wire_data: WireType,

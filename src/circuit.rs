@@ -20,7 +20,7 @@ use core::{cmp, ops};
 use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
 use sp_std::vec;
-use zksnarks::{plonk::wire::Wire, Constraint};
+use zksnarks::{plonk::wire::PrivateWire, Constraint};
 use zkstd::common::{
     CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
     TwistedEdwardsAffine, Vec,
@@ -56,10 +56,10 @@ pub struct Builder<P: Pairing> {
     pub(crate) perm: Permutation<P>,
 }
 
-impl<P: Pairing> ops::Index<Wire> for Builder<P> {
+impl<P: Pairing> ops::Index<PrivateWire> for Builder<P> {
     type Output = P::ScalarField;
 
-    fn index(&self, w: Wire) -> &Self::Output {
+    fn index(&self, w: PrivateWire) -> &Self::Output {
         &self.witness[w.index()]
     }
 }
@@ -69,13 +69,13 @@ impl<P: Pairing> Builder<P> {
     ///
     /// A turbo composer expects the first witness to be always present and to
     /// be zero.
-    pub const ZERO: Wire = Wire::new(0);
+    pub const ZERO: PrivateWire = PrivateWire::new(0);
 
     /// `One` representation inside the constraint system.
     ///
     /// A turbo composer expects the 2nd witness to be always present and to
     /// be one.
-    const ONE: Wire = Wire::new(1);
+    const ONE: PrivateWire = PrivateWire::new(1);
 
     /// Identity point representation inside the constraint system
     const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
@@ -128,10 +128,8 @@ impl<P: Pairing> Builder<P> {
     pub fn append_witness<W: Into<P::ScalarField>>(
         &mut self,
         witness: W,
-    ) -> Wire {
-        let witness = self.append_witness_internal(witness.into());
-
-        witness
+    ) -> PrivateWire {
+        self.append_witness_internal(witness.into())
     }
 
     /// Append a new width-4 poly gate/constraint.
@@ -144,7 +142,10 @@ impl<P: Pairing> Builder<P> {
     }
 
     ///
-    pub fn append_witness_internal(&mut self, witness: P::ScalarField) -> Wire {
+    pub fn append_witness_internal(
+        &mut self,
+        witness: P::ScalarField,
+    ) -> PrivateWire {
         let n = self.witness.len();
 
         // Get a new Witness from the permutation
@@ -153,7 +154,7 @@ impl<P: Pairing> Builder<P> {
         // Bind the allocated witness
         self.witness.push(witness);
 
-        Wire::new(n)
+        PrivateWire::new(n)
     }
 
     ///
@@ -195,11 +196,11 @@ impl<P: Pairing> Builder<P> {
     /// `num_bits % 2 != 0`.
     fn append_logic_component(
         &mut self,
-        a: Wire,
-        b: Wire,
+        a: PrivateWire,
+        b: PrivateWire,
         num_bits: usize,
         is_component_xor: bool,
-    ) -> Wire {
+    ) -> PrivateWire {
         let num_bits = cmp::min(num_bits, 256);
         let num_quads = num_bits >> 1;
 
@@ -306,7 +307,7 @@ impl<P: Pairing> Builder<P> {
     /// Will error if `jubjub` doesn't fit `Fr`
     pub fn component_mul_generator<A: Into<P::JubjubExtended>>(
         &mut self,
-        jubjub: Wire,
+        jubjub: PrivateWire,
         generator: A,
     ) -> Result<WitnessPoint, Error> {
         let generator = generator.into();
@@ -419,7 +420,7 @@ impl<P: Pairing> Builder<P> {
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound::<Wire, P::ScalarField> {
+            let wnaf_round = WnafRound::<PrivateWire, P::ScalarField> {
                 acc_x,
                 acc_y,
                 accumulated_bit,
@@ -502,7 +503,7 @@ impl<P: Pairing> Builder<P> {
     pub fn append_evaluated_output(
         &mut self,
         s: Constraint<P::ScalarField>,
-    ) -> Option<Wire> {
+    ) -> Option<PrivateWire> {
         let a = s.w_a;
         let b = s.w_b;
         let d = s.w_d;
@@ -587,11 +588,11 @@ impl<P: Pairing> Builder<P> {
     }
 
     /// Constrain a scalar into the circuit description and return an allocated
-    /// [`Wire`] with its value
+    /// [`PrivateWire`] with its value
     pub fn append_constant<C: Into<P::ScalarField>>(
         &mut self,
         constant: C,
-    ) -> Wire {
+    ) -> PrivateWire {
         let constant = constant.into();
         let witness = self.append_witness(constant);
 
@@ -658,7 +659,7 @@ impl<P: Pairing> Builder<P> {
     pub fn append_public<A: Into<P::ScalarField>>(
         &mut self,
         public: A,
-    ) -> Wire {
+    ) -> PrivateWire {
         let public = public.into();
         let witness = self.append_witness(public);
 
@@ -668,7 +669,7 @@ impl<P: Pairing> Builder<P> {
     }
 
     /// Asserts `a == b` by appending a gate
-    pub fn assert_equal(&mut self, a: Wire, b: Wire) {
+    pub fn assert_equal(&mut self, a: PrivateWire, b: PrivateWire) {
         let constraint = Constraint::default()
             .left(1)
             .right(-P::ScalarField::one())
@@ -679,7 +680,7 @@ impl<P: Pairing> Builder<P> {
     }
 
     /// Adds a logical AND gate that performs the bitwise AND between two values
-    /// for the specified first `num_bits` returning a [`Wire`]
+    /// for the specified first `num_bits` returning a [`PrivateWire`]
     /// holding the result.
     ///
     /// # Panics
@@ -687,15 +688,15 @@ impl<P: Pairing> Builder<P> {
     /// If the `num_bits` specified in the fn params is odd.
     pub fn append_logic_and(
         &mut self,
-        a: Wire,
-        b: Wire,
+        a: PrivateWire,
+        b: PrivateWire,
         num_bits: usize,
-    ) -> Wire {
+    ) -> PrivateWire {
         self.append_logic_component(a, b, num_bits, false)
     }
 
     /// Adds a logical XOR gate that performs the XOR between two values for the
-    /// specified first `num_bits` returning a [`Wire`] holding the
+    /// specified first `num_bits` returning a [`PrivateWire`] holding the
     /// result.
     ///
     /// # Panics
@@ -703,10 +704,10 @@ impl<P: Pairing> Builder<P> {
     /// If the `num_bits` specified in the fn params is odd.
     pub fn append_logic_xor(
         &mut self,
-        a: Wire,
-        b: Wire,
+        a: PrivateWire,
+        b: PrivateWire,
         num_bits: usize,
-    ) -> Wire {
+    ) -> PrivateWire {
         self.append_logic_component(a, b, num_bits, true)
     }
 
@@ -715,7 +716,7 @@ impl<P: Pairing> Builder<P> {
     /// `constant` will be defined as part of the public circuit description.
     pub fn assert_equal_constant<C: Into<P::ScalarField>>(
         &mut self,
-        a: Wire,
+        a: PrivateWire,
         constant: C,
         public: Option<P::ScalarField>,
     ) {
@@ -806,13 +807,13 @@ impl<P: Pairing> Builder<P> {
     }
 
     /// Adds a boolean constraint (also known as binary constraint) where the
-    /// gate eq. will enforce that the [`Wire`] received is either `0` or `1`
-    /// by adding a constraint in the circuit.
+    /// gate eq. will enforce that the [`PrivateWire`] received is either `0` or
+    /// `1` by adding a constraint in the circuit.
     ///
-    /// Note that using this constraint with whatever [`Wire`] that
+    /// Note that using this constraint with whatever [`PrivateWire`] that
     /// is not representing a value equalling 0 or 1, will always force the
     /// equation to fail.
-    pub fn component_boolean(&mut self, a: Wire) {
+    pub fn component_boolean(&mut self, a: PrivateWire) {
         let zero = Self::ZERO;
         let constraint = Constraint::default()
             .mult(1)
@@ -832,8 +833,8 @@ impl<P: Pairing> Builder<P> {
     /// Consume `2 · N + 1` gates
     pub fn component_decomposition<const N: usize>(
         &mut self,
-        scalar: Wire,
-    ) -> [Wire; N] {
+        scalar: PrivateWire,
+    ) -> [PrivateWire; N] {
         // Static assertion
         assert!(0 < N && N <= 256);
 
@@ -875,7 +876,7 @@ impl<P: Pairing> Builder<P> {
     /// [`Composer::component_boolean`]
     pub fn component_select_identity(
         &mut self,
-        bit: Wire,
+        bit: PrivateWire,
         a: WitnessPoint,
     ) -> WitnessPoint {
         let x = self.component_select_zero(bit, *a.x());
@@ -887,7 +888,7 @@ impl<P: Pairing> Builder<P> {
     /// Evaluate `jubjub · point` as a [`WitnessPoint`]
     pub fn component_mul_point(
         &mut self,
-        jubjub: Wire,
+        jubjub: PrivateWire,
         point: WitnessPoint,
     ) -> WitnessPoint {
         // Turn scalar into bits
@@ -905,14 +906,19 @@ impl<P: Pairing> Builder<P> {
         result
     }
 
-    /// Conditionally selects a [`Wire`] based on an input bit.
+    /// Conditionally selects a [`PrivateWire`] based on an input bit.
     ///
     /// bit == 1 => a,
     /// bit == 0 => b,
     ///
     /// `bit` is expected to be constrained by
     /// [`Composer::component_boolean`]
-    pub fn component_select(&mut self, bit: Wire, a: Wire, b: Wire) -> Wire {
+    pub fn component_select(
+        &mut self,
+        bit: PrivateWire,
+        a: PrivateWire,
+        b: PrivateWire,
+    ) -> PrivateWire {
         // bit * a
         let constraint = Constraint::default().mult(1).a(bit).b(a);
         let bit_times_a = self.gate_mul(constraint);
@@ -937,14 +943,18 @@ impl<P: Pairing> Builder<P> {
         self.gate_add(constraint)
     }
 
-    /// Conditionally selects a [`Wire`] based on an input bit.
+    /// Conditionally selects a [`PrivateWire`] based on an input bit.
     ///
     /// bit == 1 => value,
     /// bit == 0 => 1,
     ///
     /// `bit` is expected to be constrained by
     /// [`Composer::component_boolean`]
-    pub fn component_select_one(&mut self, bit: Wire, value: Wire) -> Wire {
+    pub fn component_select_one(
+        &mut self,
+        bit: PrivateWire,
+        value: PrivateWire,
+    ) -> PrivateWire {
         let b = self[bit];
         let v = self[value];
 
@@ -974,7 +984,7 @@ impl<P: Pairing> Builder<P> {
     /// [`Composer::component_boolean`]
     pub fn component_select_point(
         &mut self,
-        bit: Wire,
+        bit: PrivateWire,
         a: WitnessPoint,
         b: WitnessPoint,
     ) -> WitnessPoint {
@@ -984,21 +994,25 @@ impl<P: Pairing> Builder<P> {
         WitnessPoint::new(x, y)
     }
 
-    /// Conditionally selects a [`Wire`] based on an input bit.
+    /// Conditionally selects a [`PrivateWire`] based on an input bit.
     ///
     /// bit == 1 => value,
     /// bit == 0 => 0,
     ///
     /// `bit` is expected to be constrained by
     /// [`Composer::component_boolean`]
-    pub fn component_select_zero(&mut self, bit: Wire, value: Wire) -> Wire {
+    pub fn component_select_zero(
+        &mut self,
+        bit: PrivateWire,
+        value: PrivateWire,
+    ) -> PrivateWire {
         let constraint = Constraint::default().mult(1).a(bit).b(value);
 
         self.gate_mul(constraint)
     }
 
     /// Adds a range-constraint gate that checks and constrains a
-    /// [`Wire`] to be inside of the range \[0,num_bits\].
+    /// [`PrivateWire`] to be inside of the range \[0,num_bits\].
     ///
     /// This function adds `num_bits/4` gates to the circuit description in
     /// order to add the range constraint.
@@ -1006,7 +1020,7 @@ impl<P: Pairing> Builder<P> {
     ///# Panics
     /// This function will panic if the num_bits specified is not even, ie.
     /// `num_bits % 2 != 0`.
-    pub fn component_range(&mut self, witness: Wire, num_bits: usize) {
+    pub fn component_range(&mut self, witness: PrivateWire, num_bits: usize) {
         // convert witness to bit representation and reverse
         let bits = self[witness];
         let bit_iter = BitIterator8::new(bits.to_bytes());
@@ -1040,7 +1054,7 @@ impl<P: Pairing> Builder<P> {
 
         // We collect the set of accumulators to return back to the user
         // and keep a running count of the current accumulator
-        let mut accumulators: Vec<Wire> = Vec::new();
+        let mut accumulators: Vec<PrivateWire> = Vec::new();
         let mut accumulator = P::ScalarField::zero();
         let four = P::ScalarField::from(4);
 
@@ -1109,7 +1123,7 @@ impl<P: Pairing> Builder<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_l · a + q_r · b + q_4 · d + q_c + PI`
-    pub fn gate_add(&mut self, s: Constraint<P::ScalarField>) -> Wire {
+    pub fn gate_add(&mut self, s: Constraint<P::ScalarField>) -> PrivateWire {
         let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
 
         let o = self
@@ -1126,7 +1140,7 @@ impl<P: Pairing> Builder<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_m · a · b + q_4 · d + q_c + PI`
-    pub fn gate_mul(&mut self, s: Constraint<P::ScalarField>) -> Wire {
+    pub fn gate_mul(&mut self, s: Constraint<P::ScalarField>) -> PrivateWire {
         let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
 
         let o = self
