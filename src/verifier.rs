@@ -7,7 +7,7 @@
 use crate::error::Error;
 use crate::proof_system::Proof;
 
-use super::ConstraintSystem;
+use crate::circuit::ConstraintSystem;
 
 use core::marker::PhantomData;
 use poly_commit::EvaluationKey;

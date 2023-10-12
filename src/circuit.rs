@@ -6,13 +6,9 @@
 
 //! PLONK turbo composer definitions
 
-mod compiler;
-mod prover;
-mod verifier;
-
-pub use compiler::Compiler;
-pub use prover::Prover;
-pub use verifier::Verifier;
+pub use crate::compiler::Compiler;
+pub use crate::prover::Prover;
+pub use crate::verifier::Verifier;
 
 use bls_12_381::Fr as BlsScalar;
 use core::fmt::Debug;

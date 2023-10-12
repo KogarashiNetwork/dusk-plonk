@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::proof_system::proof::Proof;
 use crate::proof_system::{linearization_poly, quotient_poly};
 
-use super::{Circuit, ConstraintSystem};
+use crate::circuit::{Circuit, ConstraintSystem};
 
 use core::marker::PhantomData;
 use core::ops;

@@ -54,6 +54,10 @@
 mod bit_iterator;
 mod permutation;
 
+mod compiler;
+mod prover;
+mod verifier;
+
 pub mod circuit;
 pub mod gadget;
 

@@ -13,7 +13,7 @@ use zksnarks::plonk::key::{
 use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
-use super::{Circuit, ConstraintSystem, Prover, Verifier};
+use crate::circuit::{Circuit, ConstraintSystem, Prover, Verifier};
 use crate::error::Error;
 use sp_std::vec;
 
