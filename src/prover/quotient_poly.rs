@@ -4,14 +4,13 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-#![allow(clippy::type_complexity)]
-use crate::error::Error;
 #[cfg(feature = "std")]
 use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
 use poly_commit::{Coefficients, Fft, PointsValue};
+use zksnarks::error::Error;
 use zksnarks::plonk::ProvingKey;
 use zkstd::behave::*;
 

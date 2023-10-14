@@ -14,8 +14,8 @@ use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
 use crate::circuit::{Circuit, ConstraintSystem, Prover, Verifier};
-use crate::error::Error;
 use sp_std::vec;
+use zksnarks::error::Error;
 
 /// Generate the arguments to prove and verify a circuit
 pub struct Compiler;

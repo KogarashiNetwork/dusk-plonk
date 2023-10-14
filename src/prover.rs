@@ -9,8 +9,8 @@ mod proof;
 mod quotient_poly;
 
 use crate::circuit::{Circuit, ConstraintSystem};
-use crate::error::Error;
 pub use proof::Proof;
+use zksnarks::error::Error;
 
 use core::marker::PhantomData;
 use core::ops;

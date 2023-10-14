@@ -7,16 +7,14 @@
 //! A Proof stores the commitments to all of the elements that
 //! are needed to univocally identify a prove of some statement.
 
-use crate::{
-    commitment_scheme::{batch_check, AggregateProof},
-    error::Error,
-};
+use crate::commitment_scheme::{batch_check, AggregateProof};
 use codec::{Decode, Encode};
 use poly_commit::{
     batch_inversion, msm_curve_addtion, Coefficients, Commitment, EvaluationKey,
 };
 #[cfg(feature = "std")]
 use rayon::prelude::*;
+use zksnarks::error::Error;
 use zksnarks::plonk::{
     Evaluations as ProofEvaluations, Transcript, TranscriptProtocol,
     VerificationKey,

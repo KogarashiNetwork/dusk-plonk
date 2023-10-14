@@ -14,10 +14,10 @@
 //! commitment schemes without modification, one would need to remove the
 //! linearizer
 
-use crate::error::Error;
 use poly_commit::{powers_of, Commitment, EvaluationKey, Proof};
 #[cfg(feature = "std")]
 use rayon::prelude::*;
+use zksnarks::error::Error;
 use zksnarks::plonk::{Transcript, TranscriptProtocol};
 use zkstd::common::{CurveGroup, Group, Pairing, PairingRange, Vec};
 

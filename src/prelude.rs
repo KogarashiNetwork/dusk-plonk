@@ -14,8 +14,8 @@ pub use crate::{
     gadget::WitnessPoint,
 };
 
-pub use crate::error::Error;
 pub use crate::prover::Proof;
 pub use bls_12_381::Fr as BlsScalar;
 pub use jub_jub::{Fp as JubjubScalar, JubjubAffine, JubjubExtended};
+pub use zksnarks::error::Error;
 pub use zksnarks::Constraint;

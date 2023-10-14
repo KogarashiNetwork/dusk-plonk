@@ -62,7 +62,6 @@ pub mod circuit;
 pub mod gadget;
 
 pub mod commitment_scheme;
-pub mod error;
 pub mod prelude;
 
 #[doc = include_str!("../docs/notes-intro.md")]

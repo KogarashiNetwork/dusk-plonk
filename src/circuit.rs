@@ -16,6 +16,7 @@ use core::{cmp, ops};
 use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
 use sp_std::vec;
+use zksnarks::error::Error;
 use zksnarks::{plonk::wire::PrivateWire, Constraint};
 use zkstd::common::{
     CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
@@ -23,7 +24,6 @@ use zkstd::common::{
 };
 
 use crate::bit_iterator::BitIterator8;
-use crate::error::Error;
 use crate::gadget::ecc::WnafRound;
 use crate::gadget::WitnessPoint;
 use crate::permutation::Permutation;

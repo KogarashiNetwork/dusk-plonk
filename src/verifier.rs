@@ -4,8 +4,8 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use crate::error::Error;
 use crate::prover::Proof;
+use zksnarks::error::Error;
 
 use crate::circuit::ConstraintSystem;
 
