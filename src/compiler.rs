@@ -110,17 +110,17 @@ impl Compiler {
             q_variable_group_add.0[i] = c.q_variable_group_add;
         });
 
-        let mut q_m = fft.idft(&mut q_m);
-        let mut q_l = fft.idft(&mut q_l);
-        let mut q_r = fft.idft(&mut q_r);
-        let mut q_o = fft.idft(&mut q_o);
-        let mut q_c = fft.idft(&mut q_c);
-        let mut q_d = fft.idft(&mut q_d);
-        let mut q_arith = fft.idft(&mut q_arith);
-        let mut q_range = fft.idft(&mut q_range);
-        let mut q_logic = fft.idft(&mut q_logic);
-        let mut q_fixed_group_add = fft.idft(&mut q_fixed_group_add);
-        let mut q_variable_group_add = fft.idft(&mut q_variable_group_add);
+        let q_m = fft.idft(&mut q_m);
+        let q_l = fft.idft(&mut q_l);
+        let q_r = fft.idft(&mut q_r);
+        let q_o = fft.idft(&mut q_o);
+        let q_c = fft.idft(&mut q_c);
+        let q_d = fft.idft(&mut q_d);
+        let q_arith = fft.idft(&mut q_arith);
+        let q_range = fft.idft(&mut q_range);
+        let q_logic = fft.idft(&mut q_logic);
+        let q_fixed_group_add = fft.idft(&mut q_fixed_group_add);
+        let q_variable_group_add = fft.idft(&mut q_variable_group_add);
 
         let q_m_poly = q_m.clone();
         let q_l_poly = q_l.clone();
@@ -220,33 +220,28 @@ impl Compiler {
         let x8n = (8 * n).next_power_of_two();
         let x8k = x8n.trailing_zeros();
         let fft_8n = Fft::new(x8k as usize);
-        let mut s_sigma_1 = s_sigma_1_poly.clone();
-        let mut s_sigma_2 = s_sigma_2_poly.clone();
-        let mut s_sigma_3 = s_sigma_3_poly.clone();
-        let mut s_sigma_4 = s_sigma_4_poly.clone();
-        let mut min_p =
+        let min_p =
             Coeffs::new(vec![P::ScalarField::zero(), P::ScalarField::one()]);
 
-        let q_m_eval_8n = fft_8n.coset_dft(&mut q_m);
-        let q_l_eval_8n = fft_8n.coset_dft(&mut q_l);
-        let q_r_eval_8n = fft_8n.coset_dft(&mut q_r);
-        let q_o_eval_8n = fft_8n.coset_dft(&mut q_o);
-        let q_c_eval_8n = fft_8n.coset_dft(&mut q_c);
-        let q_4_eval_8n = fft_8n.coset_dft(&mut q_d);
-        let q_arith_eval_8n = fft_8n.coset_dft(&mut q_arith);
-        let q_range_eval_8n = fft_8n.coset_dft(&mut q_range);
-        let q_logic_eval_8n = fft_8n.coset_dft(&mut q_logic);
-        let q_fixed_group_add_eval_8n =
-            fft_8n.coset_dft(&mut q_fixed_group_add);
+        let q_m_eval_8n = fft_8n.coset_dft(q_m);
+        let q_l_eval_8n = fft_8n.coset_dft(q_l);
+        let q_r_eval_8n = fft_8n.coset_dft(q_r);
+        let q_o_eval_8n = fft_8n.coset_dft(q_o);
+        let q_c_eval_8n = fft_8n.coset_dft(q_c);
+        let q_4_eval_8n = fft_8n.coset_dft(q_d);
+        let q_arith_eval_8n = fft_8n.coset_dft(q_arith);
+        let q_range_eval_8n = fft_8n.coset_dft(q_range);
+        let q_logic_eval_8n = fft_8n.coset_dft(q_logic);
+        let q_fixed_group_add_eval_8n = fft_8n.coset_dft(q_fixed_group_add);
         let q_variable_group_add_eval_8n =
-            fft_8n.coset_dft(&mut q_variable_group_add);
+            fft_8n.coset_dft(q_variable_group_add);
 
-        let s_sigma_1_eval_8n = fft_8n.coset_dft(&mut s_sigma_1);
-        let s_sigma_2_eval_8n = fft_8n.coset_dft(&mut s_sigma_2);
-        let s_sigma_3_eval_8n = fft_8n.coset_dft(&mut s_sigma_3);
-        let s_sigma_4_eval_8n = fft_8n.coset_dft(&mut s_sigma_4);
+        let s_sigma_1_eval_8n = fft_8n.coset_dft(s_sigma_1_poly.clone());
+        let s_sigma_2_eval_8n = fft_8n.coset_dft(s_sigma_2_poly.clone());
+        let s_sigma_3_eval_8n = fft_8n.coset_dft(s_sigma_3_poly.clone());
+        let s_sigma_4_eval_8n = fft_8n.coset_dft(s_sigma_4_poly.clone());
 
-        let linear_eval_8n = fft_8n.coset_dft(&mut min_p);
+        let linear_eval_8n = fft_8n.coset_dft(min_p.clone());
 
         let arithmetic_prover_key = arithmetic::ProvingKey {
             q_m: (q_m_poly, q_m_eval_8n),

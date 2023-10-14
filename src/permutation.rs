@@ -184,11 +184,6 @@ impl<F: FftField> Permutation<F> {
         // Compute sigma mappings
         let sigmas = self.compute_sigma_permutations(n);
 
-        assert_eq!(sigmas[0].len(), n);
-        assert_eq!(sigmas[1].len(), n);
-        assert_eq!(sigmas[2].len(), n);
-        assert_eq!(sigmas[3].len(), n);
-
         // define the sigma permutations using two non quadratic residues
         let mut s_sigma_1 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[0], fft),
@@ -220,7 +215,7 @@ impl<F: FftField> Permutation<F> {
         wires: [&[F]; 4],
         beta: &F,
         gamma: &F,
-        mut sigma_polys: [Coefficients<F>; 4],
+        sigma_polys: [Coefficients<F>; 4],
     ) -> Vec<F> {
         let n = fft.size();
 
@@ -239,9 +234,9 @@ impl<F: FftField> Permutation<F> {
             .map(|(w0, w1, w2, w3)| vec![w0, w1, w2, w3]);
 
         let gatewise_sigmas: Vec<Vec<F>> = sigma_polys
-            .iter_mut()
+            .iter()
             .map(|sigma| {
-                fft.dft(sigma);
+                let sigma = fft.dft(sigma.clone());
                 sigma.0.clone()
             })
             .collect();
@@ -348,15 +343,10 @@ mod test {
         let common_roots: Vec<BlsScalar> =
             fft.elements.iter().map(|root| root * beta).collect();
 
-        let mut s_sigma_1_poly = s_sigma_1_poly.clone();
-        let mut s_sigma_2_poly = s_sigma_2_poly.clone();
-        let mut s_sigma_3_poly = s_sigma_3_poly.clone();
-        let mut s_sigma_4_poly = s_sigma_4_poly.clone();
-
-        fft.dft(&mut s_sigma_1_poly);
-        fft.dft(&mut s_sigma_2_poly);
-        fft.dft(&mut s_sigma_3_poly);
-        fft.dft(&mut s_sigma_4_poly);
+        let s_sigma_1_poly = fft.dft(s_sigma_1_poly.clone());
+        let s_sigma_2_poly = fft.dft(s_sigma_2_poly.clone());
+        let s_sigma_3_poly = fft.dft(s_sigma_3_poly.clone());
+        let s_sigma_4_poly = fft.dft(s_sigma_4_poly.clone());
 
         let s_sigma_1_mapping = s_sigma_1_poly.0;
         let s_sigma_2_mapping = s_sigma_2_poly.0;
@@ -528,15 +518,10 @@ mod test {
         let k = n.trailing_zeros();
         let fft = Fft::new(k as usize);
 
-        let mut s_sigma_1_poly = s_sigma_1_poly.clone();
-        let mut s_sigma_2_poly = s_sigma_2_poly.clone();
-        let mut s_sigma_3_poly = s_sigma_3_poly.clone();
-        let mut s_sigma_4_poly = s_sigma_4_poly.clone();
-
-        fft.dft(&mut s_sigma_1_poly);
-        fft.dft(&mut s_sigma_2_poly);
-        fft.dft(&mut s_sigma_3_poly);
-        fft.dft(&mut s_sigma_4_poly);
+        let s_sigma_1_poly = fft.dft(s_sigma_1_poly.clone());
+        let s_sigma_2_poly = fft.dft(s_sigma_2_poly.clone());
+        let s_sigma_3_poly = fft.dft(s_sigma_3_poly.clone());
+        let s_sigma_4_poly = fft.dft(s_sigma_4_poly.clone());
 
         let s_sigma_1_mapping = s_sigma_1_poly.0;
         let s_sigma_2_mapping = s_sigma_2_poly.0;

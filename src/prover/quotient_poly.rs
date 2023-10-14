@@ -51,18 +51,11 @@ pub(crate) fn compute<P: Pairing>(
     let k = n.trailing_zeros();
     let fft_8n = Fft::<P::ScalarField>::new(k as usize);
 
-    let mut z_poly = z_poly.clone();
-    let mut a_w_poly = a_w_poly.clone();
-    let mut b_w_poly = b_w_poly.clone();
-    let mut c_w_poly = c_w_poly.clone();
-    let mut d_w_poly = d_w_poly.clone();
-
-    fft_8n.coset_dft(&mut z_poly);
-
-    fft_8n.coset_dft(&mut a_w_poly);
-    fft_8n.coset_dft(&mut b_w_poly);
-    fft_8n.coset_dft(&mut c_w_poly);
-    fft_8n.coset_dft(&mut d_w_poly);
+    let mut z_poly = fft_8n.coset_dft(z_poly.clone());
+    let mut a_w_poly = fft_8n.coset_dft(a_w_poly.clone());
+    let mut b_w_poly = fft_8n.coset_dft(b_w_poly.clone());
+    let c_w_poly = fft_8n.coset_dft(c_w_poly.clone());
+    let mut d_w_poly = fft_8n.coset_dft(d_w_poly.clone());
 
     for i in 0..8 {
         z_poly.0.push(z_poly.0[i]);
@@ -87,7 +80,12 @@ pub(crate) fn compute<P: Pairing>(
             var_base_challenge,
         ),
         prover_key,
-        (&a_w_eval_8n, &b_w_eval_8n, &c_w_eval_8n, &d_w_eval_8n),
+        (
+            &a_w_eval_8n.0,
+            &b_w_eval_8n.0,
+            &c_w_eval_8n.0,
+            &d_w_eval_8n.0,
+        ),
         public_inputs_poly,
     );
 
@@ -95,8 +93,13 @@ pub(crate) fn compute<P: Pairing>(
         fft,
         &fft_8n,
         prover_key,
-        (&a_w_eval_8n, &b_w_eval_8n, &c_w_eval_8n, &d_w_eval_8n),
-        &z_eval_8n,
+        (
+            &a_w_eval_8n.0,
+            &b_w_eval_8n.0,
+            &c_w_eval_8n.0,
+            &d_w_eval_8n.0,
+        ),
+        &z_eval_8n.0,
         (alpha, beta, gamma),
     );
 
@@ -137,9 +140,9 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
     ),
     pi_poly: &Coefficients<P::ScalarField>,
 ) -> Vec<P::ScalarField> {
-    let mut pi_poly = Coefficients::new(pi_poly.0.clone());
-    fft.coset_dft(&mut pi_poly);
-    let public_eval_8n = pi_poly.0;
+    let pi_poly = Coefficients::new(pi_poly.0.clone());
+    let pi_evals = fft.coset_dft(pi_poly);
+    let public_eval_8n = pi_evals.0;
 
     #[cfg(not(feature = "std"))]
     let range = 0..fft.size();
@@ -227,10 +230,9 @@ fn compute_permutation_checks<P: Pairing>(
     z_eval_8n: &[P::ScalarField],
     (alpha, beta, gamma): (&P::ScalarField, &P::ScalarField, &P::ScalarField),
 ) -> Vec<P::ScalarField> {
-    let mut l1_poly_alpha =
+    let l1_poly_alpha =
         compute_first_lagrange_poly_scaled::<P>(fft, alpha.square());
-    fft_n8.coset_dft(&mut l1_poly_alpha);
-    let l1_alpha_sq_evals = l1_poly_alpha.0;
+    let l1_alpha_sq_evals = fft_n8.coset_dft(l1_poly_alpha);
 
     #[cfg(not(feature = "std"))]
     let range = 0..fft_n8.size();
