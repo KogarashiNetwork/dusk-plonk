@@ -42,10 +42,10 @@ fn mul_generator_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
@@ -137,10 +137,10 @@ fn add_point_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_point(self.a);
             let w_b = composer.append_point(self.b);
@@ -263,10 +263,10 @@ fn mul_point_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);

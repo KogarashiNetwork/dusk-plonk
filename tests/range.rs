@@ -42,10 +42,10 @@ fn range_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
 

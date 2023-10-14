@@ -5,6 +5,7 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
+use jub_jub::JubjubAffine;
 use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
@@ -38,10 +39,10 @@ fn boolean_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
 
@@ -222,10 +223,10 @@ fn select_works() {
         }
     }
 
-    impl Circuit<TatePairing> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<TatePairing>,
+            composer: &mut ConstraintSystem<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_bit = composer.append_witness(self.bit);
             let w_a = composer.append_witness(self.a);

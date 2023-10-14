@@ -19,8 +19,8 @@ use sp_std::vec;
 use zksnarks::error::Error;
 use zksnarks::{plonk::wire::PrivateWire, Constraint};
 use zkstd::common::{
-    CurveGroup, FftField, Group, Neg, Pairing, PrimeField, Ring, SigUtils,
-    TwistedEdwardsAffine, Vec,
+    CurveGroup, FftField, Group, Neg, PrimeField, Ring, TwistedEdwardsAffine,
+    Vec,
 };
 
 use crate::bit_iterator::BitIterator8;
@@ -336,14 +336,10 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
         // we should error instead of producing invalid proofs - otherwise this
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
-        let scalar = match P::JubjubScalar::from_bytes(self[jubjub].to_bytes())
-        {
-            Some(scalar) => scalar,
-            None => panic!("Failed to deserialize jubjub scalar"),
-        };
+        let scalar = C::Scalar::from(self[jubjub]);
 
         let width = 2;
-        let wnaf_entries = compute_windowed_naf(scalar, width);
+        let wnaf_entries = compute_windowed_naf::<C::Scalar>(scalar, width);
 
         debug_assert_eq!(wnaf_entries.len(), bits);
 
@@ -760,13 +756,19 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = C::from_raw_unchecked(self[x_1].into(), self[y_1].into());
-        let p2 = C::from_raw_unchecked(self[x_2].into(), self[y_2].into());
+        let p1 = C::from_raw_unchecked(
+            C::scalar_to_range(self[x_1]),
+            C::scalar_to_range(self[y_1]),
+        );
+        let p2 = C::from_raw_unchecked(
+            C::scalar_to_range(self[x_2]),
+            C::scalar_to_range(self[y_2]),
+        );
 
         let point = C::from(p1 + p2);
 
-        let x_3: C::Scalar = point.get_x().into();
-        let y_3: C::Scalar = point.get_y().into();
+        let x_3 = C::Scalar::from(point.get_x());
+        let y_3 = C::Scalar::from(point.get_y());
 
         let x1_y2 = self[x_1] * self[y_2];
 
