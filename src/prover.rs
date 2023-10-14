@@ -78,33 +78,6 @@ where
         }
     }
 
-    /// adds blinding scalars to a witness vector
-    ///
-    /// appends:
-    ///
-    /// if hiding degree = 1: (b2*X^(n+1) + b1*X^n - b2*X - b1) + witnesses
-    /// if hiding degree = 2: (b3*X^(n+2) + b2*X^(n+1) + b1*X^n - b3*X^2 - b2*X
-    fn blind_poly<R>(
-        rng: &mut R,
-        witnesses: &[P::ScalarField],
-        hiding_degree: usize,
-        fft: &Fft<P::ScalarField>,
-    ) -> Coefficients<P::ScalarField>
-    where
-        R: RngCore,
-    {
-        let w_vec_inverse = PointsValue::new(witnesses.to_vec());
-        let mut w_vec_inverse = fft.idft(w_vec_inverse);
-
-        for i in 0..hiding_degree + 1 {
-            let blinding_scalar = P::ScalarField::random(&mut *rng);
-            w_vec_inverse.0[i] -= blinding_scalar;
-            w_vec_inverse.0.push(blinding_scalar);
-        }
-
-        w_vec_inverse
-    }
-
     /// Prove the circuit
     pub fn create_proof<R>(
         &self,
@@ -145,22 +118,27 @@ where
 
         // round 1
         // convert wires to padded scalars
-        let mut a_w_scalar = vec![P::ScalarField::zero(); size];
-        let mut b_w_scalar = vec![P::ScalarField::zero(); size];
-        let mut o_w_scalar = vec![P::ScalarField::zero(); size];
-        let mut d_w_scalar = vec![P::ScalarField::zero(); size];
+        let mut a_w_scalar = PointsValue(vec![P::ScalarField::zero(); size]);
+        let mut b_w_scalar = PointsValue(vec![P::ScalarField::zero(); size]);
+        let mut o_w_scalar = PointsValue(vec![P::ScalarField::zero(); size]);
+        let mut d_w_scalar = PointsValue(vec![P::ScalarField::zero(); size]);
 
         prover.constraints.iter().enumerate().for_each(|(i, c)| {
-            a_w_scalar[i] = prover[c.w_a];
-            b_w_scalar[i] = prover[c.w_b];
-            o_w_scalar[i] = prover[c.w_o];
-            d_w_scalar[i] = prover[c.w_d];
+            a_w_scalar.0[i] = prover[c.w_a];
+            b_w_scalar.0[i] = prover[c.w_b];
+            o_w_scalar.0[i] = prover[c.w_o];
+            d_w_scalar.0[i] = prover[c.w_d];
         });
 
-        let a_w_poly = Self::blind_poly(rng, &a_w_scalar, 1, &fft);
-        let b_w_poly = Self::blind_poly(rng, &b_w_scalar, 1, &fft);
-        let o_w_poly = Self::blind_poly(rng, &o_w_scalar, 1, &fft);
-        let d_w_poly = Self::blind_poly(rng, &d_w_scalar, 1, &fft);
+        let mut a_w_poly = fft.idft(a_w_scalar.clone());
+        let mut b_w_poly = fft.idft(b_w_scalar.clone());
+        let mut o_w_poly = fft.idft(o_w_scalar.clone());
+        let mut d_w_poly = fft.idft(d_w_scalar.clone());
+
+        a_w_poly.blind(1, rng);
+        b_w_poly.blind(1, rng);
+        o_w_poly.blind(1, rng);
+        d_w_poly.blind(1, rng);
 
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
@@ -214,16 +192,17 @@ where
             self.prover_key.permutation.s_sigma_4.0.clone(),
         ];
         let wires = [
-            a_w_scalar.as_slice(),
-            b_w_scalar.as_slice(),
-            o_w_scalar.as_slice(),
-            d_w_scalar.as_slice(),
+            a_w_scalar.0.as_slice(),
+            b_w_scalar.0.as_slice(),
+            o_w_scalar.0.as_slice(),
+            d_w_scalar.0.as_slice(),
         ];
         let permutation = prover
             .perm
             .compute_permutation_vec(&fft, wires, &beta, &gamma, sigma);
 
-        let z_poly = Self::blind_poly(rng, &permutation, 2, &fft);
+        let mut z_poly = fft.idft(PointsValue(permutation));
+        z_poly.blind(2, rng);
         let z_poly_commit = self.keypair.commit(&z_poly)?;
         <Transcript as TranscriptProtocol<P>>::append_commitment(
             &mut transcript,
