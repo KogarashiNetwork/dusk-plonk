@@ -20,8 +20,8 @@ use sp_std::vec;
 use zksnarks::plonk::{
     PlonkParams, ProvingKey, Transcript, TranscriptProtocol, VerificationKey,
 };
-use zkstd::behave::{FftField, Group, Pairing};
 use zkstd::common::Vec;
+use zkstd::traits::{FftField, Group, Pairing};
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]

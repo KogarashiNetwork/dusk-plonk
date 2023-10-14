@@ -11,8 +11,8 @@ use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
-use zkstd::behave::{FftField, Group};
 use zkstd::common::Pairing;
+use zkstd::traits::{FftField, Group};
 
 #[test]
 fn range_works() {

@@ -11,8 +11,8 @@ use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
-use zkstd::behave::Group;
 use zkstd::common::{CurveGroup, Pairing};
+use zkstd::traits::Group;
 
 #[test]
 fn mul_generator_works() {

@@ -19,8 +19,8 @@ use zksnarks::plonk::{
     Evaluations as ProofEvaluations, Transcript, TranscriptProtocol,
     VerificationKey,
 };
-use zkstd::behave::{FftField, Group, Pairing, PrimeField, Ring};
 use zkstd::common::Vec;
+use zkstd::traits::{FftField, Group, Pairing, PrimeField, Ring};
 
 /// A Proof is a composition of `Commitment`s to the Witness, Permutation,
 /// Quotient, Shifted and Opening polynomials as well as the
