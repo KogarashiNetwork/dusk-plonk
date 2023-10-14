@@ -110,48 +110,40 @@ impl Compiler {
             q_variable_group_add.0[i] = c.q_variable_group_add;
         });
 
-        let q_m = fft.idft(q_m);
-        let q_l = fft.idft(q_l);
-        let q_r = fft.idft(q_r);
-        let q_o = fft.idft(q_o);
-        let q_c = fft.idft(q_c);
-        let q_d = fft.idft(q_d);
-        let q_arith = fft.idft(q_arith);
-        let q_range = fft.idft(q_range);
-        let q_logic = fft.idft(q_logic);
-        let q_fixed_group_add = fft.idft(q_fixed_group_add);
-        let q_variable_group_add = fft.idft(q_variable_group_add);
-
-        let q_m_poly = q_m.clone();
-        let q_l_poly = q_l.clone();
-        let q_r_poly = q_r.clone();
-        let q_o_poly = q_o.clone();
-        let q_c_poly = q_c.clone();
-        let q_d_poly = q_d.clone();
-        let q_arith_poly = q_arith.clone();
-        let q_range_poly = q_range.clone();
-        let q_logic_poly = q_logic.clone();
-        let q_fixed_group_add_poly = q_fixed_group_add.clone();
-        let q_variable_group_add_poly = q_variable_group_add.clone();
+        let q_m_poly = fft.idft(q_m);
+        let q_l_poly = fft.idft(q_l);
+        let q_r_poly = fft.idft(q_r);
+        let q_o_poly = fft.idft(q_o);
+        let q_c_poly = fft.idft(q_c);
+        let q_d_poly = fft.idft(q_d);
+        let q_arith_poly = fft.idft(q_arith);
+        let q_range_poly = fft.idft(q_range);
+        let q_logic_poly = fft.idft(q_logic);
+        let q_fixed_group_add_poly = fft.idft(q_fixed_group_add);
+        let q_variable_group_add_poly = fft.idft(q_variable_group_add);
 
         // 2. compute the sigma polynomials
         let mut perm = prover.perm.clone();
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
             perm.compute_sigma_polynomials(n, &fft);
 
-        let q_m_poly_commit = keypair.commit(&q_m).unwrap_or_default();
-        let q_l_poly_commit = keypair.commit(&q_l).unwrap_or_default();
-        let q_r_poly_commit = keypair.commit(&q_r).unwrap_or_default();
-        let q_o_poly_commit = keypair.commit(&q_o).unwrap_or_default();
-        let q_c_poly_commit = keypair.commit(&q_c).unwrap_or_default();
-        let q_d_poly_commit = keypair.commit(&q_d).unwrap_or_default();
-        let q_arith_poly_commit = keypair.commit(&q_arith).unwrap_or_default();
-        let q_range_poly_commit = keypair.commit(&q_range).unwrap_or_default();
-        let q_logic_poly_commit = keypair.commit(&q_logic).unwrap_or_default();
+        let q_m_poly_commit = keypair.commit(&q_m_poly).unwrap_or_default();
+        let q_l_poly_commit = keypair.commit(&q_l_poly).unwrap_or_default();
+        let q_r_poly_commit = keypair.commit(&q_r_poly).unwrap_or_default();
+        let q_o_poly_commit = keypair.commit(&q_o_poly).unwrap_or_default();
+        let q_c_poly_commit = keypair.commit(&q_c_poly).unwrap_or_default();
+        let q_d_poly_commit = keypair.commit(&q_d_poly).unwrap_or_default();
+        let q_arith_poly_commit =
+            keypair.commit(&q_arith_poly).unwrap_or_default();
+        let q_range_poly_commit =
+            keypair.commit(&q_range_poly).unwrap_or_default();
+        let q_logic_poly_commit =
+            keypair.commit(&q_logic_poly).unwrap_or_default();
         let q_fixed_group_add_poly_commit =
-            keypair.commit(&q_fixed_group_add).unwrap_or_default();
-        let q_variable_group_add_poly_commit =
-            keypair.commit(&q_variable_group_add).unwrap_or_default();
+            keypair.commit(&q_fixed_group_add_poly).unwrap_or_default();
+        let q_variable_group_add_poly_commit = keypair
+            .commit(&q_variable_group_add_poly)
+            .unwrap_or_default();
 
         let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly)?;
         let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly)?;
@@ -223,18 +215,19 @@ impl Compiler {
         let min_p =
             Coeffs::new(vec![P::ScalarField::zero(), P::ScalarField::one()]);
 
-        let q_m_eval_8n = fft_8n.coset_dft(q_m);
-        let q_l_eval_8n = fft_8n.coset_dft(q_l);
-        let q_r_eval_8n = fft_8n.coset_dft(q_r);
-        let q_o_eval_8n = fft_8n.coset_dft(q_o);
-        let q_c_eval_8n = fft_8n.coset_dft(q_c);
-        let q_4_eval_8n = fft_8n.coset_dft(q_d);
-        let q_arith_eval_8n = fft_8n.coset_dft(q_arith);
-        let q_range_eval_8n = fft_8n.coset_dft(q_range);
-        let q_logic_eval_8n = fft_8n.coset_dft(q_logic);
-        let q_fixed_group_add_eval_8n = fft_8n.coset_dft(q_fixed_group_add);
+        let q_m_eval_8n = fft_8n.coset_dft(q_m_poly.clone());
+        let q_l_eval_8n = fft_8n.coset_dft(q_l_poly.clone());
+        let q_r_eval_8n = fft_8n.coset_dft(q_r_poly.clone());
+        let q_o_eval_8n = fft_8n.coset_dft(q_o_poly.clone());
+        let q_c_eval_8n = fft_8n.coset_dft(q_c_poly.clone());
+        let q_4_eval_8n = fft_8n.coset_dft(q_d_poly.clone());
+        let q_arith_eval_8n = fft_8n.coset_dft(q_arith_poly.clone());
+        let q_range_eval_8n = fft_8n.coset_dft(q_range_poly.clone());
+        let q_logic_eval_8n = fft_8n.coset_dft(q_logic_poly.clone());
+        let q_fixed_group_add_eval_8n =
+            fft_8n.coset_dft(q_fixed_group_add_poly.clone());
         let q_variable_group_add_eval_8n =
-            fft_8n.coset_dft(q_variable_group_add);
+            fft_8n.coset_dft(q_variable_group_add_poly.clone());
 
         let s_sigma_1_eval_8n = fft_8n.coset_dft(s_sigma_1_poly.clone());
         let s_sigma_2_eval_8n = fft_8n.coset_dft(s_sigma_2_poly.clone());

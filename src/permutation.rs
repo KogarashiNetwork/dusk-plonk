@@ -150,9 +150,7 @@ impl<F: FftField> Permutation<F> {
         let lagrange_poly: Vec<F> = sigma_mapping
             .iter()
             .map(|x| match x {
-                WireType::Left(index) => {
-                    roots[*index]
-                }
+                WireType::Left(index) => roots[*index],
                 WireType::Right(index) => {
                     let root = &roots[*index];
                     F::from(Self::K1) * root
@@ -346,22 +344,14 @@ mod test {
         let s_sigma_4_poly = fft.dft(s_sigma_4_poly.clone());
 
         // Compute beta * sigma polynomials
-        let beta_s_sigma_1: Vec<_> = s_sigma_1_poly.0
-            .iter()
-            .map(|sigma| *sigma * beta)
-            .collect();
-        let beta_s_sigma_2: Vec<_> = s_sigma_2_poly.0
-            .iter()
-            .map(|sigma| *sigma * beta)
-            .collect();
-        let beta_s_sigma_3: Vec<_> = s_sigma_3_poly.0
-            .iter()
-            .map(|sigma| *sigma * beta)
-            .collect();
-        let beta_s_sigma_4: Vec<_> = s_sigma_4_poly.0
-            .iter()
-            .map(|sigma| *sigma * beta)
-            .collect();
+        let beta_s_sigma_1: Vec<_> =
+            s_sigma_1_poly.0.iter().map(|sigma| *sigma * beta).collect();
+        let beta_s_sigma_2: Vec<_> =
+            s_sigma_2_poly.0.iter().map(|sigma| *sigma * beta).collect();
+        let beta_s_sigma_3: Vec<_> =
+            s_sigma_3_poly.0.iter().map(|sigma| *sigma * beta).collect();
+        let beta_s_sigma_4: Vec<_> =
+            s_sigma_4_poly.0.iter().map(|sigma| *sigma * beta).collect();
 
         // Compute beta * roots * K1
         let beta_roots_k1: Vec<_> =
