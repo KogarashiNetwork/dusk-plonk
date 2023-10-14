@@ -1081,7 +1081,6 @@ mod test {
         // permutation polynomial (z)
         let mut z_vec = Evaluations::new(z_vec);
         let z_poly = fft.idft(&mut z_vec);
-        let z_poly = Coefficients::from_vec(z_poly.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1131,7 +1130,6 @@ mod test {
         // Test that the shifted polynomial is correct
         let mut shifted_z = Evaluations::new(shift_poly_by_one(fast_z_vec));
         let shifted_z_poly = fft.idft(&mut shifted_z);
-        let shifted_z_poly = Coefficients::from_vec(shifted_z_poly.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.generator()));
             let shifted_z_eval = shifted_z_poly.evaluate(element);

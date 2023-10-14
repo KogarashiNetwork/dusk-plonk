@@ -284,15 +284,16 @@ where
         // split quotient polynomial into 4 degree `n` polynomials
         let domain_size = fft.size();
         let t_low_poly =
-            Coefficients::from_vec(t_poly[0..domain_size].to_vec());
-        let t_mid_poly = Coefficients::from_vec(
-            t_poly[domain_size..2 * domain_size].to_vec(),
-        );
-        let t_high_poly = Coefficients::from_vec(
+            Coefficients::new(t_poly[0..domain_size].to_vec()).format_degree();
+        let t_mid_poly =
+            Coefficients::new(t_poly[domain_size..2 * domain_size].to_vec())
+                .format_degree();
+        let t_high_poly = Coefficients::new(
             t_poly[2 * domain_size..3 * domain_size].to_vec(),
-        );
-        let t_4_poly =
-            Coefficients::from_vec(t_poly[3 * domain_size..].to_vec());
+        )
+        .format_degree();
+        let t_4_poly = Coefficients::new(t_poly[3 * domain_size..].to_vec())
+            .format_degree();
 
         // commit to split quotient polynomial
         let t_low_commit = self.keypair.commit(&t_low_poly)?;

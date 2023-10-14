@@ -72,11 +72,11 @@ pub(crate) fn compute<P: Pairing>(
         d_w_poly.0.push(d_w_poly.0[i]);
     }
 
-    let z_eval_8n = Coefficients::from_vec(z_poly.0);
-    let a_w_eval_8n = Coefficients::from_vec(a_w_poly.0);
-    let b_w_eval_8n = Coefficients::from_vec(b_w_poly.0);
-    let c_w_eval_8n = Coefficients::from_vec(c_w_poly.0);
-    let d_w_eval_8n = Coefficients::from_vec(d_w_poly.0);
+    let z_eval_8n = z_poly.format_degree();
+    let a_w_eval_8n = a_w_poly.format_degree();
+    let b_w_eval_8n = b_w_poly.format_degree();
+    let c_w_eval_8n = c_w_poly.format_degree();
+    let d_w_eval_8n = d_w_poly.format_degree();
 
     let t_1 = compute_circuit_satisfiability_equation(
         &fft_8n,
@@ -100,17 +100,18 @@ pub(crate) fn compute<P: Pairing>(
         (alpha, beta, gamma),
     );
 
-    let quotient: Vec<_> = (0..fft_8n.size())
-        .map(|i| {
-            let numerator = t_1[i] + t_2[i];
-            let denominator = prover_key.v_h_coset_8n().0[i];
-            numerator * denominator.invert().unwrap()
-        })
-        .collect();
-    let mut quotient = PointsValue::new(quotient);
+    let mut quotient = PointsValue::new(
+        (0..fft_8n.size())
+            .map(|i| {
+                let numerator = t_1[i] + t_2[i];
+                let denominator = prover_key.v_h_coset_8n().0[i];
+                numerator * denominator.invert().unwrap()
+            })
+            .collect(),
+    );
     let quotient = fft_8n.coset_idft(&mut quotient);
 
-    Ok(Coefficients::from_vec(quotient.0))
+    Ok(quotient)
 }
 
 // Ensures that the circuit is satisfied
@@ -264,6 +265,5 @@ fn compute_first_lagrange_poly_scaled<P: Pairing>(
     let mut x_evals =
         PointsValue::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
-    let x_evals = fft.idft(&mut x_evals);
-    Coefficients::from_vec(x_evals.0)
+    fft.idft(&mut x_evals)
 }
