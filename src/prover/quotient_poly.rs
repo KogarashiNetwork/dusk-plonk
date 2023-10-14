@@ -109,9 +109,9 @@ pub(crate) fn compute<P: Pairing>(
             })
             .collect(),
     );
-    let quotient = fft_8n.coset_idft(&mut quotient);
+    let q_poly = fft_8n.coset_idft(&mut quotient);
 
-    Ok(quotient)
+    Ok(q_poly)
 }
 
 // Ensures that the circuit is satisfied
