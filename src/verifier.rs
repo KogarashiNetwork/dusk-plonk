@@ -69,11 +69,12 @@ impl<C, P: Pairing> Verifier<C, P> {
             )
         });
 
-        let dense_public_inputs = ConstraintSystem::<P>::dense_public_inputs(
-            &self.public_input_indexes,
-            public_inputs,
-            self.size,
-        );
+        let dense_public_inputs =
+            ConstraintSystem::<P::JubjubAffine>::dense_public_inputs(
+                &self.public_input_indexes,
+                public_inputs,
+                self.size,
+            );
 
         proof.verify(
             &self.verifier_key,

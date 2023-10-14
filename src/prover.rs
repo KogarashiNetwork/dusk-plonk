@@ -27,7 +27,7 @@ use zkstd::common::Vec;
 #[derive(Clone)]
 pub struct Prover<C, P>
 where
-    C: Circuit<P>,
+    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     pub(crate) prover_key: ProvingKey<P>,
@@ -41,7 +41,7 @@ where
 
 impl<C, P> ops::Deref for Prover<C, P>
 where
-    C: Circuit<P>,
+    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     type Target = ProvingKey<P>;
@@ -53,7 +53,7 @@ where
 
 impl<C, P> Prover<C, P>
 where
-    C: Circuit<P>,
+    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     pub(crate) fn new(
@@ -85,10 +85,11 @@ where
         circuit: &C,
     ) -> Result<(Proof<P>, Vec<P::ScalarField>), Error>
     where
-        C: Circuit<P>,
+        C: Circuit<P::JubjubAffine>,
         R: RngCore,
     {
-        let mut prover = ConstraintSystem::initialized(self.constraints);
+        let mut prover =
+            ConstraintSystem::<P::JubjubAffine>::initialized(self.constraints);
 
         circuit.synthesize(&mut prover)?;
 
@@ -100,12 +101,13 @@ where
 
         let public_inputs = prover.public_inputs();
         let public_input_indexes = prover.public_input_indexes();
-        let dense_public_inputs =
-            PointsValue::new(ConstraintSystem::<P>::dense_public_inputs(
-                &public_input_indexes,
-                &public_inputs,
-                self.size,
-            ));
+        let dense_public_inputs = PointsValue::new(ConstraintSystem::<
+            P::JubjubAffine,
+        >::dense_public_inputs(
+            &public_input_indexes,
+            &public_inputs,
+            self.size,
+        ));
 
         public_inputs.iter().for_each(|pi| {
             <Transcript as TranscriptProtocol<P>>::append_scalar(

@@ -31,7 +31,7 @@ impl Compiler {
         label: &[u8],
     ) -> CompilerResult<C, P>
     where
-        C: Circuit<P>,
+        C: Circuit<P::JubjubAffine>,
         P: Pairing,
     {
         Self::compile_with_circuit::<C, P>(keypair, label, &Default::default())
@@ -46,7 +46,7 @@ impl Compiler {
         circuit: &C,
     ) -> CompilerResult<C, P>
     where
-        C: Circuit<P>,
+        C: Circuit<P::JubjubAffine>,
         P: Pairing,
     {
         let max_size = keypair.max_degree() >> 1;
@@ -67,10 +67,10 @@ impl Compiler {
     fn preprocess<C, P>(
         label: &[u8],
         keypair: &PlonkParams<P>,
-        prover: &ConstraintSystem<P>,
+        prover: &ConstraintSystem<P::JubjubAffine>,
     ) -> CompilerResult<C, P>
     where
-        C: Circuit<P>,
+        C: Circuit<P::JubjubAffine>,
         P: Pairing,
     {
         let constraints = prover.constraints();

@@ -31,39 +31,39 @@ use crate::permutation::Permutation;
 /// Circuit implementation that can be proved by a Composer
 ///
 /// The default implementation will be used to generate the proving arguments.
-pub trait Circuit<P: Pairing>: Default + Debug {
+pub trait Circuit<C: TwistedEdwardsAffine>: Default + Debug {
     /// Circuit definition
     fn synthesize(
         &self,
-        composer: &mut ConstraintSystem<P>,
+        composer: &mut ConstraintSystem<C>,
     ) -> Result<(), Error>;
 }
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
-pub struct ConstraintSystem<P: Pairing> {
+pub struct ConstraintSystem<C: TwistedEdwardsAffine> {
     /// Constraint system gates
-    pub(crate) constraints: Vec<Constraint<P::ScalarField>>,
+    pub(crate) constraints: Vec<Constraint<C::Scalar>>,
 
     /// Sparse representation of the public inputs
-    pub(crate) instance: HashMap<usize, P::ScalarField>,
+    pub(crate) instance: HashMap<usize, C::Scalar>,
 
     /// Witness values
-    pub(crate) witness: Vec<P::ScalarField>,
+    pub(crate) witness: Vec<C::Scalar>,
 
     /// Permutation argument.
-    pub(crate) perm: Permutation<P::ScalarField>,
+    pub(crate) perm: Permutation<C::Scalar>,
 }
 
-impl<P: Pairing> ops::Index<PrivateWire> for ConstraintSystem<P> {
-    type Output = P::ScalarField;
+impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for ConstraintSystem<C> {
+    type Output = C::Scalar;
 
     fn index(&self, w: PrivateWire) -> &Self::Output {
         &self.witness[w.index()]
     }
 }
 
-impl<P: Pairing> ConstraintSystem<P> {
+impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
     /// Zero representation inside the constraint system.
     ///
     /// A turbo composer expects the first witness to be always present and to
@@ -88,7 +88,7 @@ impl<P: Pairing> ConstraintSystem<P> {
         public_input_indexes
     }
 
-    pub(crate) fn public_inputs(&self) -> Vec<P::ScalarField> {
+    pub(crate) fn public_inputs(&self) -> Vec<C::Scalar> {
         self.public_input_indexes()
             .iter()
             .filter_map(|idx| self.instance.get(idx).copied())
@@ -97,10 +97,10 @@ impl<P: Pairing> ConstraintSystem<P> {
 
     pub(crate) fn dense_public_inputs(
         public_input_indexes: &[usize],
-        public_inputs: &[P::ScalarField],
+        public_inputs: &[C::Scalar],
         size: usize,
-    ) -> Vec<P::ScalarField> {
-        let mut dense_public_inputs = vec![P::ScalarField::zero(); size];
+    ) -> Vec<C::Scalar> {
+        let mut dense_public_inputs = vec![C::Scalar::zero(); size];
 
         public_input_indexes
             .iter()
@@ -124,7 +124,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     }
 
     /// Allocate a witness value into the composer and return its index.
-    pub fn append_witness<W: Into<P::ScalarField>>(
+    pub fn append_witness<W: Into<C::Scalar>>(
         &mut self,
         witness: W,
     ) -> PrivateWire {
@@ -132,10 +132,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     }
 
     /// Append a new width-4 poly gate/constraint.
-    pub fn append_custom_gate(
-        &mut self,
-        constraint: Constraint<P::ScalarField>,
-    ) {
+    pub fn append_custom_gate(&mut self, constraint: Constraint<C::Scalar>) {
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
     }
@@ -143,7 +140,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     ///
     pub fn append_witness_internal(
         &mut self,
-        witness: P::ScalarField,
+        witness: C::Scalar,
     ) -> PrivateWire {
         let n = self.witness.len();
 
@@ -159,7 +156,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     ///
     pub fn append_custom_gate_internal(
         &mut self,
-        constraint: Constraint<P::ScalarField>,
+        constraint: Constraint<C::Scalar>,
     ) {
         let n = self.constraints.len();
 
@@ -203,15 +200,15 @@ impl<P: Pairing> ConstraintSystem<P> {
         let num_bits = cmp::min(num_bits, 256);
         let num_quads = num_bits >> 1;
 
-        let bls_four = P::ScalarField::from(4u64);
-        let mut left_acc = P::ScalarField::zero();
-        let mut right_acc = P::ScalarField::zero();
-        let mut out_acc = P::ScalarField::zero();
+        let bls_four = C::Scalar::from(4u64);
+        let mut left_acc = C::Scalar::zero();
+        let mut right_acc = C::Scalar::zero();
+        let mut out_acc = C::Scalar::zero();
 
         // skip bits outside of argument `num_bits`
-        let a_bit_iter = BitIterator8::new(self[a].to_bytes());
+        let a_bit_iter = BitIterator8::new(self[a].to_raw_bytes());
         let a_bits: Vec<_> = a_bit_iter.skip(256 - num_bits).collect();
-        let b_bit_iter = BitIterator8::new(self[b].to_bytes());
+        let b_bit_iter = BitIterator8::new(self[b].to_raw_bytes());
         let b_bits: Vec<_> = b_bit_iter.skip(256 - num_bits).collect();
 
         //
@@ -244,23 +241,23 @@ impl<P: Pairing> ConstraintSystem<P> {
             let l = (a_bits[idx] as u8) << 1;
             let r = a_bits[idx + 1] as u8;
             let left_quad = l + r;
-            let left_quad_bls = P::ScalarField::from(left_quad as u64);
+            let left_quad_bls = C::Scalar::from(left_quad as u64);
 
             let l = (b_bits[idx] as u8) << 1;
             let r = b_bits[idx + 1] as u8;
             let right_quad = l + r;
-            let right_quad_bls = P::ScalarField::from(right_quad as u64);
+            let right_quad_bls = C::Scalar::from(right_quad as u64);
 
             let out_quad_bls = if is_component_xor {
                 left_quad ^ right_quad
             } else {
                 left_quad & right_quad
             } as u64;
-            let out_quad_bls = P::ScalarField::from(out_quad_bls);
+            let out_quad_bls = C::Scalar::from(out_quad_bls);
 
             // `w` argument to safeguard the quotient polynomial
             let prod_quad_bls = (left_quad * right_quad) as u64;
-            let prod_quad_bls = P::ScalarField::from(prod_quad_bls);
+            let prod_quad_bls = C::Scalar::from(prod_quad_bls);
 
             // Now that we've computed this round results, we need to apply the
             // logic transition constraint that will check that
@@ -304,7 +301,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// `generator` will be appended to the circuit description as constant
     ///
     /// Will error if `jubjub` doesn't fit `Fr`
-    pub fn component_mul_generator<A: Into<P::JubjubExtended>>(
+    pub fn component_mul_generator<A: Into<C::Extended>>(
         &mut self,
         jubjub: PrivateWire,
         generator: A,
@@ -320,8 +317,7 @@ impl<P: Pairing> ConstraintSystem<P> {
 
         // compute 2^iG
         let mut wnaf_point_multiples: Vec<_> = {
-            let mut multiples =
-                vec![P::JubjubExtended::ADDITIVE_IDENTITY; bits];
+            let mut multiples = vec![C::Extended::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
 
@@ -331,7 +327,7 @@ impl<P: Pairing> ConstraintSystem<P> {
 
             multiples
                 .iter()
-                .map(|point| P::JubjubAffine::from(*point))
+                .map(|point| C::from(*point))
                 .collect::<Vec<_>>()
         };
 
@@ -352,29 +348,25 @@ impl<P: Pairing> ConstraintSystem<P> {
         debug_assert_eq!(wnaf_entries.len(), bits);
 
         // initialize the accumulators
-        let mut scalar_acc = vec![P::ScalarField::zero()];
-        let mut point_acc =
-            vec![P::JubjubAffine::from(P::JubjubExtended::ADDITIVE_IDENTITY)];
+        let mut scalar_acc = vec![C::Scalar::zero()];
+        let mut point_acc = vec![C::from(C::Extended::ADDITIVE_IDENTITY)];
 
         // auxillary point to help with checks on the backend
-        let two = P::ScalarField::from(2u64);
+        let two = C::Scalar::from(2u64);
         let xy_alphas: Vec<_> = wnaf_entries
             .iter()
             .rev()
             .enumerate()
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
-                    0 => (
-                        P::ScalarField::zero(),
-                        P::JubjubExtended::ADDITIVE_IDENTITY,
-                    ),
+                    0 => (C::Scalar::zero(), C::Extended::ADDITIVE_IDENTITY),
                     -1 => (
-                        P::ScalarField::one().neg(),
-                        -P::JubjubExtended::from(wnaf_point_multiples[i]),
+                        C::Scalar::one().neg(),
+                        -C::Extended::from(wnaf_point_multiples[i]),
                     ),
                     1 => (
-                        P::ScalarField::one(),
-                        P::JubjubExtended::from(wnaf_point_multiples[i]),
+                        C::Scalar::one(),
+                        C::Extended::from(wnaf_point_multiples[i]),
                     ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
@@ -383,11 +375,10 @@ impl<P: Pairing> ConstraintSystem<P> {
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let point =
-                    P::JubjubExtended::from(point_acc[i]) + point_to_add;
-                point_acc.push(P::JubjubAffine::from(point));
+                let point = C::Extended::from(point_acc[i]) + point_to_add;
+                point_acc.push(C::from(point));
 
-                let point_to_add: P::JubjubAffine = point_to_add.into();
+                let point_to_add: C = point_to_add.into();
 
                 let x_alpha = point_to_add.get_x();
                 let y_alpha = point_to_add.get_y();
@@ -404,11 +395,11 @@ impl<P: Pairing> ConstraintSystem<P> {
             // the point accumulator must start from identity and its scalar
             // from zero
             if i == 0 {
-                self.assert_equal_constant(acc_x, P::ScalarField::zero(), None);
-                self.assert_equal_constant(acc_y, P::ScalarField::one(), None);
+                self.assert_equal_constant(acc_x, C::Scalar::zero(), None);
+                self.assert_equal_constant(acc_y, C::Scalar::one(), None);
                 self.assert_equal_constant(
                     accumulated_bit,
-                    P::ScalarField::zero(),
+                    C::Scalar::zero(),
                     None,
                 );
             }
@@ -419,7 +410,7 @@ impl<P: Pairing> ConstraintSystem<P> {
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound::<PrivateWire, P::ScalarField> {
+            let wnaf_round = WnafRound::<PrivateWire, C::Scalar> {
                 acc_x,
                 acc_y,
                 accumulated_bit,
@@ -490,7 +481,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     ///
     /// The constraint added will enforce the following:
     /// `q_m · a · b  + q_l · a + q_r · b + q_o · o + q_4 · d + q_c + PI = 0`.
-    pub fn append_gate(&mut self, constraint: Constraint<P::ScalarField>) {
+    pub fn append_gate(&mut self, constraint: Constraint<C::Scalar>) {
         let constraint = Constraint::arithmetic(constraint);
 
         self.append_custom_gate(constraint)
@@ -501,7 +492,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Return `None` if the output selector is zero
     pub fn append_evaluated_output(
         &mut self,
-        s: Constraint<P::ScalarField>,
+        s: Constraint<C::Scalar>,
     ) -> Option<PrivateWire> {
         let a = s.w_a;
         let b = s.w_b;
@@ -516,7 +507,7 @@ impl<P: Pairing> ConstraintSystem<P> {
         let qr = s.q_r;
         let qd = s.q_d;
         let qc = s.q_c;
-        let pi = s.public_input.unwrap_or_else(P::ScalarField::zero);
+        let pi = s.public_input.unwrap_or_else(C::Scalar::zero);
 
         let x = qm * a * b + ql * a + qr * b + qd * d + qc + pi;
 
@@ -536,9 +527,9 @@ impl<P: Pairing> ConstraintSystem<P> {
 
             // Can't use a match pattern here since `BlsScalar` doesn't derive
             // `PartialEq`
-            if y == P::ScalarField::one() {
+            if y == C::Scalar::one() {
                 Some(-x)
-            } else if y == -P::ScalarField::one() {
+            } else if y == -C::Scalar::one() {
                 Some(x)
             } else {
                 y.invert().map(|y| x * (-y))
@@ -551,10 +542,10 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Adds blinding factors to the witness polynomials with two dummy
     /// arithmetic constraints
     pub fn append_dummy_gates(&mut self) {
-        let six = self.append_witness(P::ScalarField::from(6));
-        let one = self.append_witness(P::ScalarField::from(1));
-        let seven = self.append_witness(P::ScalarField::from(7));
-        let min_twenty = self.append_witness(-P::ScalarField::from(20));
+        let six = self.append_witness(C::Scalar::from(6));
+        let one = self.append_witness(C::Scalar::from(1));
+        let seven = self.append_witness(C::Scalar::from(7));
+        let min_twenty = self.append_witness(-C::Scalar::from(20));
 
         // Add a dummy constraint so that we do not have zero polynomials
         let constraint = Constraint::default()
@@ -588,9 +579,9 @@ impl<P: Pairing> ConstraintSystem<P> {
 
     /// Constrain a scalar into the circuit description and return an allocated
     /// [`PrivateWire`] with its value
-    pub fn append_constant<C: Into<P::ScalarField>>(
+    pub fn append_constant<A: Into<C::Scalar>>(
         &mut self,
-        constant: C,
+        constant: A,
     ) -> PrivateWire {
         let constant = constant.into();
         let witness = self.append_witness(constant);
@@ -601,10 +592,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     }
 
     /// Appends a point in affine form as [`WitnessPoint`]
-    pub fn append_point<A: Into<P::JubjubAffine>>(
-        &mut self,
-        affine: A,
-    ) -> WitnessPoint {
+    pub fn append_point<A: Into<C>>(&mut self, affine: A) -> WitnessPoint {
         let affine = affine.into();
 
         let x = self.append_witness(affine.get_x());
@@ -615,7 +603,7 @@ impl<P: Pairing> ConstraintSystem<P> {
 
     /// Constrain a point into the circuit description and return an allocated
     /// [`WitnessPoint`] with its coordinates
-    pub fn append_constant_point<A: Into<P::JubjubAffine>>(
+    pub fn append_constant_point<A: Into<C>>(
         &mut self,
         affine: A,
     ) -> WitnessPoint {
@@ -630,7 +618,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Appends a point in affine form as [`WitnessPoint`]
     ///
     /// Creates two public inputs as `(x, y)`
-    pub fn append_public_point<A: Into<P::JubjubAffine>>(
+    pub fn append_public_point<A: Into<C>>(
         &mut self,
         affine: A,
     ) -> WitnessPoint {
@@ -639,14 +627,14 @@ impl<P: Pairing> ConstraintSystem<P> {
 
         self.assert_equal_constant(
             *point.x(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-affine.get_x())),
+            C::Scalar::zero(),
+            Some(C::Range::into(-affine.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-affine.get_y())),
+            C::Scalar::zero(),
+            Some(C::Range::into(-affine.get_y())),
         );
 
         point
@@ -655,7 +643,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Allocate a witness value into the composer and return its index.
     ///
     /// Create a public input with the scalar
-    pub fn append_public<A: Into<P::ScalarField>>(
+    pub fn append_public<A: Into<C::Scalar>>(
         &mut self,
         public: A,
     ) -> PrivateWire {
@@ -671,7 +659,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     pub fn assert_equal(&mut self, a: PrivateWire, b: PrivateWire) {
         let constraint = Constraint::default()
             .left(1)
-            .right(-P::ScalarField::one())
+            .right(-C::Scalar::one())
             .a(a)
             .b(b);
 
@@ -713,11 +701,11 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Constrain `a` to be equal to `constant + pi`.
     ///
     /// `constant` will be defined as part of the public circuit description.
-    pub fn assert_equal_constant<C: Into<P::ScalarField>>(
+    pub fn assert_equal_constant<A: Into<C::Scalar>>(
         &mut self,
         a: PrivateWire,
-        constant: C,
-        public: Option<P::ScalarField>,
+        constant: A,
+        public: Option<C::Scalar>,
     ) {
         let constant = constant.into();
         let constraint = Constraint::default().left(1).constant(-constant).a(a);
@@ -736,7 +724,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     /// Asserts `point == public`.
     ///
     /// Will add `public` affine coordinates `(x,y)` as public inputs
-    pub fn assert_equal_public_point<A: Into<P::JubjubAffine>>(
+    pub fn assert_equal_public_point<A: Into<C>>(
         &mut self,
         point: WitnessPoint,
         public: A,
@@ -745,14 +733,14 @@ impl<P: Pairing> ConstraintSystem<P> {
 
         self.assert_equal_constant(
             *point.x(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-public.get_x())),
+            C::Scalar::zero(),
+            Some(C::Range::into(-public.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            P::ScalarField::zero(),
-            Some(<<<P as zkstd::behave::Pairing>::JubjubAffine as CurveGroup>::Range>::into(-public.get_y())),
+            C::Scalar::zero(),
+            Some(C::Range::into(-public.get_y())),
         );
     }
 
@@ -772,19 +760,13 @@ impl<P: Pairing> ConstraintSystem<P> {
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = P::JubjubAffine::from_raw_unchecked(
-            self[x_1].into(),
-            self[y_1].into(),
-        );
-        let p2 = P::JubjubAffine::from_raw_unchecked(
-            self[x_2].into(),
-            self[y_2].into(),
-        );
+        let p1 = C::from_raw_unchecked(self[x_1].into(), self[y_1].into());
+        let p2 = C::from_raw_unchecked(self[x_2].into(), self[y_2].into());
 
-        let point = P::JubjubAffine::from(p1 + p2);
+        let point = C::from(p1 + p2);
 
-        let x_3: P::ScalarField = point.get_x().into();
-        let y_3: P::ScalarField = point.get_y().into();
+        let x_3: C::Scalar = point.get_x().into();
+        let y_3: C::Scalar = point.get_y().into();
 
         let x1_y2 = self[x_1] * self[y_2];
 
@@ -816,7 +798,7 @@ impl<P: Pairing> ConstraintSystem<P> {
         let zero = Self::ZERO;
         let constraint = Constraint::default()
             .mult(1)
-            .output(-P::ScalarField::one())
+            .output(-C::Scalar::one())
             .a(a)
             .b(a)
             .o(a)
@@ -847,12 +829,12 @@ impl<P: Pairing> ConstraintSystem<P> {
             .enumerate()
             .zip(decomposition.iter_mut())
             .fold(acc, |acc, ((i, w), d)| {
-                *d = self.append_witness(P::ScalarField::from(*w as u64));
+                *d = self.append_witness(C::Scalar::from(*w as u64));
 
                 self.component_boolean(*d);
 
                 let constraint = Constraint::default()
-                    .left(P::ScalarField::pow_of_2(i as u64))
+                    .left(C::Scalar::pow_of_2(i as u64))
                     .right(1)
                     .a(*d)
                     .b(acc);
@@ -924,7 +906,7 @@ impl<P: Pairing> ConstraintSystem<P> {
 
         // 1 - bit
         let constraint = Constraint::default()
-            .left(-P::ScalarField::one())
+            .left(-C::Scalar::one())
             .constant(1)
             .a(bit);
         let one_min_bit = self.gate_add(constraint);
@@ -957,13 +939,13 @@ impl<P: Pairing> ConstraintSystem<P> {
         let b = self[bit];
         let v = self[value];
 
-        let f_x = P::ScalarField::one() - b + (b * v);
+        let f_x = C::Scalar::one() - b + (b * v);
         let f_x = self.append_witness(f_x);
 
         let constraint = Constraint::default()
             .mult(1)
-            .left(-P::ScalarField::one())
-            .output(-P::ScalarField::one())
+            .left(-C::Scalar::one())
+            .output(-C::Scalar::one())
             .constant(1)
             .a(bit)
             .b(value)
@@ -1022,7 +1004,7 @@ impl<P: Pairing> ConstraintSystem<P> {
     pub fn component_range(&mut self, witness: PrivateWire, num_bits: usize) {
         // convert witness to bit representation and reverse
         let bits = self[witness];
-        let bit_iter = BitIterator8::new(bits.to_bytes());
+        let bit_iter = BitIterator8::new(bits.to_raw_bytes());
         let mut bits: Vec<_> = bit_iter.collect();
         bits.reverse();
 
@@ -1047,15 +1029,15 @@ impl<P: Pairing> ConstraintSystem<P> {
         // last gate is reserved for either the genesis quad or the padding
         let used_gates = num_gates + 1;
 
-        let base = Constraint::<P::ScalarField>::default();
+        let base = Constraint::<C::Scalar>::default();
         let base = Constraint::range(base);
         let mut constraints = vec![base; used_gates];
 
         // We collect the set of accumulators to return back to the user
         // and keep a running count of the current accumulator
         let mut accumulators: Vec<PrivateWire> = Vec::new();
-        let mut accumulator = P::ScalarField::zero();
-        let four = P::ScalarField::from(4);
+        let mut accumulator = C::Scalar::zero();
+        let four = C::Scalar::from(4);
 
         for i in pad..=num_quads {
             // convert each pair of bits to quads
@@ -1065,7 +1047,7 @@ impl<P: Pairing> ConstraintSystem<P> {
             let quad = q_0 + (2 * q_1);
 
             accumulator = four * accumulator;
-            accumulator += P::ScalarField::from(quad);
+            accumulator += C::Scalar::from(quad);
 
             let accumulator_var = self.append_witness(accumulator);
 
@@ -1122,8 +1104,8 @@ impl<P: Pairing> ConstraintSystem<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_l · a + q_r · b + q_4 · d + q_c + PI`
-    pub fn gate_add(&mut self, s: Constraint<P::ScalarField>) -> PrivateWire {
-        let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
+    pub fn gate_add(&mut self, s: Constraint<C::Scalar>) -> PrivateWire {
+        let s = Constraint::arithmetic(s).output(-C::Scalar::one());
 
         let o = self
             .append_evaluated_output(s)
@@ -1139,8 +1121,8 @@ impl<P: Pairing> ConstraintSystem<P> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_m · a · b + q_4 · d + q_c + PI`
-    pub fn gate_mul(&mut self, s: Constraint<P::ScalarField>) -> PrivateWire {
-        let s = Constraint::arithmetic(s).output(-P::ScalarField::one());
+    pub fn gate_mul(&mut self, s: Constraint<C::Scalar>) -> PrivateWire {
+        let s = Constraint::arithmetic(s).output(-C::Scalar::one());
 
         let o = self
             .append_evaluated_output(s)
