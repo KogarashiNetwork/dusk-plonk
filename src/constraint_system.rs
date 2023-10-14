@@ -88,7 +88,7 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
         public_input_indexes
     }
 
-    pub(crate) fn public_inputs(&self) -> Vec<C::Scalar> {
+    pub(crate) fn instance(&self) -> Vec<C::Scalar> {
         self.public_input_indexes()
             .iter()
             .filter_map(|idx| self.instance.get(idx).copied())
@@ -119,7 +119,7 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
         }
     }
 
-    pub(crate) fn constraints(&self) -> usize {
+    pub(crate) fn m(&self) -> usize {
         self.constraints.len()
     }
 

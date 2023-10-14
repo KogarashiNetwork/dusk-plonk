@@ -54,7 +54,7 @@ impl Compiler {
 
         circuit.synthesize(&mut prover)?;
 
-        let n = (prover.constraints() + 6).next_power_of_two();
+        let n = (prover.m() + 6).next_power_of_two();
 
         let keypair = keypair.trim(n);
 
@@ -73,7 +73,7 @@ impl Compiler {
         C: Circuit<P::JubjubAffine>,
         P: Pairing,
     {
-        let constraints = prover.constraints();
+        let constraints = prover.m();
         let n = constraints.next_power_of_two();
         let k = n.trailing_zeros();
         let fft = Fft::<P::ScalarField>::new(k as usize);

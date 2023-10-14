@@ -99,7 +99,7 @@ where
 
         let mut transcript = self.transcript.clone();
 
-        let public_inputs = prover.public_inputs();
+        let public_inputs = prover.instance();
         let public_input_indexes = prover.public_input_indexes();
         let dense_public_inputs = PointsValue::new(ConstraintSystem::<
             P::JubjubAffine,
