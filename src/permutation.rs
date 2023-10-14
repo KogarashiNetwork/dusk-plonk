@@ -77,10 +77,10 @@ impl<F: FftField> Permutation<F> {
         d: PrivateWire,
         gate_index: usize,
     ) {
-        let left: WireType = WireType::Left(gate_index);
-        let right: WireType = WireType::Right(gate_index);
-        let output: WireType = WireType::Output(gate_index);
-        let fourth: WireType = WireType::Fourth(gate_index);
+        let left = WireType::Left(gate_index);
+        let right = WireType::Right(gate_index);
+        let output = WireType::Output(gate_index);
+        let fourth = WireType::Fourth(gate_index);
 
         // Map each witness to the wire it is associated with
         // This essentially tells us that:
@@ -109,12 +109,10 @@ impl<F: FftField> Permutation<F> {
         &mut self,
         n: usize,
     ) -> [Vec<WireType>; 4] {
-        let sigma_1: Vec<_> = (0..n).map(WireType::Left).collect();
-        let sigma_2: Vec<_> = (0..n).map(WireType::Right).collect();
-        let sigma_3: Vec<_> = (0..n).map(WireType::Output).collect();
-        let sigma_4: Vec<_> = (0..n).map(WireType::Fourth).collect();
-
-        let mut sigmas = [sigma_1, sigma_2, sigma_3, sigma_4];
+        let mut sigma_1: Vec<_> = (0..n).map(WireType::Left).collect();
+        let mut sigma_2: Vec<_> = (0..n).map(WireType::Right).collect();
+        let mut sigma_3: Vec<_> = (0..n).map(WireType::Output).collect();
+        let mut sigma_4: Vec<_> = (0..n).map(WireType::Fourth).collect();
 
         for (_, wire_data) in self.witness_map.iter() {
             // Gets the data for each wire associated with this witness
@@ -131,15 +129,15 @@ impl<F: FftField> Permutation<F> {
 
                 // Map current wire to next wire
                 match current_wire {
-                    WireType::Left(index) => sigmas[0][*index] = *next_wire,
-                    WireType::Right(index) => sigmas[1][*index] = *next_wire,
-                    WireType::Output(index) => sigmas[2][*index] = *next_wire,
-                    WireType::Fourth(index) => sigmas[3][*index] = *next_wire,
+                    WireType::Left(index) => sigma_1[*index] = *next_wire,
+                    WireType::Right(index) => sigma_2[*index] = *next_wire,
+                    WireType::Output(index) => sigma_3[*index] = *next_wire,
+                    WireType::Fourth(index) => sigma_4[*index] = *next_wire,
                 };
             }
         }
 
-        sigmas
+        [sigma_1, sigma_2, sigma_3, sigma_4]
     }
 
     fn compute_permutation_lagrange(
@@ -147,14 +145,13 @@ impl<F: FftField> Permutation<F> {
         sigma_mapping: &[WireType],
         fft: &Fft<F>,
     ) -> Vec<F> {
-        let roots: Vec<_> = fft.elements.clone();
+        let roots = fft.elements.clone();
 
         let lagrange_poly: Vec<F> = sigma_mapping
             .iter()
             .map(|x| match x {
                 WireType::Left(index) => {
-                    let root = &roots[*index];
-                    *root
+                    roots[*index]
                 }
                 WireType::Right(index) => {
                     let root = &roots[*index];
@@ -185,23 +182,23 @@ impl<F: FftField> Permutation<F> {
         let sigmas = self.compute_sigma_permutations(n);
 
         // define the sigma permutations using two non quadratic residues
-        let mut s_sigma_1 = Evaluations::new(
+        let s_sigma_1 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[0], fft),
         );
-        let mut s_sigma_2 = Evaluations::new(
+        let s_sigma_2 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[1], fft),
         );
-        let mut s_sigma_3 = Evaluations::new(
+        let s_sigma_3 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[2], fft),
         );
-        let mut s_sigma_4 = Evaluations::new(
+        let s_sigma_4 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[3], fft),
         );
 
-        let s_sigma_1 = fft.idft(&mut s_sigma_1);
-        let s_sigma_2 = fft.idft(&mut s_sigma_2);
-        let s_sigma_3 = fft.idft(&mut s_sigma_3);
-        let s_sigma_4 = fft.idft(&mut s_sigma_4);
+        let s_sigma_1 = fft.idft(s_sigma_1);
+        let s_sigma_2 = fft.idft(s_sigma_2);
+        let s_sigma_3 = fft.idft(s_sigma_3);
+        let s_sigma_4 = fft.idft(s_sigma_4);
 
         [s_sigma_1, s_sigma_2, s_sigma_3, s_sigma_4]
     }
@@ -348,25 +345,20 @@ mod test {
         let s_sigma_3_poly = fft.dft(s_sigma_3_poly.clone());
         let s_sigma_4_poly = fft.dft(s_sigma_4_poly.clone());
 
-        let s_sigma_1_mapping = s_sigma_1_poly.0;
-        let s_sigma_2_mapping = s_sigma_2_poly.0;
-        let s_sigma_3_mapping = s_sigma_3_poly.0;
-        let s_sigma_4_mapping = s_sigma_4_poly.0;
-
         // Compute beta * sigma polynomials
-        let beta_s_sigma_1: Vec<_> = s_sigma_1_mapping
+        let beta_s_sigma_1: Vec<_> = s_sigma_1_poly.0
             .iter()
             .map(|sigma| *sigma * beta)
             .collect();
-        let beta_s_sigma_2: Vec<_> = s_sigma_2_mapping
+        let beta_s_sigma_2: Vec<_> = s_sigma_2_poly.0
             .iter()
             .map(|sigma| *sigma * beta)
             .collect();
-        let beta_s_sigma_3: Vec<_> = s_sigma_3_mapping
+        let beta_s_sigma_3: Vec<_> = s_sigma_3_poly.0
             .iter()
             .map(|sigma| *sigma * beta)
             .collect();
-        let beta_s_sigma_4: Vec<_> = s_sigma_4_mapping
+        let beta_s_sigma_4: Vec<_> = s_sigma_4_poly.0
             .iter()
             .map(|sigma| *sigma * beta)
             .collect();
@@ -523,20 +515,15 @@ mod test {
         let s_sigma_3_poly = fft.dft(s_sigma_3_poly.clone());
         let s_sigma_4_poly = fft.dft(s_sigma_4_poly.clone());
 
-        let s_sigma_1_mapping = s_sigma_1_poly.0;
-        let s_sigma_2_mapping = s_sigma_2_poly.0;
-        let s_sigma_3_mapping = s_sigma_3_poly.0;
-        let s_sigma_4_mapping = s_sigma_4_poly.0;
-
         // Compute beta * sigma polynomials
         let beta_s_sigma_1_iter =
-            s_sigma_1_mapping.iter().map(|sigma| *sigma * beta);
+            s_sigma_1_poly.0.iter().map(|sigma| *sigma * beta);
         let beta_s_sigma_2_iter =
-            s_sigma_2_mapping.iter().map(|sigma| *sigma * beta);
+            s_sigma_2_poly.0.iter().map(|sigma| *sigma * beta);
         let beta_s_sigma_3_iter =
-            s_sigma_3_mapping.iter().map(|sigma| *sigma * beta);
+            s_sigma_3_poly.0.iter().map(|sigma| *sigma * beta);
         let beta_s_sigma_4_iter =
-            s_sigma_4_mapping.iter().map(|sigma| *sigma * beta);
+            s_sigma_4_poly.0.iter().map(|sigma| *sigma * beta);
 
         // Compute beta * roots
         let beta_roots_iter = fft.elements.iter().map(|root| root * beta);
@@ -544,24 +531,19 @@ mod test {
         // Compute beta * roots * K1
         let beta_roots_k1_iter =
             fft.elements.iter().map(|root| K1 * beta * root);
-
         // Compute beta * roots * K2
         let beta_roots_k2_iter =
             fft.elements.iter().map(|root| K2 * beta * root);
-
         // Compute beta * roots * K3
         let beta_roots_k3_iter =
             fft.elements.iter().map(|root| K3 * beta * root);
 
         // Compute left_wire + gamma
         let a_w_gamma: Vec<_> = a_w.map(|w| w + gamma).collect();
-
         // Compute right_wire + gamma
         let b_w_gamma: Vec<_> = b_w.map(|w| w + gamma).collect();
-
         // Compute out_wire + gamma
         let c_w_gamma: Vec<_> = c_w.map(|w| w + gamma).collect();
-
         // Compute fourth_wire + gamma
         let d_w_gamma: Vec<_> = d_w.map(|w| w + gamma).collect();
 
@@ -600,13 +582,10 @@ mod test {
         ) {
             // (a_w + beta * root + gamma)
             let prod_a = beta_root + a_w_gamma;
-
             // (b_w + beta * root * k_1 + gamma)
             let prod_b = beta_root_k1 + b_w_gamma;
-
             // (c_w + beta * root * k_2 + gamma)
             let prod_c = beta_root_k2 + c_w_gamma;
-
             // (d_w + beta * root * k_3 + gamma)
             let prod_d = beta_root_k3 + d_w_gamma;
 
@@ -641,13 +620,10 @@ mod test {
         ) {
             // (a_w + beta * s_sigma_1 + gamma)
             let prod_a = beta_s_sigma_1 + a_w_gamma;
-
             // (b_w + beta * s_sigma_2 + gamma)
             let prod_b = beta_s_sigma_2 + b_w_gamma;
-
             // (c_w + beta * s_sigma_3 + gamma)
             let prod_c = beta_s_sigma_3 + c_w_gamma;
-
             // (d_w + beta * s_sigma_4 + gamma)
             let prod_d = beta_s_sigma_4 + d_w_gamma;
 
@@ -1064,8 +1040,8 @@ mod test {
 
         //3. Now we perform the two checks that need to be done on the
         // permutation polynomial (z)
-        let mut z_vec = Evaluations::new(z_vec);
-        let z_poly = fft.idft(&mut z_vec);
+        let z_vec = Evaluations::new(z_vec);
+        let z_poly = fft.idft(z_vec);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1113,8 +1089,8 @@ mod test {
         }
 
         // Test that the shifted polynomial is correct
-        let mut shifted_z = Evaluations::new(shift_poly_by_one(fast_z_vec));
-        let shifted_z_poly = fft.idft(&mut shifted_z);
+        let shifted_z = Evaluations::new(shift_poly_by_one(fast_z_vec));
+        let shifted_z_poly = fft.idft(shifted_z);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.generator()));
             let shifted_z_eval = shifted_z_poly.evaluate(element);

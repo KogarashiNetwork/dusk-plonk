@@ -93,8 +93,8 @@ where
     where
         R: RngCore,
     {
-        let mut w_vec_inverse = PointsValue::new(witnesses.to_vec());
-        let mut w_vec_inverse = fft.idft(&mut w_vec_inverse);
+        let w_vec_inverse = PointsValue::new(witnesses.to_vec());
+        let mut w_vec_inverse = fft.idft(w_vec_inverse);
 
         for i in 0..hiding_degree + 1 {
             let blinding_scalar = P::ScalarField::random(&mut *rng);
@@ -128,7 +128,7 @@ where
 
         let public_inputs = prover.public_inputs();
         let public_input_indexes = prover.public_input_indexes();
-        let mut dense_public_inputs =
+        let dense_public_inputs =
             PointsValue::new(ConstraintSystem::<P>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
@@ -259,7 +259,7 @@ where
             );
 
         // compute public inputs polynomial
-        let pi_poly = fft.idft(&mut dense_public_inputs);
+        let pi_poly = fft.idft(dense_public_inputs);
 
         // compute quotient polynomial
         let wires = (&a_w_poly, &b_w_poly, &o_w_poly, &d_w_poly);

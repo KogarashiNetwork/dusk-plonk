@@ -110,17 +110,17 @@ impl Compiler {
             q_variable_group_add.0[i] = c.q_variable_group_add;
         });
 
-        let q_m = fft.idft(&mut q_m);
-        let q_l = fft.idft(&mut q_l);
-        let q_r = fft.idft(&mut q_r);
-        let q_o = fft.idft(&mut q_o);
-        let q_c = fft.idft(&mut q_c);
-        let q_d = fft.idft(&mut q_d);
-        let q_arith = fft.idft(&mut q_arith);
-        let q_range = fft.idft(&mut q_range);
-        let q_logic = fft.idft(&mut q_logic);
-        let q_fixed_group_add = fft.idft(&mut q_fixed_group_add);
-        let q_variable_group_add = fft.idft(&mut q_variable_group_add);
+        let q_m = fft.idft(q_m);
+        let q_l = fft.idft(q_l);
+        let q_r = fft.idft(q_r);
+        let q_o = fft.idft(q_o);
+        let q_c = fft.idft(q_c);
+        let q_d = fft.idft(q_d);
+        let q_arith = fft.idft(q_arith);
+        let q_range = fft.idft(q_range);
+        let q_logic = fft.idft(q_logic);
+        let q_fixed_group_add = fft.idft(q_fixed_group_add);
+        let q_variable_group_add = fft.idft(q_variable_group_add);
 
         let q_m_poly = q_m.clone();
         let q_l_poly = q_l.clone();

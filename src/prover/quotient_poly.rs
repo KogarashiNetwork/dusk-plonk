@@ -103,7 +103,7 @@ pub(crate) fn compute<P: Pairing>(
         (alpha, beta, gamma),
     );
 
-    let mut quotient = PointsValue::new(
+    let quotient = PointsValue::new(
         (0..fft_8n.size())
             .map(|i| {
                 let numerator = t_1[i] + t_2[i];
@@ -112,7 +112,7 @@ pub(crate) fn compute<P: Pairing>(
             })
             .collect(),
     );
-    let q_poly = fft_8n.coset_idft(&mut quotient);
+    let q_poly = fft_8n.coset_idft(quotient);
 
     Ok(q_poly)
 }
@@ -267,5 +267,5 @@ fn compute_first_lagrange_poly_scaled<P: Pairing>(
     let mut x_evals =
         PointsValue::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
-    fft.idft(&mut x_evals)
+    fft.idft(x_evals)
 }
