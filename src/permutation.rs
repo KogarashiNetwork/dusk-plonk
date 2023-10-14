@@ -8,7 +8,7 @@ use crate::gadget::WireType;
 use core::marker::PhantomData;
 use hashbrown::HashMap;
 use itertools::izip;
-use poly_commit::{Coefficients, Fft};
+use poly_commit::{Coefficients, Fft, PointsValue as Evaluations};
 use sp_std::vec;
 use zksnarks::plonk::wire::PrivateWire;
 use zkstd::behave::*;
@@ -190,23 +190,23 @@ impl<F: FftField> Permutation<F> {
         assert_eq!(sigmas[3].len(), n);
 
         // define the sigma permutations using two non quadratic residues
-        let mut s_sigma_1 = Coefficients::new(
+        let mut s_sigma_1 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[0], fft),
         );
-        let mut s_sigma_2 = Coefficients::new(
+        let mut s_sigma_2 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[1], fft),
         );
-        let mut s_sigma_3 = Coefficients::new(
+        let mut s_sigma_3 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[2], fft),
         );
-        let mut s_sigma_4 = Coefficients::new(
+        let mut s_sigma_4 = Evaluations::new(
             self.compute_permutation_lagrange(&sigmas[3], fft),
         );
 
-        fft.idft(&mut s_sigma_1);
-        fft.idft(&mut s_sigma_2);
-        fft.idft(&mut s_sigma_3);
-        fft.idft(&mut s_sigma_4);
+        let s_sigma_1 = fft.idft(&mut s_sigma_1);
+        let s_sigma_2 = fft.idft(&mut s_sigma_2);
+        let s_sigma_3 = fft.idft(&mut s_sigma_3);
+        let s_sigma_4 = fft.idft(&mut s_sigma_4);
 
         [s_sigma_1, s_sigma_2, s_sigma_3, s_sigma_4]
     }
@@ -1079,9 +1079,9 @@ mod test {
 
         //3. Now we perform the two checks that need to be done on the
         // permutation polynomial (z)
-        let mut z_vec = Coefficients::new(z_vec);
-        fft.idft(&mut z_vec);
-        let z_poly = Coefficients::from_vec(z_vec.0);
+        let mut z_vec = Evaluations::new(z_vec);
+        let z_poly = fft.idft(&mut z_vec);
+        let z_poly = Coefficients::from_vec(z_poly.0);
         //
         // Check that z(w^{n+1}) == z(1) == 1
         // This is the first check in the protocol
@@ -1129,9 +1129,9 @@ mod test {
         }
 
         // Test that the shifted polynomial is correct
-        let mut shifted_z = Coefficients::new(shift_poly_by_one(fast_z_vec));
-        fft.idft(&mut shifted_z);
-        let shifted_z_poly = Coefficients::from_vec(shifted_z.0);
+        let mut shifted_z = Evaluations::new(shift_poly_by_one(fast_z_vec));
+        let shifted_z_poly = fft.idft(&mut shifted_z);
+        let shifted_z_poly = Coefficients::from_vec(shifted_z_poly.0);
         for element in fft.elements.iter() {
             let z_eval = z_poly.evaluate(&(*element * domain.generator()));
             let shifted_z_eval = shifted_z_poly.evaluate(element);

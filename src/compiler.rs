@@ -84,19 +84,19 @@ impl Compiler {
         //
         // we use allocated vectors because the current ifft api only accepts
         // slices
-        let mut q_m = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_l = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_r = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_o = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_c = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_d = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_arith = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_range = Coeffs::new(vec![P::ScalarField::zero(); n]);
-        let mut q_logic = Coeffs::new(vec![P::ScalarField::zero(); n]);
+        let mut q_m = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_l = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_r = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_o = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_c = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_d = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_arith = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_range = Points::new(vec![P::ScalarField::zero(); n]);
+        let mut q_logic = Points::new(vec![P::ScalarField::zero(); n]);
         let mut q_fixed_group_add =
-            Coeffs::new(vec![P::ScalarField::zero(); n]);
+            Points::new(vec![P::ScalarField::zero(); n]);
         let mut q_variable_group_add =
-            Coeffs::new(vec![P::ScalarField::zero(); n]);
+            Points::new(vec![P::ScalarField::zero(); n]);
 
         prover.constraints.iter().enumerate().for_each(|(i, c)| {
             q_m.0[i] = c.q_m;
@@ -112,17 +112,17 @@ impl Compiler {
             q_variable_group_add.0[i] = c.q_variable_group_add;
         });
 
-        fft.idft(&mut q_m);
-        fft.idft(&mut q_l);
-        fft.idft(&mut q_r);
-        fft.idft(&mut q_o);
-        fft.idft(&mut q_c);
-        fft.idft(&mut q_d);
-        fft.idft(&mut q_arith);
-        fft.idft(&mut q_range);
-        fft.idft(&mut q_logic);
-        fft.idft(&mut q_fixed_group_add);
-        fft.idft(&mut q_variable_group_add);
+        let mut q_m = fft.idft(&mut q_m);
+        let mut q_l = fft.idft(&mut q_l);
+        let mut q_r = fft.idft(&mut q_r);
+        let mut q_o = fft.idft(&mut q_o);
+        let mut q_c = fft.idft(&mut q_c);
+        let mut q_d = fft.idft(&mut q_d);
+        let mut q_arith = fft.idft(&mut q_arith);
+        let mut q_range = fft.idft(&mut q_range);
+        let mut q_logic = fft.idft(&mut q_logic);
+        let mut q_fixed_group_add = fft.idft(&mut q_fixed_group_add);
+        let mut q_variable_group_add = fft.idft(&mut q_variable_group_add);
 
         let q_m_poly = Coeffs::from_vec(q_m.0.clone());
         let q_l_poly = Coeffs::from_vec(q_l.0.clone());

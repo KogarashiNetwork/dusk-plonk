@@ -14,7 +14,7 @@ pub use proof::Proof;
 
 use core::marker::PhantomData;
 use core::ops;
-use poly_commit::{Coefficients, Fft};
+use poly_commit::{Coefficients, Fft, PointsValue};
 use rand_core::RngCore;
 use sp_std::vec;
 use zksnarks::plonk::{
@@ -93,8 +93,8 @@ where
     where
         R: RngCore,
     {
-        let mut w_vec_inverse = Coefficients::new(witnesses.to_vec());
-        fft.idft(&mut w_vec_inverse);
+        let mut w_vec_inverse = PointsValue::new(witnesses.to_vec());
+        let mut w_vec_inverse = fft.idft(&mut w_vec_inverse);
 
         for i in 0..hiding_degree + 1 {
             let blinding_scalar = P::ScalarField::random(&mut *rng);
@@ -129,7 +129,7 @@ where
         let public_inputs = prover.public_inputs();
         let public_input_indexes = prover.public_input_indexes();
         let mut dense_public_inputs =
-            Coefficients::new(ConstraintSystem::<P>::dense_public_inputs(
+            PointsValue::new(ConstraintSystem::<P>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
                 self.size,
@@ -259,8 +259,7 @@ where
             );
 
         // compute public inputs polynomial
-        fft.idft(&mut dense_public_inputs);
-        let pi_poly = dense_public_inputs;
+        let pi_poly = fft.idft(&mut dense_public_inputs);
 
         // compute quotient polynomial
         let wires = (&a_w_poly, &b_w_poly, &o_w_poly, &d_w_poly);

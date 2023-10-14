@@ -11,7 +11,7 @@ use rayon::prelude::*;
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use poly_commit::{Coefficients, Fft};
+use poly_commit::{Coefficients, Fft, PointsValue};
 use zksnarks::plonk::ProvingKey;
 use zkstd::behave::*;
 
@@ -107,8 +107,8 @@ pub(crate) fn compute<P: Pairing>(
             numerator * denominator.invert().unwrap()
         })
         .collect();
-    let mut quotient = Coefficients::new(quotient);
-    fft_8n.coset_idft(&mut quotient);
+    let mut quotient = PointsValue::new(quotient);
+    let quotient = fft_8n.coset_idft(&mut quotient);
 
     Ok(Coefficients::from_vec(quotient.0))
 }
@@ -262,8 +262,8 @@ fn compute_first_lagrange_poly_scaled<P: Pairing>(
     scale: P::ScalarField,
 ) -> Coefficients<P::ScalarField> {
     let mut x_evals =
-        Coefficients::new(vec![P::ScalarField::zero(); fft.size()]);
+        PointsValue::new(vec![P::ScalarField::zero(); fft.size()]);
     x_evals.0[0] = scale;
-    fft.idft(&mut x_evals);
+    let x_evals = fft.idft(&mut x_evals);
     Coefficients::from_vec(x_evals.0)
 }
