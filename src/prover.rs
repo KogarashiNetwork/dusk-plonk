@@ -8,7 +8,7 @@ mod linearization_poly;
 mod proof;
 mod quotient_poly;
 
-use crate::circuit::{Circuit, ConstraintSystem};
+use crate::constraint_system::{Circuit, ConstraintSystem};
 pub use proof::Proof;
 use zksnarks::error::Error;
 

@@ -58,7 +58,7 @@ mod compiler;
 mod prover;
 mod verifier;
 
-pub mod circuit;
+pub mod constraint_system;
 pub mod gadget;
 
 pub mod commitment_scheme;
