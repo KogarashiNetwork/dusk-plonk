@@ -239,7 +239,7 @@ fn compute_permutation_checks<P: Pairing>(
     #[cfg(feature = "std")]
     let range = (0..fft_n8.size()).into_par_iter();
 
-    let t: Vec<_> = range
+    range
         .map(|i| {
             prover_key.permutation.compute_quotient_i(
                 i,
@@ -255,8 +255,7 @@ fn compute_permutation_checks<P: Pairing>(
                 gamma,
             )
         })
-        .collect();
-    t
+        .collect()
 }
 
 fn compute_first_lagrange_poly_scaled<P: Pairing>(

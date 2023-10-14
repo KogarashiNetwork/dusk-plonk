@@ -94,7 +94,6 @@ where
 
         let size = self.size;
         let k = size.trailing_zeros();
-
         let fft = Fft::<P::ScalarField>::new(k as usize);
 
         let mut transcript = self.transcript.clone();

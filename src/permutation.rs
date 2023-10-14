@@ -147,7 +147,7 @@ impl<F: FftField> Permutation<F> {
     ) -> Vec<F> {
         let roots = fft.elements.clone();
 
-        let lagrange_poly: Vec<F> = sigma_mapping
+        sigma_mapping
             .iter()
             .map(|x| match x {
                 WireType::Left(index) => roots[*index],
@@ -164,9 +164,7 @@ impl<F: FftField> Permutation<F> {
                     F::from(Self::K3) * root
                 }
             })
-            .collect();
-
-        lagrange_poly
+            .collect()
     }
 
     /// Computes the sigma polynomials which are used to build the permutation
