@@ -73,8 +73,6 @@ impl Compiler {
         C: Circuit<P>,
         P: Pairing,
     {
-        let mut perm = prover.perm.clone();
-
         let constraints = prover.constraints();
         let n = constraints.next_power_of_two();
         let k = n.trailing_zeros();
@@ -124,51 +122,41 @@ impl Compiler {
         let mut q_fixed_group_add = fft.idft(&mut q_fixed_group_add);
         let mut q_variable_group_add = fft.idft(&mut q_variable_group_add);
 
-        let q_m_poly = Coeffs::from_vec(q_m.0.clone());
-        let q_l_poly = Coeffs::from_vec(q_l.0.clone());
-        let q_r_poly = Coeffs::from_vec(q_r.0.clone());
-        let q_o_poly = Coeffs::from_vec(q_o.0.clone());
-        let q_c_poly = Coeffs::from_vec(q_c.0.clone());
-        let q_d_poly = Coeffs::from_vec(q_d.0.clone());
-        let q_arith_poly = Coeffs::from_vec(q_arith.0.clone());
-        let q_range_poly = Coeffs::from_vec(q_range.0.clone());
-        let q_logic_poly = Coeffs::from_vec(q_logic.0.clone());
-        let q_fixed_group_add_poly =
-            Coeffs::from_vec(q_fixed_group_add.0.clone());
-        let q_variable_group_add_poly =
-            Coeffs::from_vec(q_variable_group_add.0.clone());
+        let q_m_poly = q_m.clone();
+        let q_l_poly = q_l.clone();
+        let q_r_poly = q_r.clone();
+        let q_o_poly = q_o.clone();
+        let q_c_poly = q_c.clone();
+        let q_d_poly = q_d.clone();
+        let q_arith_poly = q_arith.clone();
+        let q_range_poly = q_range.clone();
+        let q_logic_poly = q_logic.clone();
+        let q_fixed_group_add_poly = q_fixed_group_add.clone();
+        let q_variable_group_add_poly = q_variable_group_add.clone();
 
         // 2. compute the sigma polynomials
+        let mut perm = prover.perm.clone();
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
             perm.compute_sigma_polynomials(n, &fft);
 
-        let q_m_poly_commit = keypair.commit(&q_m_poly).unwrap_or_default();
-        let q_l_poly_commit = keypair.commit(&q_l_poly).unwrap_or_default();
-        let q_r_poly_commit = keypair.commit(&q_r_poly).unwrap_or_default();
-        let q_o_poly_commit = keypair.commit(&q_o_poly).unwrap_or_default();
-        let q_c_poly_commit = keypair.commit(&q_c_poly).unwrap_or_default();
-        let q_d_poly_commit = keypair.commit(&q_d_poly).unwrap_or_default();
-        let q_arith_poly_commit =
-            keypair.commit(&q_arith_poly).unwrap_or_default();
-        let q_range_poly_commit =
-            keypair.commit(&q_range_poly).unwrap_or_default();
-        let q_logic_poly_commit =
-            keypair.commit(&q_logic_poly).unwrap_or_default();
+        let q_m_poly_commit = keypair.commit(&q_m).unwrap_or_default();
+        let q_l_poly_commit = keypair.commit(&q_l).unwrap_or_default();
+        let q_r_poly_commit = keypair.commit(&q_r).unwrap_or_default();
+        let q_o_poly_commit = keypair.commit(&q_o).unwrap_or_default();
+        let q_c_poly_commit = keypair.commit(&q_c).unwrap_or_default();
+        let q_d_poly_commit = keypair.commit(&q_d).unwrap_or_default();
+        let q_arith_poly_commit = keypair.commit(&q_arith).unwrap_or_default();
+        let q_range_poly_commit = keypair.commit(&q_range).unwrap_or_default();
+        let q_logic_poly_commit = keypair.commit(&q_logic).unwrap_or_default();
         let q_fixed_group_add_poly_commit =
-            keypair.commit(&q_fixed_group_add_poly).unwrap_or_default();
-        let q_variable_group_add_poly_commit = keypair
-            .commit(&q_variable_group_add_poly)
-            .unwrap_or_default();
+            keypair.commit(&q_fixed_group_add).unwrap_or_default();
+        let q_variable_group_add_poly_commit =
+            keypair.commit(&q_variable_group_add).unwrap_or_default();
 
-        let s_sigma_1_poly_commit = Coeffs::from_vec(s_sigma_1_poly.0.clone());
-        let s_sigma_2_poly_commit = Coeffs::from_vec(s_sigma_2_poly.0.clone());
-        let s_sigma_3_poly_commit = Coeffs::from_vec(s_sigma_3_poly.0.clone());
-        let s_sigma_4_poly_commit = Coeffs::from_vec(s_sigma_4_poly.0.clone());
-
-        let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly_commit)?;
-        let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly_commit)?;
-        let s_sigma_3_poly_commit = keypair.commit(&s_sigma_3_poly_commit)?;
-        let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly_commit)?;
+        let s_sigma_1_poly_commit = keypair.commit(&s_sigma_1_poly)?;
+        let s_sigma_2_poly_commit = keypair.commit(&s_sigma_2_poly)?;
+        let s_sigma_3_poly_commit = keypair.commit(&s_sigma_3_poly)?;
+        let s_sigma_4_poly_commit = keypair.commit(&s_sigma_4_poly)?;
 
         // verifier Key for arithmetic circuits
         let arithmetic_verifier_key = arithmetic::VerificationKey {
@@ -239,43 +227,26 @@ impl Compiler {
         let mut min_p =
             Coeffs::new(vec![P::ScalarField::zero(), P::ScalarField::one()]);
 
-        fft_8n.coset_dft(&mut q_m);
-        fft_8n.coset_dft(&mut q_l);
-        fft_8n.coset_dft(&mut q_r);
-        fft_8n.coset_dft(&mut q_o);
-        fft_8n.coset_dft(&mut q_c);
-        fft_8n.coset_dft(&mut q_d);
-        fft_8n.coset_dft(&mut q_arith);
-        fft_8n.coset_dft(&mut q_range);
-        fft_8n.coset_dft(&mut q_logic);
-        fft_8n.coset_dft(&mut q_fixed_group_add);
-        fft_8n.coset_dft(&mut q_variable_group_add);
-        fft_8n.coset_dft(&mut s_sigma_1);
-        fft_8n.coset_dft(&mut s_sigma_2);
-        fft_8n.coset_dft(&mut s_sigma_3);
-        fft_8n.coset_dft(&mut s_sigma_4);
-        fft_8n.coset_dft(&mut min_p);
-
-        let q_m_eval_8n = Points::new(q_m.0.clone());
-        let q_l_eval_8n = Points::new(q_l.0.clone());
-        let q_r_eval_8n = Points::new(q_r.0.clone());
-        let q_o_eval_8n = Points::new(q_o.0.clone());
-        let q_c_eval_8n = Points::new(q_c.0.clone());
-        let q_4_eval_8n = Points::new(q_d.0.clone());
-        let q_arith_eval_8n = Points::new(q_arith.0.clone());
-        let q_range_eval_8n = Points::new(q_range.0.clone());
-        let q_logic_eval_8n = Points::new(q_logic.0.clone());
+        let q_m_eval_8n = fft_8n.coset_dft(&mut q_m);
+        let q_l_eval_8n = fft_8n.coset_dft(&mut q_l);
+        let q_r_eval_8n = fft_8n.coset_dft(&mut q_r);
+        let q_o_eval_8n = fft_8n.coset_dft(&mut q_o);
+        let q_c_eval_8n = fft_8n.coset_dft(&mut q_c);
+        let q_4_eval_8n = fft_8n.coset_dft(&mut q_d);
+        let q_arith_eval_8n = fft_8n.coset_dft(&mut q_arith);
+        let q_range_eval_8n = fft_8n.coset_dft(&mut q_range);
+        let q_logic_eval_8n = fft_8n.coset_dft(&mut q_logic);
         let q_fixed_group_add_eval_8n =
-            Points::new(q_fixed_group_add.0.clone());
+            fft_8n.coset_dft(&mut q_fixed_group_add);
         let q_variable_group_add_eval_8n =
-            Points::new(q_variable_group_add.0.clone());
+            fft_8n.coset_dft(&mut q_variable_group_add);
 
-        let s_sigma_1_eval_8n = Points::new(s_sigma_1.0);
-        let s_sigma_2_eval_8n = Points::new(s_sigma_2.0);
-        let s_sigma_3_eval_8n = Points::new(s_sigma_3.0);
-        let s_sigma_4_eval_8n = Points::new(s_sigma_4.0);
+        let s_sigma_1_eval_8n = fft_8n.coset_dft(&mut s_sigma_1);
+        let s_sigma_2_eval_8n = fft_8n.coset_dft(&mut s_sigma_2);
+        let s_sigma_3_eval_8n = fft_8n.coset_dft(&mut s_sigma_3);
+        let s_sigma_4_eval_8n = fft_8n.coset_dft(&mut s_sigma_4);
 
-        let linear_eval_8n = Points::new(min_p.0);
+        let linear_eval_8n = fft_8n.coset_dft(&mut min_p);
 
         let arithmetic_prover_key = arithmetic::ProvingKey {
             q_m: (q_m_poly, q_m_eval_8n),
