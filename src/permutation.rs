@@ -12,7 +12,7 @@ use poly_commit::{Coefficients, Fft, PointsValue as Evaluations};
 use sp_std::vec;
 use zksnarks::plonk::wire::PrivateWire;
 use zkstd::common::Vec;
-use zkstd::traits::*;
+use zkstd::common::*;
 
 /// Permutation provides the necessary state information and functions
 /// to create the permutation polynomial. In the literature, Z(X) is the

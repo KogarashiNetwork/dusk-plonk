@@ -12,7 +12,7 @@ use sp_std::vec::Vec;
 use poly_commit::{Coefficients, Fft, PointsValue};
 use zksnarks::error::Error;
 use zksnarks::plonk::ProvingKey;
-use zkstd::traits::*;
+use zkstd::common::*;
 
 /// Computes the Quotient [`Coefficients`] given the [`EvaluationDomain`], a
 /// [`ProvingKey`] and some other info.

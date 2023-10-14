@@ -59,7 +59,7 @@ pub(crate) fn batch_check<P: Pairing>(
     ])
     .final_exp();
 
-    if pairing != <<P as zkstd::traits::Pairing>::PairingRange as PairingRange>::Gt::ADDITIVE_IDENTITY {
+    if pairing != <<P as zkstd::common::Pairing>::PairingRange as PairingRange>::Gt::ADDITIVE_IDENTITY {
         return Err(Error::PairingCheckFailure);
     };
     Ok(())

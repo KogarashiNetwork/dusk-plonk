@@ -12,7 +12,7 @@ use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
 use zkstd::common::Pairing;
-use zkstd::traits::{FftField, Group};
+use zkstd::common::{FftField, Group};
 
 #[test]
 fn range_works() {

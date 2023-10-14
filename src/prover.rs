@@ -21,7 +21,7 @@ use zksnarks::plonk::{
     PlonkParams, ProvingKey, Transcript, TranscriptProtocol, VerificationKey,
 };
 use zkstd::common::Vec;
-use zkstd::traits::{FftField, Group, Pairing};
+use zkstd::common::{FftField, Group, Pairing};
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]
