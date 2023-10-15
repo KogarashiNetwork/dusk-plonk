@@ -10,6 +10,7 @@ mod quotient_poly;
 
 use super::Plonk;
 pub use proof::Proof;
+use zksnarks::constraint_system::ConstraintSystem;
 use zksnarks::error::Error;
 
 use core::marker::PhantomData;
@@ -34,7 +35,6 @@ where
     pub(crate) keypair: PlonkParams<P>,
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
-    pub(crate) constraints: usize,
     pairing: PhantomData<P>,
 }
 
@@ -69,7 +69,6 @@ where
             keypair,
             transcript,
             size,
-            constraints,
             pairing: PhantomData,
         }
     }
@@ -84,8 +83,7 @@ where
         C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
         R: RngCore,
     {
-        let mut prover =
-            Plonk::<P::JubjubAffine>::initialized(self.constraints);
+        let mut prover = Plonk::<P::JubjubAffine>::initialize();
 
         circuit.synthesize(&mut prover)?;
 

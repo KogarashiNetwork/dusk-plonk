@@ -10,16 +10,15 @@ use super::{Plonk, Prover, Verifier};
 
 use poly_commit::{Coefficients as Coeffs, Fft, PointsValue as Points};
 use sp_std::vec;
-use zksnarks::circuit::Circuit;
-use zksnarks::constraint_system::ConstraintSystem;
-use zksnarks::error::Error;
-use zksnarks::keypair::Keypair;
 use zksnarks::plonk::keypair::{
     arithmetic,
     curve::{add, scalar},
     logic, permutation, range, ProvingKey, VerificationKey,
 };
-use zksnarks::plonk::PlonkParams;
+use zksnarks::{
+    circuit::Circuit, constraint_system::ConstraintSystem, error::Error,
+    keypair::Keypair, plonk::PlonkParams,
+};
 use zkstd::common::{Group, Pairing, Ring};
 
 /// Generate the arguments to prove and verify a circuit
@@ -64,34 +63,15 @@ impl<
         ),
         Error,
     > {
-        let max_size = keypair.max_degree() >> 1;
-        let mut prover = Plonk::initialize(max_size);
+        let mut cs = Plonk::initialize();
 
-        circuit.synthesize(&mut prover)?;
+        circuit.synthesize(&mut cs)?;
 
-        let n = (prover.m() + 6).next_power_of_two();
-
-        let keypair = keypair.trim(n);
-
-        let (prover, verifier) = Self::preprocess(label, &keypair, &prover)?;
-
-        Ok((prover, verifier))
-    }
-
-    fn preprocess(
-        label: &[u8],
-        keypair: &PlonkParams<P>,
-        prover: &C::ConstraintSystem,
-    ) -> Result<
-        (
-            <Self as Keypair<P, C>>::Prover,
-            <Self as Keypair<P, C>>::Verifier,
-        ),
-        Error,
-    > {
-        let constraints = prover.m();
-        let n = constraints.next_power_of_two();
+        let m = cs.m();
+        let n = m.next_power_of_two();
         let k = n.trailing_zeros();
+        let additional_n = (m + 6).next_power_of_two();
+        let keypair = keypair.trim(additional_n);
         let fft = Fft::<P::ScalarField>::new(k as usize);
 
         // 1. pad circuit to a power of two
@@ -112,23 +92,19 @@ impl<
         let mut q_variable_group_add =
             Points::new(vec![P::ScalarField::zero(); n]);
 
-        prover
-            .constraints()
-            .into_iter()
-            .enumerate()
-            .for_each(|(i, c)| {
-                q_m.0[i] = c.q_m;
-                q_l.0[i] = c.q_l;
-                q_r.0[i] = c.q_r;
-                q_o.0[i] = c.q_o;
-                q_c.0[i] = c.q_c;
-                q_d.0[i] = c.q_d;
-                q_arith.0[i] = c.q_arith;
-                q_range.0[i] = c.q_range;
-                q_logic.0[i] = c.q_logic;
-                q_fixed_group_add.0[i] = c.q_fixed_group_add;
-                q_variable_group_add.0[i] = c.q_variable_group_add;
-            });
+        cs.constraints().into_iter().enumerate().for_each(|(i, c)| {
+            q_m.0[i] = c.q_m;
+            q_l.0[i] = c.q_l;
+            q_r.0[i] = c.q_r;
+            q_o.0[i] = c.q_o;
+            q_c.0[i] = c.q_c;
+            q_d.0[i] = c.q_d;
+            q_arith.0[i] = c.q_arith;
+            q_range.0[i] = c.q_range;
+            q_logic.0[i] = c.q_logic;
+            q_fixed_group_add.0[i] = c.q_fixed_group_add;
+            q_variable_group_add.0[i] = c.q_variable_group_add;
+        });
 
         let q_m_poly = fft.idft(q_m);
         let q_l_poly = fft.idft(q_l);
@@ -143,7 +119,7 @@ impl<
         let q_variable_group_add_poly = fft.idft(q_variable_group_add);
 
         // 2. compute the sigma polynomials
-        let mut perm = prover.perm.clone();
+        let mut perm = cs.perm.clone();
         let [s_sigma_1_poly, s_sigma_2_poly, s_sigma_3_poly, s_sigma_4_poly] =
             perm.compute_sigma_polynomials(n, &fft);
 
@@ -213,7 +189,7 @@ impl<
         };
 
         let verifier_key = VerificationKey {
-            n: constraints,
+            n: m,
             n_inv: fft.size_inv(),
             generator: fft.generator(),
             generator_inv: fft.generator_inv(),
@@ -313,7 +289,7 @@ impl<
             v_h_coset_8n,
         };
 
-        let public_input_indexes = prover.public_input_indexes();
+        let public_input_indexes = cs.public_input_indexes();
 
         let label = label.to_vec();
 
@@ -323,7 +299,7 @@ impl<
             prover_key,
             verifier_key.clone(),
             n,
-            constraints,
+            m,
         );
 
         let verifier = Verifier::new(
@@ -332,7 +308,7 @@ impl<
             keypair.verification_key(),
             public_input_indexes,
             n,
-            constraints,
+            m,
         );
 
         Ok((prover, verifier))

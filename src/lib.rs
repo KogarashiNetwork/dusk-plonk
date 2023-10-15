@@ -127,8 +127,8 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
         }
     }
 
-    fn initialize(n: usize) -> Self {
-        let mut slf = Self::uninitialized(n);
+    fn initialize() -> Self {
+        let mut slf = Self::new();
 
         let zero = slf.append_witness(0);
         let one = slf.append_witness(1);
@@ -216,15 +216,6 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             .for_each(|(idx, pi)| dense_public_inputs[*idx] = *pi);
 
         dense_public_inputs
-    }
-
-    fn uninitialized(capacity: usize) -> Self {
-        Self {
-            constraints: Vec::with_capacity(capacity),
-            instance: HashMap::new(),
-            witness: Vec::with_capacity(capacity),
-            perm: Permutation::new(),
-        }
     }
 
     pub(crate) fn m(&self) -> usize {
@@ -562,23 +553,6 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         self.assert_equal(last_accumulated_bit, jubjub);
 
         Ok(WitnessPoint::new(acc_x, acc_y))
-    }
-
-    /// Initialize the constraint system with dummy gates
-    pub(crate) fn initialized(capacity: usize) -> Self {
-        #[allow(deprecated)]
-        let mut slf = Self::uninitialized(capacity);
-
-        let zero = slf.append_witness(0);
-        let one = slf.append_witness(1);
-
-        slf.assert_equal_constant(zero, 0, None);
-        slf.assert_equal_constant(one, 1, None);
-
-        slf.append_dummy_gates();
-        slf.append_dummy_gates();
-
-        slf
     }
 
     /// Append a new width-4 poly gate/constraint.
