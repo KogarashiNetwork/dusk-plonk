@@ -5,12 +5,12 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
+use zksnarks::public_params::PublicParameters;
 use zkstd::common::Group;
 use zkstd::common::{CurveGroup, Pairing};
 
@@ -20,7 +20,7 @@ fn mul_generator_works() {
 
     let n = 9;
     let label = b"demo";
-    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubScalar,
@@ -113,7 +113,7 @@ fn add_point_works() {
 
     let n = 4;
     let label = b"demo";
-    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubExtended,
@@ -238,7 +238,7 @@ fn mul_point_works() {
 
     let n = 13;
     let label = b"demo";
-    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubScalar,

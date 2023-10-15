@@ -6,12 +6,12 @@
 
 use ec_pairing::TatePairing;
 use jub_jub::JubjubAffine;
-use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
+use zksnarks::public_params::PublicParameters;
 use zkstd::common::{CurveGroup, Group, Pairing};
 
 #[test]
@@ -20,7 +20,7 @@ fn boolean_works() {
 
     let n = 4;
     let label = b"demo";
-    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, &mut rng);
 
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
@@ -97,7 +97,7 @@ fn select_works() {
 
     let n = 6;
     let label = b"demo";
-    let mut pp = PlonkParams::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::setup(n, &mut rng);
 
     #[derive(Clone, Debug)]
     pub struct DummyCircuit<P: Pairing> {

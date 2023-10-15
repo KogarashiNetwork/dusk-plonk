@@ -5,14 +5,13 @@
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
 use ec_pairing::TatePairing;
-use poly_commit::PublicParameters;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
 use zksnarks::error::Error;
 use zksnarks::plonk::PlonkParams;
-use zkstd::common::Pairing;
-use zkstd::common::{FftField, Group};
+use zksnarks::public_params::PublicParameters;
+use zkstd::common::{FftField, Pairing};
 
 #[test]
 fn range_works() {
@@ -20,8 +19,7 @@ fn range_works() {
 
     let n = 5;
     let label = b"demo";
-    let mut pp =
-        PlonkParams::<TatePairing>::setup(n, BlsScalar::random(&mut rng));
+    let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
 
     const DEFAULT_BITS: usize = 76;
     #[derive(Debug)]
