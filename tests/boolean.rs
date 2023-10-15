@@ -55,7 +55,7 @@ fn boolean_works() {
     }
 
     let (prover, verifier) =
-        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -271,7 +271,7 @@ fn select_works() {
     }
 
     let (prover, verifier): (Prover<TatePairing>, Verifier<TatePairing>) =
-        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works

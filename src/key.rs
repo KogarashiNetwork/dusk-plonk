@@ -6,7 +6,7 @@
 
 use core::marker::PhantomData;
 
-use crate::constraint_system::{Plonk, Prover, Verifier};
+use super::{Plonk, Prover, Verifier};
 
 use poly_commit::{Coefficients as Coeffs, Fft, PointsValue as Points};
 use sp_std::vec;
@@ -23,7 +23,7 @@ use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
 /// Generate the arguments to prove and verify a circuit
-pub struct Compiler<P: Pairing, C: Circuit<P::JubjubAffine>> {
+pub struct PlonkKey<P: Pairing, C: Circuit<P::JubjubAffine>> {
     c: PhantomData<C>,
     p: PhantomData<P>,
 }
@@ -31,7 +31,7 @@ pub struct Compiler<P: Pairing, C: Circuit<P::JubjubAffine>> {
 impl<
         P: Pairing,
         C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
-    > Keypair<P, C> for Compiler<P, C>
+    > Keypair<P, C> for PlonkKey<P, C>
 {
     type Prover = Prover<P>;
     type Verifier = Verifier<P>;
@@ -48,7 +48,7 @@ impl<
 impl<
         P: Pairing,
         C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
-    > Compiler<P, C>
+    > PlonkKey<P, C>
 {
     /// Create a new arguments set from a given circuit instance
     ///

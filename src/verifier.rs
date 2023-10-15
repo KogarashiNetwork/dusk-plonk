@@ -4,12 +4,11 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use super::Plonk;
 use crate::prover::Proof;
-use zksnarks::error::Error;
-
-use crate::constraint_system::Plonk;
 
 use poly_commit::EvaluationKey;
+use zksnarks::error::Error;
 use zksnarks::plonk::{Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::common::{Pairing, Vec};
 

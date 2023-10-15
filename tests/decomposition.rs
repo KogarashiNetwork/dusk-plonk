@@ -72,7 +72,7 @@ fn decomposition_works() {
     }
 
     let (prover, verifier) =
-        Compiler::<TatePairing, DummyCircuit<256, TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<256, TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works

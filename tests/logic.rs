@@ -9,8 +9,8 @@ use ec_pairing::TatePairing;
 use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::constraint_system::Compiler;
-use zero_plonk::constraint_system::Plonk;
+use zero_plonk::Plonk;
+use zero_plonk::PlonkKey;
 use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
@@ -72,7 +72,7 @@ fn logic_and_works() {
     }
 
     let (prover, verifier) =
-        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -122,7 +122,7 @@ fn logic_and_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&mut pp, label, &circuit)
+            PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -147,7 +147,7 @@ fn logic_and_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&mut pp, label, &circuit)
+            PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -171,7 +171,7 @@ fn logic_and_works() {
 
         let circuit = DummyCircuit::new(a, b, bits);
 
-        Compiler::compile_with_circuit(&mut pp, label, &circuit)
+        PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
             .expect("failed to compile circuit");
     }
 }
@@ -229,7 +229,7 @@ fn logic_xor_works() {
     }
 
     let (prover, verifier) =
-        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -279,7 +279,7 @@ fn logic_xor_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&mut pp, label, &circuit)
+            PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -304,7 +304,7 @@ fn logic_xor_works() {
         let circuit = DummyCircuit::new(a, b, bits);
 
         let (prover, verifier) =
-            Compiler::compile_with_circuit(&mut pp, label, &circuit)
+            PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
                 .expect("failed to compile circuit");
 
         let a = BlsScalar::random(&mut rng);
@@ -328,7 +328,7 @@ fn logic_xor_works() {
 
         let circuit = DummyCircuit::new(a, b, bits);
 
-        Compiler::compile_with_circuit(&mut pp, label, &circuit)
+        PlonkKey::compile_with_circuit(&mut pp, label, &circuit)
             .expect("failed to compile circuit");
     }
 }

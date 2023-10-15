@@ -9,7 +9,7 @@ use ec_pairing::TatePairing;
 use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::constraint_system::{Compiler, Plonk};
+use zero_plonk::{Plonk, PlonkKey};
 use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
@@ -59,7 +59,7 @@ fn range_works() {
     }
 
     let (prover, verifier) =
-        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -88,7 +88,7 @@ fn range_works() {
     {
         let a = BlsScalar::one();
 
-        Compiler::compile_with_circuit(
+        PlonkKey::compile_with_circuit(
             &mut pp,
             label,
             &DummyCircuit::new(a, DEFAULT_BITS + 1),

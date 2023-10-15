@@ -9,13 +9,12 @@
 //! Use this as the only import that you need to interact
 //! with the principal data structures of the plonk library.
 
-pub use crate::{
-    constraint_system::{Circuit, Compiler, Plonk, Prover, Verifier},
-    gadget::WitnessPoint,
-};
-
+pub use super::{Plonk, PlonkKey, Prover, Verifier};
+pub use crate::gadget::WitnessPoint;
 pub use crate::prover::Proof;
+
 pub use bls_12_381::Fr as BlsScalar;
 pub use jub_jub::{Fp as JubjubScalar, JubjubAffine, JubjubExtended};
+pub use zksnarks::circuit::Circuit;
 pub use zksnarks::error::Error;
 pub use zksnarks::Constraint;
