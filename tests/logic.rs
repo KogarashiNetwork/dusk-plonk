@@ -4,11 +4,16 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use bls_12_381::Fr as BlsScalar;
 use ec_pairing::TatePairing;
+use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::prelude::*;
+use zero_plonk::constraint_system::Compiler;
+use zero_plonk::constraint_system::Plonk;
+use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
+use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
 use zkstd::common::Pairing;
@@ -49,9 +54,10 @@ fn logic_and_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
@@ -65,11 +71,9 @@ fn logic_and_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {
@@ -207,9 +211,10 @@ fn logic_xor_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_witness(self.b);
@@ -223,11 +228,9 @@ fn logic_xor_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {

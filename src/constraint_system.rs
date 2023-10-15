@@ -17,7 +17,9 @@ use hashbrown::HashMap;
 use jub_jub::compute_windowed_naf;
 use sp_std::vec;
 use zksnarks::error::Error;
-use zksnarks::{plonk::wire::PrivateWire, Constraint};
+use zksnarks::{
+    constraint_system::ConstraintSystem, plonk::wire::PrivateWire, Constraint,
+};
 use zkstd::common::{
     CurveGroup, FftField, Group, Neg, PrimeField, Ring, TwistedEdwardsAffine,
     Vec,
@@ -33,15 +35,60 @@ use crate::permutation::Permutation;
 /// The default implementation will be used to generate the proving arguments.
 pub trait Circuit<C: TwistedEdwardsAffine>: Default + Debug {
     /// Circuit definition
-    fn synthesize(
-        &self,
-        composer: &mut ConstraintSystem<C>,
-    ) -> Result<(), Error>;
+    fn synthesize(&self, composer: &mut Plonk<C>) -> Result<(), Error>;
+}
+
+impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
+    type Wire = PrivateWire;
+    type Constraints = Vec<Constraint<C::Scalar>>;
+    fn new() -> Self {
+        Self {
+            constraints: Vec::default(),
+            instance: HashMap::new(),
+            witness: Vec::default(),
+            perm: Permutation::new(),
+        }
+    }
+
+    fn initialize(n: usize) -> Self {
+        let mut slf = Self::uninitialized(n);
+
+        let zero = slf.append_witness(0);
+        let one = slf.append_witness(1);
+
+        slf.assert_equal_constant(zero, 0, None);
+        slf.assert_equal_constant(one, 1, None);
+
+        slf.append_dummy_gates();
+        slf.append_dummy_gates();
+
+        slf
+    }
+
+    fn constraints(&self) -> Self::Constraints {
+        self.constraints.clone()
+    }
+
+    fn m(&self) -> usize {
+        self.constraints.len()
+    }
+
+    fn alloc_instance(&mut self, instance: <C>::Range) -> Self::Wire {
+        self.append_public(instance)
+    }
+
+    fn alloc_witness(&mut self, witness: <C>::Range) -> Self::Wire {
+        self.append_witness(witness)
+    }
+
+    fn instance(&self) -> Vec<<C>::Range> {
+        Vec::new()
+    }
 }
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
-pub struct ConstraintSystem<C: TwistedEdwardsAffine> {
+pub struct Plonk<C: TwistedEdwardsAffine> {
     /// Constraint system gates
     pub(crate) constraints: Vec<Constraint<C::Scalar>>,
 
@@ -55,7 +102,7 @@ pub struct ConstraintSystem<C: TwistedEdwardsAffine> {
     pub(crate) perm: Permutation<C::Scalar>,
 }
 
-impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for ConstraintSystem<C> {
+impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for Plonk<C> {
     type Output = C::Scalar;
 
     fn index(&self, w: PrivateWire) -> &Self::Output {
@@ -63,7 +110,7 @@ impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for ConstraintSystem<C> {
     }
 }
 
-impl<C: TwistedEdwardsAffine> ConstraintSystem<C> {
+impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Zero representation inside the constraint system.
     ///
     /// A turbo composer expects the first witness to be always present and to

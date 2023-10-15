@@ -8,7 +8,9 @@ use ec_pairing::TatePairing;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
+use zksnarks::keypair::Keypair;
 use zksnarks::plonk::wire::PrivateWire;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
@@ -19,8 +21,7 @@ fn decomposition_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
     let n = 10;
-    let label = b"demo";
-    let mut pp = PlonkParams::setup(n, &mut rng);
+    let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
 
     #[derive(Debug)]
     pub struct DummyCircuit<const N: usize, P: Pairing> {
@@ -47,13 +48,13 @@ fn decomposition_works() {
     }
 
     impl<const N: usize> Circuit<JubjubAffine> for DummyCircuit<N, TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
-            let mut w_bits: [PrivateWire; N] =
-                [ConstraintSystem::<JubjubAffine>::ZERO; N];
+            let mut w_bits: [PrivateWire; N] = [Plonk::<JubjubAffine>::ZERO; N];
 
             w_bits
                 .iter_mut()
@@ -70,11 +71,9 @@ fn decomposition_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<256, TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<256, TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {

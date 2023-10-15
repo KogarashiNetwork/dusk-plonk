@@ -8,7 +8,7 @@ mod linearization_poly;
 mod proof;
 mod quotient_poly;
 
-use crate::constraint_system::{Circuit, ConstraintSystem};
+use crate::constraint_system::Plonk;
 pub use proof::Proof;
 use zksnarks::error::Error;
 
@@ -17,6 +17,7 @@ use core::ops;
 use poly_commit::{Coefficients, Fft, PointsValue};
 use rand_core::RngCore;
 use sp_std::vec;
+use zksnarks::circuit::Circuit;
 use zksnarks::plonk::{
     PlonkParams, ProvingKey, Transcript, TranscriptProtocol, VerificationKey,
 };
@@ -25,9 +26,8 @@ use zkstd::common::{FftField, Group, Pairing};
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]
-pub struct Prover<C, P>
+pub struct Prover<P>
 where
-    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     pub(crate) prover_key: ProvingKey<P>,
@@ -35,13 +35,11 @@ where
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
     pub(crate) constraints: usize,
-    circuit: PhantomData<C>,
     pairing: PhantomData<P>,
 }
 
-impl<C, P> ops::Deref for Prover<C, P>
+impl<P> ops::Deref for Prover<P>
 where
-    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     type Target = ProvingKey<P>;
@@ -51,9 +49,8 @@ where
     }
 }
 
-impl<C, P> Prover<C, P>
+impl<P> Prover<P>
 where
-    C: Circuit<P::JubjubAffine>,
     P: Pairing,
 {
     pub(crate) fn new(
@@ -73,23 +70,22 @@ where
             transcript,
             size,
             constraints,
-            circuit: PhantomData,
             pairing: PhantomData,
         }
     }
 
     /// Prove the circuit
-    pub fn create_proof<R>(
+    pub fn create_proof<R, C>(
         &self,
         rng: &mut R,
         circuit: &C,
     ) -> Result<(Proof<P>, Vec<P::ScalarField>), Error>
     where
-        C: Circuit<P::JubjubAffine>,
+        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
         R: RngCore,
     {
         let mut prover =
-            ConstraintSystem::<P::JubjubAffine>::initialized(self.constraints);
+            Plonk::<P::JubjubAffine>::initialized(self.constraints);
 
         circuit.synthesize(&mut prover)?;
 
@@ -101,13 +97,12 @@ where
 
         let public_inputs = prover.instance();
         let public_input_indexes = prover.public_input_indexes();
-        let dense_public_inputs = PointsValue::new(ConstraintSystem::<
-            P::JubjubAffine,
-        >::dense_public_inputs(
-            &public_input_indexes,
-            &public_inputs,
-            self.size,
-        ));
+        let dense_public_inputs =
+            PointsValue::new(Plonk::<P::JubjubAffine>::dense_public_inputs(
+                &public_input_indexes,
+                &public_inputs,
+                self.size,
+            ));
 
         public_inputs.iter().for_each(|pi| {
             <Transcript as TranscriptProtocol<P>>::append_scalar(

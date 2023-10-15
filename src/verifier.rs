@@ -7,24 +7,22 @@
 use crate::prover::Proof;
 use zksnarks::error::Error;
 
-use crate::constraint_system::ConstraintSystem;
+use crate::constraint_system::Plonk;
 
-use core::marker::PhantomData;
 use poly_commit::EvaluationKey;
 use zksnarks::plonk::{Transcript, TranscriptProtocol, VerificationKey};
 use zkstd::common::{Pairing, Vec};
 
 /// Verify proofs of a given circuit
-pub struct Verifier<C, P: Pairing> {
+pub struct Verifier<P: Pairing> {
     verifier_key: VerificationKey<P>,
     opening_key: EvaluationKey<P>,
     public_input_indexes: Vec<usize>,
     transcript: Transcript,
     size: usize,
-    circuit: PhantomData<C>,
 }
 
-impl<C, P: Pairing> Verifier<C, P> {
+impl<P: Pairing> Verifier<P> {
     pub(crate) fn new(
         label: Vec<u8>,
         verifier_key: VerificationKey<P>,
@@ -42,7 +40,6 @@ impl<C, P: Pairing> Verifier<C, P> {
             public_input_indexes,
             transcript,
             size,
-            circuit: PhantomData,
         }
     }
 
@@ -69,12 +66,11 @@ impl<C, P: Pairing> Verifier<C, P> {
             )
         });
 
-        let dense_public_inputs =
-            ConstraintSystem::<P::JubjubAffine>::dense_public_inputs(
-                &self.public_input_indexes,
-                public_inputs,
-                self.size,
-            );
+        let dense_public_inputs = Plonk::<P::JubjubAffine>::dense_public_inputs(
+            &self.public_input_indexes,
+            public_inputs,
+            self.size,
+        );
 
         proof.verify(
             &self.verifier_key,

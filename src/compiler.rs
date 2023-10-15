@@ -4,8 +4,17 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use core::marker::PhantomData;
+
+use crate::constraint_system::{Plonk, Prover, Verifier};
+
 use poly_commit::{Coefficients as Coeffs, Fft, PointsValue as Points};
-use zksnarks::plonk::key::{
+use sp_std::vec;
+use zksnarks::circuit::Circuit;
+use zksnarks::constraint_system::ConstraintSystem;
+use zksnarks::error::Error;
+use zksnarks::keypair::Keypair;
+use zksnarks::plonk::keypair::{
     arithmetic,
     curve::{add, scalar},
     logic, permutation, range, ProvingKey, VerificationKey,
@@ -13,44 +22,50 @@ use zksnarks::plonk::key::{
 use zksnarks::plonk::PlonkParams;
 use zkstd::common::{Group, Pairing, Ring};
 
-use crate::constraint_system::{Circuit, ConstraintSystem, Prover, Verifier};
-use sp_std::vec;
-use zksnarks::error::Error;
-
 /// Generate the arguments to prove and verify a circuit
-pub struct Compiler;
+pub struct Compiler<P: Pairing, C: Circuit<P::JubjubAffine>> {
+    c: PhantomData<C>,
+    p: PhantomData<P>,
+}
 
-type CompilerResult<C, P> = Result<(Prover<C, P>, Verifier<C, P>), Error>;
-
-impl Compiler {
-    /// Create a new arguments set from a given circuit instance
-    ///
-    /// Use the default implementation of the circuit
-    pub fn compile<C, P>(
-        keypair: &mut PlonkParams<P>,
-        label: &[u8],
-    ) -> CompilerResult<C, P>
-    where
-        C: Circuit<P::JubjubAffine>,
+impl<
         P: Pairing,
-    {
-        Self::compile_with_circuit::<C, P>(keypair, label, &Default::default())
-    }
+        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
+    > Keypair<P, C> for Compiler<P, C>
+{
+    type Prover = Prover<P>;
+    type Verifier = Verifier<P>;
+    type PublicParameters = PlonkParams<P>;
+    type ConstraintSystem = Plonk<P::JubjubAffine>;
 
+    fn new(
+        pp: &Self::PublicParameters,
+    ) -> Result<(Self::Prover, Self::Verifier), Error> {
+        Self::compile_with_circuit(pp, b"plonk", &C::default())
+    }
+}
+
+impl<
+        P: Pairing,
+        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
+    > Compiler<P, C>
+{
     /// Create a new arguments set from a given circuit instance
     ///
     /// Use the provided circuit instead of the default implementation
-    pub fn compile_with_circuit<C, P>(
-        keypair: &mut PlonkParams<P>,
+    pub fn compile_with_circuit(
+        keypair: &PlonkParams<P>,
         label: &[u8],
         circuit: &C,
-    ) -> CompilerResult<C, P>
-    where
-        C: Circuit<P::JubjubAffine>,
-        P: Pairing,
-    {
+    ) -> Result<
+        (
+            <Self as Keypair<P, C>>::Prover,
+            <Self as Keypair<P, C>>::Verifier,
+        ),
+        Error,
+    > {
         let max_size = keypair.max_degree() >> 1;
-        let mut prover = ConstraintSystem::initialized(max_size);
+        let mut prover = Plonk::initialize(max_size);
 
         circuit.synthesize(&mut prover)?;
 
@@ -58,21 +73,22 @@ impl Compiler {
 
         let keypair = keypair.trim(n);
 
-        let (prover, verifier) =
-            Self::preprocess::<C, P>(label, &keypair, &prover)?;
+        let (prover, verifier) = Self::preprocess(label, &keypair, &prover)?;
 
         Ok((prover, verifier))
     }
 
-    fn preprocess<C, P>(
+    fn preprocess(
         label: &[u8],
         keypair: &PlonkParams<P>,
-        prover: &ConstraintSystem<P::JubjubAffine>,
-    ) -> CompilerResult<C, P>
-    where
-        C: Circuit<P::JubjubAffine>,
-        P: Pairing,
-    {
+        prover: &C::ConstraintSystem,
+    ) -> Result<
+        (
+            <Self as Keypair<P, C>>::Prover,
+            <Self as Keypair<P, C>>::Verifier,
+        ),
+        Error,
+    > {
         let constraints = prover.m();
         let n = constraints.next_power_of_two();
         let k = n.trailing_zeros();
@@ -96,19 +112,23 @@ impl Compiler {
         let mut q_variable_group_add =
             Points::new(vec![P::ScalarField::zero(); n]);
 
-        prover.constraints.iter().enumerate().for_each(|(i, c)| {
-            q_m.0[i] = c.q_m;
-            q_l.0[i] = c.q_l;
-            q_r.0[i] = c.q_r;
-            q_o.0[i] = c.q_o;
-            q_c.0[i] = c.q_c;
-            q_d.0[i] = c.q_d;
-            q_arith.0[i] = c.q_arith;
-            q_range.0[i] = c.q_range;
-            q_logic.0[i] = c.q_logic;
-            q_fixed_group_add.0[i] = c.q_fixed_group_add;
-            q_variable_group_add.0[i] = c.q_variable_group_add;
-        });
+        prover
+            .constraints()
+            .into_iter()
+            .enumerate()
+            .for_each(|(i, c)| {
+                q_m.0[i] = c.q_m;
+                q_l.0[i] = c.q_l;
+                q_r.0[i] = c.q_r;
+                q_o.0[i] = c.q_o;
+                q_c.0[i] = c.q_c;
+                q_d.0[i] = c.q_d;
+                q_arith.0[i] = c.q_arith;
+                q_range.0[i] = c.q_range;
+                q_logic.0[i] = c.q_logic;
+                q_fixed_group_add.0[i] = c.q_fixed_group_add;
+                q_variable_group_add.0[i] = c.q_variable_group_add;
+            });
 
         let q_m_poly = fft.idft(q_m);
         let q_l_poly = fft.idft(q_l);

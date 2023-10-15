@@ -8,7 +8,9 @@ use ec_pairing::TatePairing;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use zero_plonk::prelude::*;
+use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
+use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
 use zkstd::common::Group;
@@ -19,7 +21,6 @@ fn mul_generator_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
     let n = 9;
-    let label = b"demo";
     let mut pp = PlonkParams::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
@@ -43,9 +44,10 @@ fn mul_generator_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
@@ -60,11 +62,9 @@ fn mul_generator_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {
@@ -112,8 +112,7 @@ fn add_point_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
     let n = 4;
-    let label = b"demo";
-    let mut pp = PlonkParams::setup(n, &mut rng);
+    let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubExtended,
@@ -138,9 +137,10 @@ fn add_point_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_point(self.a);
             let w_b = composer.append_point(self.b);
@@ -154,11 +154,9 @@ fn add_point_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {
@@ -237,8 +235,7 @@ fn mul_point_works() {
     let mut rng = StdRng::seed_from_u64(8349u64);
 
     let n = 13;
-    let label = b"demo";
-    let mut pp = PlonkParams::setup(n, &mut rng);
+    let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
     #[derive(Debug)]
     pub struct DummyCircuit<P: Pairing> {
         a: P::JubjubScalar,
@@ -264,9 +261,10 @@ fn mul_point_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
             let w_b = composer.append_point(self.b);
@@ -280,11 +278,9 @@ fn mul_point_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {

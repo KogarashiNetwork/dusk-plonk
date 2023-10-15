@@ -4,11 +4,15 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
+use bls_12_381::Fr as BlsScalar;
 use ec_pairing::TatePairing;
+use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::prelude::*;
+use zero_plonk::constraint_system::{Compiler, Plonk};
+use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
+use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
 use zkstd::common::{FftField, Pairing};
@@ -41,9 +45,10 @@ fn range_works() {
     }
 
     impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+        type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
-            composer: &mut ConstraintSystem<JubjubAffine>,
+            composer: &mut Plonk<JubjubAffine>,
         ) -> Result<(), Error> {
             let w_a = composer.append_witness(self.a);
 
@@ -53,11 +58,9 @@ fn range_works() {
         }
     }
 
-    let (prover, verifier) = Compiler::compile::<
-        DummyCircuit<TatePairing>,
-        TatePairing,
-    >(&mut pp, label)
-    .expect("failed to compile circuit");
+    let (prover, verifier) =
+        Compiler::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+            .expect("failed to compile circuit");
 
     // default works
     {
@@ -85,8 +88,8 @@ fn range_works() {
     {
         let a = BlsScalar::one();
 
-        Compiler::compile_with_circuit::<DummyCircuit<TatePairing>,
-    TatePairing>(         &mut pp,
+        Compiler::compile_with_circuit(
+            &mut pp,
             label,
             &DummyCircuit::new(a, DEFAULT_BITS + 1),
         )
