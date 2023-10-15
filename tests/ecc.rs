@@ -13,8 +13,8 @@ use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
+use zkstd::common::CurveGroup;
 use zkstd::common::Group;
-use zkstd::common::{CurveGroup, Pairing};
 
 #[test]
 fn mul_generator_works() {
@@ -23,27 +23,27 @@ fn mul_generator_works() {
     let n = 9;
     let mut pp = PlonkParams::setup(n, &mut rng);
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::JubjubScalar,
-        b: P::JubjubExtended,
+    pub struct DummyCircuit {
+        a: BlsScalar,
+        b: JubjubAffine,
     }
 
-    impl DummyCircuit<TatePairing> {
-        pub fn new(a: JubjubScalar) -> Self {
+    impl DummyCircuit {
+        pub fn new(a: BlsScalar) -> Self {
             Self {
                 a,
-                b: JubjubExtended::ADDITIVE_GENERATOR * a,
+                b: (JubjubAffine::ADDITIVE_GENERATOR * a).into(),
             }
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
-            Self::new(JubjubScalar::from(7u64))
+            Self::new(BlsScalar::from(7u64))
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -53,7 +53,7 @@ fn mul_generator_works() {
             let w_b = composer.append_point(self.b);
             let w_x = composer.component_mul_generator(
                 w_a,
-                JubjubExtended::ADDITIVE_GENERATOR,
+                JubjubAffine::ADDITIVE_GENERATOR,
             )?;
 
             composer.assert_equal_point(w_b, w_x);
@@ -63,12 +63,12 @@ fn mul_generator_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
     {
-        let a = JubjubScalar::random(&mut rng);
+        let a = BlsScalar::random(&mut rng);
         let (proof, public_inputs) = prover
             .create_proof(&mut rng, &DummyCircuit::new(a))
             .expect("failed to prove");
@@ -80,11 +80,11 @@ fn mul_generator_works() {
 
     // negative check
     {
-        let a = JubjubScalar::from(7u64);
-        let b = JubjubExtended::ADDITIVE_GENERATOR * a;
+        let a = BlsScalar::from(7u64);
+        let b: JubjubAffine = (JubjubAffine::ADDITIVE_GENERATOR * a).into();
 
-        let x = JubjubScalar::from(8u64);
-        let y = JubjubExtended::ADDITIVE_GENERATOR * x;
+        let x = BlsScalar::from(8u64);
+        let y = (JubjubAffine::ADDITIVE_GENERATOR * x).into();
 
         assert_ne!(b, y);
 
@@ -96,10 +96,10 @@ fn mul_generator_works() {
     // invalid jubjub won't panic
     {
         let a = -BlsScalar::one();
-        let a = JubjubScalar::to_mont_form(a.0);
+        let a = BlsScalar::to_mont_form(a.0);
 
-        let x = JubjubScalar::from(8u64);
-        let y = JubjubExtended::ADDITIVE_GENERATOR * x;
+        let x = BlsScalar::from(8u64);
+        let y = (JubjubAffine::ADDITIVE_GENERATOR * x).into();
 
         prover
             .create_proof(&mut rng, &DummyCircuit { a, b: y })
@@ -114,29 +114,31 @@ fn add_point_works() {
     let n = 4;
     let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::JubjubExtended,
-        b: P::JubjubExtended,
-        c: P::JubjubExtended,
+    pub struct DummyCircuit {
+        a: JubjubAffine,
+        b: JubjubAffine,
+        c: JubjubAffine,
     }
 
-    impl DummyCircuit<TatePairing> {
-        pub fn new(a: &JubjubScalar, b: &JubjubScalar) -> Self {
-            let a = JubjubExtended::ADDITIVE_GENERATOR * *a;
-            let b = JubjubExtended::ADDITIVE_GENERATOR * *b;
-            let c = a + b;
+    impl DummyCircuit {
+        pub fn new(a: &BlsScalar, b: &BlsScalar) -> Self {
+            let a: JubjubAffine =
+                (JubjubAffine::ADDITIVE_GENERATOR * *a).into();
+            let b: JubjubAffine =
+                (JubjubAffine::ADDITIVE_GENERATOR * *b).into();
+            let c: JubjubAffine = (a + b).into();
 
             Self { a, b, c }
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
-            Self::new(&JubjubScalar::from(7u64), &JubjubScalar::from(8u64))
+            Self::new(&BlsScalar::from(7u64), &BlsScalar::from(8u64))
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -155,13 +157,13 @@ fn add_point_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
     {
-        let a = JubjubScalar::random(&mut rng);
-        let b = JubjubScalar::random(&mut rng);
+        let a = BlsScalar::random(&mut rng);
+        let b = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
             .create_proof(&mut rng, &DummyCircuit::new(&a, &b))
@@ -174,15 +176,15 @@ fn add_point_works() {
 
     // identity works
     {
-        let a = JubjubScalar::random(&mut rng);
-        let a = JubjubExtended::ADDITIVE_GENERATOR * a;
+        let a = BlsScalar::random(&mut rng);
+        let a = (JubjubAffine::ADDITIVE_GENERATOR * a).into();
 
         let (proof, public_inputs) = prover
             .create_proof(
                 &mut rng,
                 &DummyCircuit {
                     a,
-                    b: JubjubExtended::ADDITIVE_IDENTITY,
+                    b: JubjubAffine::ADDITIVE_IDENTITY,
                     c: a,
                 },
             )
@@ -199,9 +201,9 @@ fn add_point_works() {
             .create_proof(
                 &mut rng,
                 &DummyCircuit {
-                    a: JubjubExtended::ADDITIVE_IDENTITY,
-                    b: JubjubExtended::ADDITIVE_IDENTITY,
-                    c: JubjubExtended::ADDITIVE_IDENTITY,
+                    a: JubjubAffine::ADDITIVE_IDENTITY,
+                    b: JubjubAffine::ADDITIVE_IDENTITY,
+                    c: JubjubAffine::ADDITIVE_IDENTITY,
                 },
             )
             .expect("failed to prove");
@@ -213,16 +215,16 @@ fn add_point_works() {
 
     // negative check
     {
-        let a = JubjubScalar::from(7u64);
-        let a = JubjubExtended::ADDITIVE_GENERATOR * a;
+        let a = BlsScalar::from(7u64);
+        let a: JubjubAffine = (JubjubAffine::ADDITIVE_GENERATOR * a).into();
 
-        let b = JubjubScalar::from(8u64);
-        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
+        let b = BlsScalar::from(8u64);
+        let b: JubjubAffine = (JubjubAffine::ADDITIVE_GENERATOR * b).into();
 
-        let c = JubjubScalar::from(9u64);
-        let c = JubjubExtended::ADDITIVE_GENERATOR * c;
+        let c = BlsScalar::from(9u64);
+        let c: JubjubAffine = (JubjubAffine::ADDITIVE_GENERATOR * c).into();
 
-        assert_ne!(c, a + b);
+        assert_ne!(c, (a + b).into());
 
         prover
             .create_proof(&mut rng, &DummyCircuit { a, b, c })
@@ -237,30 +239,30 @@ fn mul_point_works() {
     let n = 13;
     let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::JubjubScalar,
-        b: P::JubjubExtended,
-        c: P::JubjubExtended,
+    pub struct DummyCircuit {
+        a: BlsScalar,
+        b: JubjubAffine,
+        c: JubjubAffine,
     }
 
-    impl DummyCircuit<TatePairing> {
-        pub fn new(a: JubjubScalar, b: JubjubExtended) -> Self {
-            let c = b * a;
+    impl DummyCircuit {
+        pub fn new(a: BlsScalar, b: JubjubAffine) -> Self {
+            let c = (b * a).into();
 
             Self { a, b, c }
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
-            let b = JubjubScalar::from(8u64);
-            let b = JubjubExtended::ADDITIVE_GENERATOR * b;
+            let b = BlsScalar::from(8u64);
+            let b = (JubjubAffine::ADDITIVE_GENERATOR * b).into();
 
-            Self::new(JubjubScalar::from(7u64), b)
+            Self::new(BlsScalar::from(7u64), b)
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -279,14 +281,14 @@ fn mul_point_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
     {
-        let a = JubjubScalar::random(&mut rng);
-        let b = JubjubScalar::random(&mut rng);
-        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
+        let a = BlsScalar::random(&mut rng);
+        let b = BlsScalar::random(&mut rng);
+        let b = (JubjubAffine::ADDITIVE_GENERATOR * b).into();
 
         let (proof, public_inputs) = prover
             .create_proof(&mut rng, &DummyCircuit::new(a, b))
@@ -299,18 +301,18 @@ fn mul_point_works() {
 
     // negative works
     {
-        let a = JubjubScalar::random(&mut rng);
-        let b = JubjubScalar::random(&mut rng);
-        let b = JubjubExtended::ADDITIVE_GENERATOR * b;
+        let a = BlsScalar::random(&mut rng);
+        let b = BlsScalar::random(&mut rng);
+        let b = (JubjubAffine::ADDITIVE_GENERATOR * b).into();
         let c = b * a;
 
-        let x = JubjubScalar::random(&mut rng);
-        let x = JubjubExtended::ADDITIVE_GENERATOR * x;
+        let x = BlsScalar::random(&mut rng);
+        let x = JubjubAffine::ADDITIVE_GENERATOR * x;
 
         assert_ne!(c, x);
 
         prover
-            .create_proof(&mut rng, &DummyCircuit { a, b, c: x })
+            .create_proof(&mut rng, &DummyCircuit { a, b, c: x.into() })
             .expect_err("circuit is not satisfied");
     }
 }

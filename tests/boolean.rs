@@ -14,7 +14,7 @@ use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
-use zkstd::common::{CurveGroup, Group, Pairing};
+use zkstd::common::{CurveGroup, Group};
 
 #[test]
 fn boolean_works() {
@@ -24,23 +24,23 @@ fn boolean_works() {
     let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
 
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::ScalarField,
+    pub struct DummyCircuit {
+        a: BlsScalar,
     }
 
-    impl DummyCircuit<TatePairing> {
+    impl DummyCircuit {
         pub fn new(a: BlsScalar) -> Self {
             Self { a }
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
             Self::new(1u64.into())
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -55,7 +55,7 @@ fn boolean_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -99,31 +99,31 @@ fn select_works() {
     let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
 
     #[derive(Clone, Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        bit: P::ScalarField,
-        a: P::ScalarField,
-        b: P::ScalarField,
-        res: P::ScalarField,
+    pub struct DummyCircuit {
+        bit: BlsScalar,
+        a: BlsScalar,
+        b: BlsScalar,
+        res: BlsScalar,
 
-        zero_bit: P::ScalarField,
-        zero_a: P::ScalarField,
-        zero_res: P::ScalarField,
+        zero_bit: BlsScalar,
+        zero_a: BlsScalar,
+        zero_res: BlsScalar,
 
-        one_bit: P::ScalarField,
-        one_a: P::ScalarField,
-        one_res: P::ScalarField,
+        one_bit: BlsScalar,
+        one_a: BlsScalar,
+        one_res: BlsScalar,
 
-        point_bit: P::ScalarField,
-        point_a: P::JubjubExtended,
-        point_b: P::JubjubExtended,
-        point_res: P::JubjubExtended,
+        point_bit: BlsScalar,
+        point_a: JubjubAffine,
+        point_b: JubjubAffine,
+        point_res: JubjubAffine,
 
-        identity_bit: P::ScalarField,
-        identity_a: P::JubjubExtended,
-        identity_res: P::JubjubExtended,
+        identity_bit: BlsScalar,
+        identity_a: JubjubAffine,
+        identity_res: JubjubAffine,
     }
 
-    impl DummyCircuit<TatePairing> {
+    impl DummyCircuit {
         #[allow(clippy::too_many_arguments)]
         pub fn new(
             bit: BlsScalar,
@@ -134,10 +134,10 @@ fn select_works() {
             one_bit: BlsScalar,
             one_a: BlsScalar,
             point_bit: BlsScalar,
-            point_a: JubjubExtended,
-            point_b: JubjubExtended,
+            point_a: JubjubAffine,
+            point_b: JubjubAffine,
             identity_bit: BlsScalar,
-            identity_a: JubjubExtended,
+            identity_a: JubjubAffine,
         ) -> Self {
             let res = if bit == BlsScalar::one() { a } else { b };
 
@@ -162,7 +162,7 @@ fn select_works() {
             let identity_res = if identity_bit == BlsScalar::one() {
                 identity_a
             } else {
-                JubjubExtended::ADDITIVE_IDENTITY
+                JubjubAffine::ADDITIVE_IDENTITY
             };
 
             Self {
@@ -187,7 +187,7 @@ fn select_works() {
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
             let bit = BlsScalar::one();
             let a = BlsScalar::from(3u64);
@@ -197,13 +197,16 @@ fn select_works() {
             let one_bit = BlsScalar::one();
             let one_a = BlsScalar::from(11u64);
             let point_bit = BlsScalar::zero();
-            let point_a =
-                JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::from(13u64);
-            let point_b =
-                JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::from(17u64);
+            let point_a = (JubjubExtended::ADDITIVE_GENERATOR
+                * JubjubScalar::from(13u64))
+            .into();
+            let point_b = (JubjubExtended::ADDITIVE_GENERATOR
+                * JubjubScalar::from(17u64))
+            .into();
             let identity_bit = BlsScalar::one();
-            let identity_a =
-                JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::from(19u64);
+            let identity_a = (JubjubExtended::ADDITIVE_GENERATOR
+                * JubjubScalar::from(19u64))
+            .into();
 
             Self::new(
                 bit,
@@ -222,7 +225,7 @@ fn select_works() {
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -271,7 +274,7 @@ fn select_works() {
     }
 
     let (prover, verifier): (Prover<TatePairing>, Verifier<TatePairing>) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -286,12 +289,13 @@ fn select_works() {
         let one_a = BlsScalar::random(&mut rng);
         let point_bit = bit;
         let point_a = JubjubScalar::random(&mut rng);
-        let point_a = JubjubExtended::ADDITIVE_GENERATOR * point_a;
+        let point_a = (JubjubExtended::ADDITIVE_GENERATOR * point_a).into();
         let point_b = JubjubScalar::random(&mut rng);
-        let point_b = JubjubExtended::ADDITIVE_GENERATOR * point_b;
+        let point_b = (JubjubExtended::ADDITIVE_GENERATOR * point_b).into();
         let identity_bit = bit;
         let identity_a = JubjubScalar::random(&mut rng);
-        let identity_a = JubjubExtended::ADDITIVE_GENERATOR * identity_a;
+        let identity_a =
+            (JubjubExtended::ADDITIVE_GENERATOR * identity_a).into();
 
         let circuit = DummyCircuit::new(
             bit,
@@ -326,12 +330,13 @@ fn select_works() {
         let one_a = BlsScalar::random(&mut rng);
         let point_bit = bit;
         let point_a = JubjubScalar::random(&mut rng);
-        let point_a = JubjubExtended::ADDITIVE_GENERATOR * point_a;
+        let point_a = (JubjubExtended::ADDITIVE_GENERATOR * point_a).into();
         let point_b = JubjubScalar::random(&mut rng);
-        let point_b = JubjubExtended::ADDITIVE_GENERATOR * point_b;
+        let point_b = (JubjubExtended::ADDITIVE_GENERATOR * point_b).into();
         let identity_bit = bit;
         let identity_a = JubjubScalar::random(&mut rng);
-        let identity_a = JubjubExtended::ADDITIVE_GENERATOR * identity_a;
+        let identity_a =
+            (JubjubExtended::ADDITIVE_GENERATOR * identity_a).into();
 
         let circuit = DummyCircuit::new(
             bit,
@@ -367,12 +372,12 @@ fn select_works() {
     let one_a = BlsScalar::random(&mut rng);
     let point_bit = bit;
     let point_a = JubjubScalar::random(&mut rng);
-    let point_a = JubjubExtended::ADDITIVE_GENERATOR * point_a;
+    let point_a = (JubjubExtended::ADDITIVE_GENERATOR * point_a).into();
     let point_b = JubjubScalar::random(&mut rng);
-    let point_b = JubjubExtended::ADDITIVE_GENERATOR * point_b;
+    let point_b = (JubjubExtended::ADDITIVE_GENERATOR * point_b).into();
     let identity_bit = bit;
     let identity_a = JubjubScalar::random(&mut rng);
-    let identity_a = JubjubExtended::ADDITIVE_GENERATOR * identity_a;
+    let identity_a = (JubjubExtended::ADDITIVE_GENERATOR * identity_a).into();
 
     let base = DummyCircuit::new(
         bit,
@@ -428,7 +433,7 @@ fn select_works() {
 
         let x = JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::one();
 
-        circuit.point_res += x;
+        circuit.point_res = (circuit.point_res + x).into();
 
         prover
             .create_proof(&mut rng, &circuit)
@@ -441,7 +446,7 @@ fn select_works() {
 
         let x = JubjubExtended::ADDITIVE_GENERATOR * JubjubScalar::one();
 
-        circuit.identity_res += x;
+        circuit.identity_res = (circuit.identity_res + x).into();
 
         prover
             .create_proof(&mut rng, &circuit)

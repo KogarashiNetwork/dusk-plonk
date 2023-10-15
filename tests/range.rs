@@ -15,7 +15,7 @@ use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
-use zkstd::common::{FftField, Pairing};
+use zkstd::common::FftField;
 
 #[test]
 fn range_works() {
@@ -27,24 +27,24 @@ fn range_works() {
 
     const DEFAULT_BITS: usize = 76;
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::ScalarField,
+    pub struct DummyCircuit {
+        a: BlsScalar,
         bits: usize,
     }
 
-    impl DummyCircuit<TatePairing> {
+    impl DummyCircuit {
         pub fn new(a: BlsScalar, bits: usize) -> Self {
             Self { a, bits }
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
             Self::new(7u64.into(), DEFAULT_BITS)
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -59,7 +59,7 @@ fn range_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works

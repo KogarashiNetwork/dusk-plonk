@@ -24,12 +24,12 @@ fn decomposition_works() {
     let mut pp = PlonkParams::<TatePairing>::setup(n, &mut rng);
 
     #[derive(Debug)]
-    pub struct DummyCircuit<const N: usize, P: Pairing> {
-        a: P::ScalarField,
-        bits: [P::ScalarField; N],
+    pub struct DummyCircuit<const N: usize> {
+        a: BlsScalar,
+        bits: [BlsScalar; N],
     }
 
-    impl<const N: usize> DummyCircuit<N, TatePairing> {
+    impl<const N: usize> DummyCircuit<N> {
         pub fn new(a: BlsScalar) -> Self {
             let mut bits = [BlsScalar::zero(); N];
 
@@ -41,13 +41,13 @@ fn decomposition_works() {
         }
     }
 
-    impl<const N: usize> Default for DummyCircuit<N, TatePairing> {
+    impl<const N: usize> Default for DummyCircuit<N> {
         fn default() -> Self {
             Self::new(BlsScalar::from(23u64))
         }
     }
 
-    impl<const N: usize> Circuit<JubjubAffine> for DummyCircuit<N, TatePairing> {
+    impl<const N: usize> Circuit<JubjubAffine> for DummyCircuit<N> {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -72,7 +72,7 @@ fn decomposition_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<256, TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit<256>>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -80,7 +80,7 @@ fn decomposition_works() {
         let a = BlsScalar::random(&mut rng);
 
         let (proof, public_inputs) = prover
-            .create_proof(&mut rng, &DummyCircuit::<256, TatePairing>::new(a))
+            .create_proof(&mut rng, &DummyCircuit::<256>::new(a))
             .expect("failed to prove");
 
         verifier
@@ -92,7 +92,7 @@ fn decomposition_works() {
     {
         let a = BlsScalar::random(&mut rng);
 
-        let mut circuit = DummyCircuit::<256, TatePairing>::new(a);
+        let mut circuit = DummyCircuit::<256>::new(a);
 
         circuit.bits[10] = circuit.bits[10] ^ BlsScalar::one();
 

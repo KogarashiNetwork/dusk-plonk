@@ -16,7 +16,6 @@ use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
-use zkstd::common::Pairing;
 use zkstd::common::{FftField, Group};
 
 #[test]
@@ -28,14 +27,14 @@ fn logic_and_works() {
     let mut pp = PlonkParams::setup(n, &mut rng);
 
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::ScalarField,
-        b: P::ScalarField,
-        c: P::ScalarField,
+    pub struct DummyCircuit {
+        a: BlsScalar,
+        b: BlsScalar,
+        c: BlsScalar,
         bits: usize,
     }
 
-    impl DummyCircuit<TatePairing> {
+    impl DummyCircuit {
         pub fn new(a: BlsScalar, b: BlsScalar, bits: usize) -> Self {
             let x = BlsScalar::pow_of_2(bits as u64) - BlsScalar::one();
 
@@ -47,13 +46,13 @@ fn logic_and_works() {
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
             Self::new(7u64.into(), 8u64.into(), 256)
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -72,7 +71,7 @@ fn logic_and_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -185,14 +184,14 @@ fn logic_xor_works() {
     let mut pp = PlonkParams::setup(n, &mut rng);
 
     #[derive(Debug)]
-    pub struct DummyCircuit<P: Pairing> {
-        a: P::ScalarField,
-        b: P::ScalarField,
-        c: P::ScalarField,
+    pub struct DummyCircuit {
+        a: BlsScalar,
+        b: BlsScalar,
+        c: BlsScalar,
         bits: usize,
     }
 
-    impl DummyCircuit<TatePairing> {
+    impl DummyCircuit {
         pub fn new(a: BlsScalar, b: BlsScalar, bits: usize) -> Self {
             let x = BlsScalar::pow_of_2(bits as u64) - BlsScalar::one();
 
@@ -204,13 +203,13 @@ fn logic_xor_works() {
         }
     }
 
-    impl Default for DummyCircuit<TatePairing> {
+    impl Default for DummyCircuit {
         fn default() -> Self {
             Self::new(7u64.into(), 8u64.into(), 256)
         }
     }
 
-    impl Circuit<JubjubAffine> for DummyCircuit<TatePairing> {
+    impl Circuit<JubjubAffine> for DummyCircuit {
         type ConstraintSystem = Plonk<JubjubAffine>;
         fn synthesize(
             &self,
@@ -229,7 +228,7 @@ fn logic_xor_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit<TatePairing>>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
