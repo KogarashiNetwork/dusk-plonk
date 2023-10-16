@@ -118,14 +118,6 @@ pub struct Plonk<C: TwistedEdwardsAffine> {
 impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
     type Wire = PrivateWire;
     type Constraints = Vec<Constraint<C::Scalar>>;
-    fn new() -> Self {
-        Self {
-            constraints: Vec::default(),
-            instance: HashMap::new(),
-            witness: Vec::default(),
-            perm: Permutation::new(),
-        }
-    }
 
     fn initialize() -> Self {
         let mut slf = Self::new();
@@ -172,6 +164,15 @@ impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for Plonk<C> {
 }
 
 impl<C: TwistedEdwardsAffine> Plonk<C> {
+    fn new() -> Self {
+        Self {
+            constraints: Vec::default(),
+            instance: HashMap::new(),
+            witness: Vec::default(),
+            perm: Permutation::new(),
+        }
+    }
+
     /// Zero representation inside the constraint system.
     ///
     /// A turbo composer expects the first witness to be always present and to
