@@ -103,21 +103,21 @@ use crate::permutation::Permutation;
 #[derive(Debug, Clone)]
 pub struct Plonk<C: TwistedEdwardsAffine> {
     /// Constraint system gates
-    pub(crate) constraints: Vec<Constraint<C::Scalar>>,
+    pub(crate) constraints: Vec<Constraint<C::Range>>,
 
     /// Sparse representation of the public inputs
-    pub(crate) instance: HashMap<usize, C::Scalar>,
+    pub(crate) instance: HashMap<usize, C::Range>,
 
     /// Witness values
-    pub(crate) witness: Vec<C::Scalar>,
+    pub(crate) witness: Vec<C::Range>,
 
     /// Permutation argument.
-    pub(crate) perm: Permutation<C::Scalar>,
+    pub(crate) perm: Permutation<C::Range>,
 }
 
 impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
     type Wire = PrivateWire;
-    type Constraints = Vec<Constraint<C::Scalar>>;
+    type Constraints = Vec<Constraint<C::Range>>;
     fn new() -> Self {
         Self {
             constraints: Vec::default(),
