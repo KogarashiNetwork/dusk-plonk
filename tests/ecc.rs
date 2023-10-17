@@ -63,7 +63,7 @@ fn mul_generator_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -157,7 +157,7 @@ fn add_point_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -281,7 +281,7 @@ fn mul_point_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
