@@ -150,15 +150,15 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
         self.constraints.len()
     }
 
-    fn alloc_instance(&mut self, instance: <C>::Range) -> Self::Wire {
+    fn alloc_instance(&mut self, instance: C::Range) -> Self::Wire {
         self.append_public(instance)
     }
 
-    fn alloc_witness(&mut self, witness: <C>::Range) -> Self::Wire {
+    fn alloc_witness(&mut self, witness: C::Range) -> Self::Wire {
         self.append_witness(witness)
     }
 
-    fn instance(&self) -> Vec<<C>::Range> {
+    fn instance(&self) -> Vec<C::Range> {
         Vec::new()
     }
 }
@@ -197,8 +197,8 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     const IDENTITY: WitnessPoint = WitnessPoint::new(Self::ZERO, Self::ONE);
 
     pub(crate) fn public_input_indexes(&self) -> Vec<usize> {
-        let mut public_input_indexes: Vec<_> =
-            self.instance.keys().copied().collect();
+        let mut public_input_indexes =
+            self.instance.keys().copied().collect::<Vec<_>>();
 
         public_input_indexes.as_mut_slice().sort();
 
@@ -315,9 +315,9 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         // skip bits outside of argument `num_bits`
         let a_bit_iter = BitIterator8::new(self[a].to_raw_bytes());
-        let a_bits: Vec<_> = a_bit_iter.skip(256 - num_bits).collect();
+        let a_bits  = a_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
         let b_bit_iter = BitIterator8::new(self[b].to_raw_bytes());
-        let b_bits: Vec<_> = b_bit_iter.skip(256 - num_bits).collect();
+        let b_bits  = b_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
 
         //
         // * +-----+-----+-----+-----+
@@ -424,7 +424,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let bits: usize = 256;
 
         // compute 2^iG
-        let mut wnaf_point_multiples: Vec<C> = {
+        let mut wnaf_point_multiples = {
             let mut multiples = vec![C::Extended::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
@@ -447,13 +447,13 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let scalar = C::Range::from(self[jubjub]);
 
         let width = 2;
-        let wnaf_entries = compute_windowed_naf::<C::Range>(scalar, width);
+        let wnaf_entries = compute_windowed_naf(scalar, width);
 
         debug_assert_eq!(wnaf_entries.len(), bits);
 
         // initialize the accumulators
         let mut scalar_acc = vec![C::Range::zero()];
-        let mut point_acc = vec![C::from(C::Extended::ADDITIVE_IDENTITY)];
+        let mut point_acc = vec![C::ADDITIVE_IDENTITY];
 
         // auxillary point to help with checks on the backend
         let two = C::Range::from(2u64);
@@ -463,14 +463,14 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             .enumerate()
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
-                    0 => (C::Range::zero(), C::Extended::ADDITIVE_IDENTITY),
+                    0 => (C::Range::zero(), C::ADDITIVE_IDENTITY),
                     -1 => (
                         C::Range::one().neg(),
-                        -(wnaf_point_multiples[i]).to_extended(),
+                        -wnaf_point_multiples[i],
                     ),
                     1 => (
                         C::Range::one(),
-                        (wnaf_point_multiples[i]).to_extended(),
+                        wnaf_point_multiples[i],
                     ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
@@ -481,8 +481,6 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
                 let point = point_acc[i] + point_to_add;
                 point_acc.push(C::from(point));
-
-                let point_to_add: C = point_to_add.into();
 
                 let x_alpha = point_to_add.get_x();
                 let y_alpha = point_to_add.get_y();
