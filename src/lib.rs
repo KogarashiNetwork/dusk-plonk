@@ -315,9 +315,9 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         // skip bits outside of argument `num_bits`
         let a_bit_iter = BitIterator8::new(self[a].to_raw_bytes());
-        let a_bits  = a_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
+        let a_bits = a_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
         let b_bit_iter = BitIterator8::new(self[b].to_raw_bytes());
-        let b_bits  = b_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
+        let b_bits = b_bit_iter.skip(256 - num_bits).collect::<Vec<_>>();
 
         //
         // * +-----+-----+-----+-----+
@@ -464,14 +464,8 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
                     0 => (C::Range::zero(), C::ADDITIVE_IDENTITY),
-                    -1 => (
-                        C::Range::one().neg(),
-                        -wnaf_point_multiples[i],
-                    ),
-                    1 => (
-                        C::Range::one(),
-                        wnaf_point_multiples[i],
-                    ),
+                    -1 => (C::Range::one().neg(), -wnaf_point_multiples[i]),
+                    1 => (C::Range::one(), wnaf_point_multiples[i]),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
 
