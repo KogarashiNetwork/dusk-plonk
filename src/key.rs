@@ -37,7 +37,7 @@ impl<
     type PublicParameters = PlonkParams<P>;
     type ConstraintSystem = Plonk<P::JubjubAffine>;
 
-    fn new(
+    fn compile(
         pp: &Self::PublicParameters,
     ) -> Result<(Self::Prover, Self::Verifier), Error> {
         Self::compile_with_circuit(pp, b"plonk", &C::default())

@@ -118,14 +118,6 @@ pub struct Plonk<C: TwistedEdwardsAffine> {
 impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
     type Wire = PrivateWire;
     type Constraints = Vec<Constraint<C::Range>>;
-    fn new() -> Self {
-        Self {
-            constraints: Vec::default(),
-            instance: HashMap::new(),
-            witness: Vec::default(),
-            perm: Permutation::new(),
-        }
-    }
 
     fn initialize() -> Self {
         let mut slf = Self::new();

@@ -59,7 +59,7 @@ fn range_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::new(&mut pp)
+        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
