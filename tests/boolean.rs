@@ -14,7 +14,7 @@ use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
 use zksnarks::plonk::PlonkParams;
 use zksnarks::public_params::PublicParameters;
-use zkstd::common::{CurveGroup, Group};
+use zkstd::common::{Group, TwistedEdwardsCurve};
 
 #[test]
 fn boolean_works() {

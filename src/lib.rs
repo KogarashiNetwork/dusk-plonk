@@ -90,8 +90,8 @@ use zksnarks::{
     constraint_system::ConstraintSystem, plonk::wire::PrivateWire, Constraint,
 };
 use zkstd::common::{
-    CurveGroup, FftField, Group, Neg, PrimeField, Ring, TwistedEdwardsAffine,
-    Vec,
+    FftField, Group, Neg, PrimeField, Ring, TwistedEdwardsAffine,
+    TwistedEdwardsCurve, TwistedEdwardsExtended, Vec,
 };
 
 use crate::bit_iterator::BitIterator8;
@@ -164,7 +164,7 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
 }
 
 impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for Plonk<C> {
-    type Output = C::Scalar;
+    type Output = C::Range;
 
     fn index(&self, w: PrivateWire) -> &Self::Output {
         &self.witness[w.index()]
@@ -196,7 +196,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         public_input_indexes
     }
 
-    pub(crate) fn instance(&self) -> Vec<C::Scalar> {
+    pub(crate) fn instance(&self) -> Vec<C::Range> {
         self.public_input_indexes()
             .iter()
             .filter_map(|idx| self.instance.get(idx).copied())
@@ -205,10 +205,10 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
     pub(crate) fn dense_public_inputs(
         public_input_indexes: &[usize],
-        public_inputs: &[C::Scalar],
+        public_inputs: &[C::Range],
         size: usize,
-    ) -> Vec<C::Scalar> {
-        let mut dense_public_inputs = vec![C::Scalar::zero(); size];
+    ) -> Vec<C::Range> {
+        let mut dense_public_inputs = vec![C::Range::zero(); size];
 
         public_input_indexes
             .iter()
@@ -223,7 +223,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     }
 
     /// Allocate a witness value into the composer and return its index.
-    pub fn append_witness<W: Into<C::Scalar>>(
+    pub fn append_witness<W: Into<C::Range>>(
         &mut self,
         witness: W,
     ) -> PrivateWire {
@@ -231,7 +231,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     }
 
     /// Append a new width-4 poly gate/constraint.
-    pub fn append_custom_gate(&mut self, constraint: Constraint<C::Scalar>) {
+    pub fn append_custom_gate(&mut self, constraint: Constraint<C::Range>) {
         #[allow(deprecated)]
         self.append_custom_gate_internal(constraint)
     }
@@ -239,7 +239,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     ///
     pub fn append_witness_internal(
         &mut self,
-        witness: C::Scalar,
+        witness: C::Range,
     ) -> PrivateWire {
         let n = self.witness.len();
 
@@ -255,7 +255,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     ///
     pub fn append_custom_gate_internal(
         &mut self,
-        constraint: Constraint<C::Scalar>,
+        constraint: Constraint<C::Range>,
     ) {
         let n = self.constraints.len();
 
@@ -299,10 +299,10 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let num_bits = cmp::min(num_bits, 256);
         let num_quads = num_bits >> 1;
 
-        let bls_four = C::Scalar::from(4u64);
-        let mut left_acc = C::Scalar::zero();
-        let mut right_acc = C::Scalar::zero();
-        let mut out_acc = C::Scalar::zero();
+        let bls_four = C::Range::from(4u64);
+        let mut left_acc = C::Range::zero();
+        let mut right_acc = C::Range::zero();
+        let mut out_acc = C::Range::zero();
 
         // skip bits outside of argument `num_bits`
         let a_bit_iter = BitIterator8::new(self[a].to_raw_bytes());
@@ -340,23 +340,23 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             let l = (a_bits[idx] as u8) << 1;
             let r = a_bits[idx + 1] as u8;
             let left_quad = l + r;
-            let left_quad_bls = C::Scalar::from(left_quad as u64);
+            let left_quad_bls = C::Range::from(left_quad as u64);
 
             let l = (b_bits[idx] as u8) << 1;
             let r = b_bits[idx + 1] as u8;
             let right_quad = l + r;
-            let right_quad_bls = C::Scalar::from(right_quad as u64);
+            let right_quad_bls = C::Range::from(right_quad as u64);
 
             let out_quad_bls = if is_component_xor {
                 left_quad ^ right_quad
             } else {
                 left_quad & right_quad
             } as u64;
-            let out_quad_bls = C::Scalar::from(out_quad_bls);
+            let out_quad_bls = C::Range::from(out_quad_bls);
 
             // `w` argument to safeguard the quotient polynomial
             let prod_quad_bls = (left_quad * right_quad) as u64;
-            let prod_quad_bls = C::Scalar::from(prod_quad_bls);
+            let prod_quad_bls = C::Range::from(prod_quad_bls);
 
             // Now that we've computed this round results, we need to apply the
             // logic transition constraint that will check that
@@ -415,7 +415,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let bits: usize = 256;
 
         // compute 2^iG
-        let mut wnaf_point_multiples: Vec<_> = {
+        let mut wnaf_point_multiples: Vec<C> = {
             let mut multiples = vec![C::Extended::ADDITIVE_IDENTITY; bits];
 
             multiples[0] = generator;
@@ -435,33 +435,33 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         // we should error instead of producing invalid proofs - otherwise this
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
-        let scalar = C::Scalar::from(self[jubjub]);
+        let scalar = C::Range::from(self[jubjub]);
 
         let width = 2;
-        let wnaf_entries = compute_windowed_naf::<C::Scalar>(scalar, width);
+        let wnaf_entries = compute_windowed_naf::<C::Range>(scalar, width);
 
         debug_assert_eq!(wnaf_entries.len(), bits);
 
         // initialize the accumulators
-        let mut scalar_acc = vec![C::Scalar::zero()];
+        let mut scalar_acc = vec![C::Range::zero()];
         let mut point_acc = vec![C::from(C::Extended::ADDITIVE_IDENTITY)];
 
         // auxillary point to help with checks on the backend
-        let two = C::Scalar::from(2u64);
+        let two = C::Range::from(2u64);
         let xy_alphas: Vec<_> = wnaf_entries
             .iter()
             .rev()
             .enumerate()
             .map(|(i, entry)| {
                 let (scalar_to_add, point_to_add) = match entry {
-                    0 => (C::Scalar::zero(), C::Extended::ADDITIVE_IDENTITY),
+                    0 => (C::Range::zero(), C::Extended::ADDITIVE_IDENTITY),
                     -1 => (
-                        C::Scalar::one().neg(),
-                        -C::Extended::from(wnaf_point_multiples[i]),
+                        C::Range::one().neg(),
+                        -(wnaf_point_multiples[i]).to_extended(),
                     ),
                     1 => (
-                        C::Scalar::one(),
-                        C::Extended::from(wnaf_point_multiples[i]),
+                        C::Range::one(),
+                        (wnaf_point_multiples[i]).to_extended(),
                     ),
                     _ => return Err(Error::UnsupportedWNAF2k),
                 };
@@ -470,7 +470,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
                 let scalar = prev_accumulator + scalar_to_add;
                 scalar_acc.push(scalar);
 
-                let point = C::Extended::from(point_acc[i]) + point_to_add;
+                let point = point_acc[i] + point_to_add;
                 point_acc.push(C::from(point));
 
                 let point_to_add: C = point_to_add.into();
@@ -490,11 +490,11 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             // the point accumulator must start from identity and its scalar
             // from zero
             if i == 0 {
-                self.assert_equal_constant(acc_x, C::Scalar::zero(), None);
-                self.assert_equal_constant(acc_y, C::Scalar::one(), None);
+                self.assert_equal_constant(acc_x, C::Range::zero(), None);
+                self.assert_equal_constant(acc_y, C::Range::one(), None);
                 self.assert_equal_constant(
                     accumulated_bit,
-                    C::Scalar::zero(),
+                    C::Range::zero(),
                     None,
                 );
             }
@@ -505,7 +505,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             let xy_alpha = self.append_witness(xy_alphas[i]);
             let xy_beta = x_beta * y_beta;
 
-            let wnaf_round = WnafRound::<PrivateWire, C::Scalar> {
+            let wnaf_round = WnafRound::<PrivateWire, C::Range> {
                 acc_x,
                 acc_y,
                 accumulated_bit,
@@ -559,7 +559,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     ///
     /// The constraint added will enforce the following:
     /// `q_m · a · b  + q_l · a + q_r · b + q_o · o + q_4 · d + q_c + PI = 0`.
-    pub fn append_gate(&mut self, constraint: Constraint<C::Scalar>) {
+    pub fn append_gate(&mut self, constraint: Constraint<C::Range>) {
         let constraint = Constraint::arithmetic(constraint);
 
         self.append_custom_gate(constraint)
@@ -570,7 +570,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Return `None` if the output selector is zero
     pub fn append_evaluated_output(
         &mut self,
-        s: Constraint<C::Scalar>,
+        s: Constraint<C::Range>,
     ) -> Option<PrivateWire> {
         let a = s.w_a;
         let b = s.w_b;
@@ -585,7 +585,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let qr = s.q_r;
         let qd = s.q_d;
         let qc = s.q_c;
-        let pi = s.public_input.unwrap_or_else(C::Scalar::zero);
+        let pi = s.public_input.unwrap_or_else(C::Range::zero);
 
         let x = qm * a * b + ql * a + qr * b + qd * d + qc + pi;
 
@@ -605,9 +605,9 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
             // Can't use a match pattern here since `BlsScalar` doesn't derive
             // `PartialEq`
-            if y == C::Scalar::one() {
+            if y == C::Range::one() {
                 Some(-x)
-            } else if y == -C::Scalar::one() {
+            } else if y == -C::Range::one() {
                 Some(x)
             } else {
                 y.invert().map(|y| x * (-y))
@@ -620,10 +620,10 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Adds blinding factors to the witness polynomials with two dummy
     /// arithmetic constraints
     pub fn append_dummy_gates(&mut self) {
-        let six = self.append_witness(C::Scalar::from(6));
-        let one = self.append_witness(C::Scalar::from(1));
-        let seven = self.append_witness(C::Scalar::from(7));
-        let min_twenty = self.append_witness(-C::Scalar::from(20));
+        let six = self.append_witness(C::Range::from(6));
+        let one = self.append_witness(C::Range::from(1));
+        let seven = self.append_witness(C::Range::from(7));
+        let min_twenty = self.append_witness(-C::Range::from(20));
 
         // Add a dummy constraint so that we do not have zero polynomials
         let constraint = Constraint::default()
@@ -657,7 +657,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
     /// Constrain a scalar into the circuit description and return an allocated
     /// [`PrivateWire`] with its value
-    pub fn append_constant<A: Into<C::Scalar>>(
+    pub fn append_constant<A: Into<C::Range>>(
         &mut self,
         constant: A,
     ) -> PrivateWire {
@@ -705,13 +705,13 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         self.assert_equal_constant(
             *point.x(),
-            C::Scalar::zero(),
+            C::Range::zero(),
             Some(C::Range::into(-affine.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            C::Scalar::zero(),
+            C::Range::zero(),
             Some(C::Range::into(-affine.get_y())),
         );
 
@@ -721,7 +721,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Allocate a witness value into the composer and return its index.
     ///
     /// Create a public input with the scalar
-    pub fn append_public<A: Into<C::Scalar>>(
+    pub fn append_public<A: Into<C::Range>>(
         &mut self,
         public: A,
     ) -> PrivateWire {
@@ -737,7 +737,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     pub fn assert_equal(&mut self, a: PrivateWire, b: PrivateWire) {
         let constraint = Constraint::default()
             .left(1)
-            .right(-C::Scalar::one())
+            .right(-C::Range::one())
             .a(a)
             .b(b);
 
@@ -779,11 +779,11 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Constrain `a` to be equal to `constant + pi`.
     ///
     /// `constant` will be defined as part of the public circuit description.
-    pub fn assert_equal_constant<A: Into<C::Scalar>>(
+    pub fn assert_equal_constant<A: Into<C::Range>>(
         &mut self,
         a: PrivateWire,
         constant: A,
-        public: Option<C::Scalar>,
+        public: Option<C::Range>,
     ) {
         let constant = constant.into();
         let constraint = Constraint::default().left(1).constant(-constant).a(a);
@@ -811,13 +811,13 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         self.assert_equal_constant(
             *point.x(),
-            C::Scalar::zero(),
+            C::Range::zero(),
             Some(C::Range::into(-public.get_x())),
         );
 
         self.assert_equal_constant(
             *point.y(),
-            C::Scalar::zero(),
+            C::Range::zero(),
             Some(C::Range::into(-public.get_y())),
         );
     }
@@ -838,19 +838,13 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let x_2 = *b.x();
         let y_2 = *b.y();
 
-        let p1 = C::from_raw_unchecked(
-            C::scalar_to_range(self[x_1]),
-            C::scalar_to_range(self[y_1]),
-        );
-        let p2 = C::from_raw_unchecked(
-            C::scalar_to_range(self[x_2]),
-            C::scalar_to_range(self[y_2]),
-        );
+        let p1 = C::from_raw_unchecked(self[x_1], self[y_1]);
+        let p2 = C::from_raw_unchecked(self[x_2], self[y_2]);
 
         let point = C::from(p1 + p2);
 
-        let x_3 = C::Scalar::from(point.get_x());
-        let y_3 = C::Scalar::from(point.get_y());
+        let x_3 = C::Range::from(point.get_x());
+        let y_3 = C::Range::from(point.get_y());
 
         let x1_y2 = self[x_1] * self[y_2];
 
@@ -882,7 +876,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let zero = Self::ZERO;
         let constraint = Constraint::default()
             .mult(1)
-            .output(-C::Scalar::one())
+            .output(-C::Range::one())
             .a(a)
             .b(a)
             .o(a)
@@ -913,12 +907,12 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             .enumerate()
             .zip(decomposition.iter_mut())
             .fold(acc, |acc, ((i, w), d)| {
-                *d = self.append_witness(C::Scalar::from(*w as u64));
+                *d = self.append_witness(C::Range::from(*w as u64));
 
                 self.component_boolean(*d);
 
                 let constraint = Constraint::default()
-                    .left(C::Scalar::pow_of_2(i as u64))
+                    .left(C::Range::pow_of_2(i as u64))
                     .right(1)
                     .a(*d)
                     .b(acc);
@@ -990,7 +984,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         // 1 - bit
         let constraint = Constraint::default()
-            .left(-C::Scalar::one())
+            .left(-C::Range::one())
             .constant(1)
             .a(bit);
         let one_min_bit = self.gate_add(constraint);
@@ -1023,13 +1017,13 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         let b = self[bit];
         let v = self[value];
 
-        let f_x = C::Scalar::one() - b + (b * v);
+        let f_x = C::Range::one() - b + (b * v);
         let f_x = self.append_witness(f_x);
 
         let constraint = Constraint::default()
             .mult(1)
-            .left(-C::Scalar::one())
-            .output(-C::Scalar::one())
+            .left(-C::Range::one())
+            .output(-C::Range::one())
             .constant(1)
             .a(bit)
             .b(value)
@@ -1113,15 +1107,15 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         // last gate is reserved for either the genesis quad or the padding
         let used_gates = num_gates + 1;
 
-        let base = Constraint::<C::Scalar>::default();
+        let base = Constraint::<C::Range>::default();
         let base = Constraint::range(base);
         let mut constraints = vec![base; used_gates];
 
         // We collect the set of accumulators to return back to the user
         // and keep a running count of the current accumulator
         let mut accumulators: Vec<PrivateWire> = Vec::new();
-        let mut accumulator = C::Scalar::zero();
-        let four = C::Scalar::from(4);
+        let mut accumulator = C::Range::zero();
+        let four = C::Range::from(4);
 
         for i in pad..=num_quads {
             // convert each pair of bits to quads
@@ -1131,7 +1125,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
             let quad = q_0 + (2 * q_1);
 
             accumulator = four * accumulator;
-            accumulator += C::Scalar::from(quad);
+            accumulator += C::Range::from(quad);
 
             let accumulator_var = self.append_witness(accumulator);
 
@@ -1188,8 +1182,8 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_l · a + q_r · b + q_4 · d + q_c + PI`
-    pub fn gate_add(&mut self, s: Constraint<C::Scalar>) -> PrivateWire {
-        let s = Constraint::arithmetic(s).output(-C::Scalar::one());
+    pub fn gate_add(&mut self, s: Constraint<C::Range>) -> PrivateWire {
+        let s = Constraint::arithmetic(s).output(-C::Range::one());
 
         let o = self
             .append_evaluated_output(s)
@@ -1205,8 +1199,8 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     ///
     /// Set `q_o = (-1)` and override the output of the constraint with:
     /// `o := q_m · a · b + q_4 · d + q_c + PI`
-    pub fn gate_mul(&mut self, s: Constraint<C::Scalar>) -> PrivateWire {
-        let s = Constraint::arithmetic(s).output(-C::Scalar::one());
+    pub fn gate_mul(&mut self, s: Constraint<C::Range>) -> PrivateWire {
+        let s = Constraint::arithmetic(s).output(-C::Range::one());
 
         let o = self
             .append_evaluated_output(s)
