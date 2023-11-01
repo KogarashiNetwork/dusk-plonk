@@ -14,6 +14,7 @@ use zksnarks::error::Error;
 use zksnarks::plonk::ProvingKey;
 use zkstd::common::*;
 
+#[allow(clippy::type_complexity)]
 /// Computes the Quotient [`Coefficients`] given the [`EvaluationDomain`], a
 /// [`ProvingKey`] and some other info.
 pub(crate) fn compute<P: Pairing>(
@@ -116,6 +117,7 @@ pub(crate) fn compute<P: Pairing>(
     Ok(q_poly)
 }
 
+#[allow(clippy::type_complexity)]
 // Ensures that the circuit is satisfied
 fn compute_circuit_satisfiability_equation<P: Pairing>(
     fft: &Fft<P::ScalarField>,
@@ -216,6 +218,7 @@ fn compute_circuit_satisfiability_equation<P: Pairing>(
     t
 }
 
+#[allow(clippy::type_complexity)]
 fn compute_permutation_checks<P: Pairing>(
     fft: &Fft<P::ScalarField>,
     fft_n8: &Fft<P::ScalarField>,

@@ -436,7 +436,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
         // we should error instead of producing invalid proofs - otherwise this
         // can easily become an attack vector to either shutdown prover
         // services or create malicious statements
-        let scalar = C::Range::from(self[jubjub]);
+        let scalar = self[jubjub];
 
         let width = 2;
         let wnaf_entries = compute_windowed_naf::<C::Range>(scalar, width);
@@ -511,9 +511,9 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
                 acc_y,
                 accumulated_bit,
                 xy_alpha,
-                x_beta: x_beta.into(),
-                y_beta: y_beta.into(),
-                xy_beta: xy_beta.into(),
+                x_beta,
+                y_beta,
+                xy_beta,
             };
 
             let constraint =
@@ -844,8 +844,8 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
 
         let point = C::from(p1 + p2);
 
-        let x_3 = C::Range::from(point.get_x());
-        let y_3 = C::Range::from(point.get_y());
+        let x_3 = point.get_x();
+        let y_3 = point.get_y();
 
         let x1_y2 = self[x_1] * self[y_2];
 

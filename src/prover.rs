@@ -106,7 +106,7 @@ where
             <Transcript as TranscriptProtocol<P>>::append_scalar(
                 &mut transcript,
                 b"pi",
-                pi.into(),
+                pi,
             )
         });
 
