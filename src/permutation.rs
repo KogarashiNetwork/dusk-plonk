@@ -230,7 +230,7 @@ impl<F: FftField> Permutation<F> {
             .iter()
             .map(|sigma| {
                 let sigma = fft.dft(sigma.clone());
-                sigma.0.clone()
+                sigma.0
             })
             .collect();
         let gatewise_sigmas = izip!(

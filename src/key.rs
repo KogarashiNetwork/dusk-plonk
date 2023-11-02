@@ -37,7 +37,7 @@ impl<
     type PublicParameters = PlonkParams<P>;
     type ConstraintSystem = Plonk<P::JubjubAffine>;
 
-    fn new(
+    fn compile(
         pp: &Self::PublicParameters,
     ) -> Result<(Self::Prover, Self::Verifier), Error> {
         Self::compile_with_circuit(pp, b"plonk", &C::default())
@@ -49,6 +49,7 @@ impl<
         C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
     > PlonkKey<P, C>
 {
+    #[allow(clippy::type_complexity)]
     /// Create a new arguments set from a given circuit instance
     ///
     /// Use the provided circuit instead of the default implementation
@@ -230,7 +231,7 @@ impl<
         let s_sigma_3_eval_8n = fft_8n.coset_dft(s_sigma_3_poly.clone());
         let s_sigma_4_eval_8n = fft_8n.coset_dft(s_sigma_4_poly.clone());
 
-        let linear_eval_8n = fft_8n.coset_dft(min_p.clone());
+        let linear_eval_8n = fft_8n.coset_dft(min_p);
 
         let arithmetic_prover_key = arithmetic::ProvingKey {
             q_m: (q_m_poly, q_m_eval_8n),

@@ -10,7 +10,8 @@
 use crate::commitment_scheme::{batch_check, AggregateProof};
 use codec::{Decode, Encode};
 use poly_commit::{
-    batch_inversion, msm_curve_addtion, Coefficients, Commitment, EvaluationKey,
+    batch_inversion, msm_curve_addition, Coefficients, Commitment,
+    EvaluationKey,
 };
 #[cfg(feature = "std")]
 use rayon::prelude::*;
@@ -503,7 +504,7 @@ impl<P: Pairing> Proof<P> {
                 &self.evaluations,
             );
 
-        Commitment::new(msm_curve_addtion::<P::G1Affine>(
+        Commitment::new(msm_curve_addition::<P::G1Affine>(
             &[
                 arithmetic_points,
                 range_points,
