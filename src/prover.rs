@@ -75,13 +75,11 @@ where
         let Self {
             prover_key,
             keypair,
-            transcript,
+            mut transcript,
             size,
         } = self.clone();
         let k = size.trailing_zeros();
         let fft = Fft::<P::ScalarField>::new(k as usize);
-
-        let mut transcript = transcript.clone();
 
         let public_inputs = prover.instance();
         let public_input_indexes = prover.public_input_indexes();
@@ -425,7 +423,7 @@ where
                 d_w_poly.clone(),
                 prover_key.permutation.s_sigma_1.0.clone(),
                 prover_key.permutation.s_sigma_2.0.clone(),
-                prover_key.permutation.s_sigma_3.0.clone(),
+                prover_key.permutation.s_sigma_3.0,
             ],
             &z_challenge,
             &<Transcript as TranscriptProtocol<P>>::challenge_scalar(
