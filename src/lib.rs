@@ -51,7 +51,6 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod bit_iterator;
 mod permutation;
 
 mod key;
@@ -94,10 +93,10 @@ use zkstd::common::{
     TwistedEdwardsCurve, TwistedEdwardsExtended, Vec,
 };
 
-use crate::bit_iterator::BitIterator8;
 use crate::gadget::ecc::WnafRound;
 use crate::gadget::WitnessPoint;
 use crate::permutation::Permutation;
+use zksnarks::bit_iterator::BitIterator8;
 
 /// Construct and prove circuits
 #[derive(Debug, Clone)]
@@ -785,7 +784,7 @@ impl<C: TwistedEdwardsAffine> Plonk<C> {
     /// Asserts `a == b` by appending two gates
     pub fn assert_equal_point(&mut self, a: WitnessPoint, b: WitnessPoint) {
         self.assert_equal(*a.x(), *b.x());
-        self.assert_equal(*b.y(), *b.y());
+        self.assert_equal(*a.y(), *b.y());
     }
 
     /// Asserts `point == public`.
