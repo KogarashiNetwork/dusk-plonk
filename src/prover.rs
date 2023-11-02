@@ -13,8 +13,6 @@ pub use proof::Proof;
 use zksnarks::constraint_system::ConstraintSystem;
 use zksnarks::error::Error;
 
-use core::marker::PhantomData;
-use core::ops;
 use poly_commit::{Coefficients, Fft, PointsValue};
 use rand_core::RngCore;
 use sp_std::vec;
@@ -35,18 +33,6 @@ where
     pub(crate) keypair: PlonkParams<P>,
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
-    pairing: PhantomData<P>,
-}
-
-impl<P> ops::Deref for Prover<P>
-where
-    P: Pairing,
-{
-    type Target = ProvingKey<P>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.prover_key
-    }
 }
 
 impl<P> Prover<P>
@@ -69,7 +55,6 @@ where
             keypair,
             transcript,
             size,
-            pairing: PhantomData,
         }
     }
 
@@ -87,11 +72,16 @@ where
 
         circuit.synthesize(&mut prover)?;
 
-        let size = self.size;
+        let Self {
+            prover_key,
+            keypair,
+            transcript,
+            size,
+        } = self.clone();
         let k = size.trailing_zeros();
         let fft = Fft::<P::ScalarField>::new(k as usize);
 
-        let mut transcript = self.transcript.clone();
+        let mut transcript = transcript.clone();
 
         let public_inputs = prover.instance();
         let public_input_indexes = prover.public_input_indexes();
@@ -99,7 +89,7 @@ where
             PointsValue::new(Plonk::<P::JubjubAffine>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
-                self.size,
+                size,
             ));
 
         public_inputs.iter().for_each(|pi| {
@@ -136,10 +126,10 @@ where
 
         // commit to wire polynomials
         // ([a(x)]_1, [b(x)]_1, [c(x)]_1, [d(x)]_1)
-        let a_w_poly_commit = self.keypair.commit(&a_w_poly)?;
-        let b_w_poly_commit = self.keypair.commit(&b_w_poly)?;
-        let o_w_poly_commit = self.keypair.commit(&o_w_poly)?;
-        let d_w_poly_commit = self.keypair.commit(&d_w_poly)?;
+        let a_w_poly_commit = keypair.commit(&a_w_poly)?;
+        let b_w_poly_commit = keypair.commit(&b_w_poly)?;
+        let o_w_poly_commit = keypair.commit(&o_w_poly)?;
+        let d_w_poly_commit = keypair.commit(&d_w_poly)?;
 
         // Add wire polynomial commitments to transcript
         <Transcript as TranscriptProtocol<P>>::append_commitment(
@@ -180,10 +170,10 @@ where
             b"gamma",
         );
         let sigma = [
-            self.prover_key.permutation.s_sigma_1.0.clone(),
-            self.prover_key.permutation.s_sigma_2.0.clone(),
-            self.prover_key.permutation.s_sigma_3.0.clone(),
-            self.prover_key.permutation.s_sigma_4.0.clone(),
+            prover_key.permutation.s_sigma_1.0.clone(),
+            prover_key.permutation.s_sigma_2.0.clone(),
+            prover_key.permutation.s_sigma_3.0.clone(),
+            prover_key.permutation.s_sigma_4.0.clone(),
         ];
         let wires = [
             a_w_scalar.0.as_slice(),
@@ -197,7 +187,7 @@ where
 
         let mut z_poly = fft.idft(PointsValue(permutation));
         z_poly.blind(2, rng);
-        let z_poly_commit = self.keypair.commit(&z_poly)?;
+        let z_poly_commit = keypair.commit(&z_poly)?;
         <Transcript as TranscriptProtocol<P>>::append_commitment(
             &mut transcript,
             b"z",
@@ -247,7 +237,7 @@ where
         );
         let t_poly = quotient_poly::compute(
             &fft,
-            &self.prover_key,
+            &prover_key,
             &z_poly,
             wires,
             &pi_poly,
@@ -265,10 +255,10 @@ where
         let t_4_poly = Coefficients::new(t_poly[3 * domain_size..].to_vec());
 
         // commit to split quotient polynomial
-        let t_low_commit = self.keypair.commit(&t_low_poly)?;
-        let t_mid_commit = self.keypair.commit(&t_mid_poly)?;
-        let t_high_commit = self.keypair.commit(&t_high_poly)?;
-        let t_4_commit = self.keypair.commit(&t_4_poly)?;
+        let t_low_commit = keypair.commit(&t_low_poly)?;
+        let t_mid_commit = keypair.commit(&t_mid_poly)?;
+        let t_high_commit = keypair.commit(&t_high_poly)?;
+        let t_4_commit = keypair.commit(&t_4_poly)?;
 
         // add quotient polynomial commitments to transcript
         <Transcript as TranscriptProtocol<P>>::append_commitment(
@@ -304,7 +294,7 @@ where
         // compute linearization polynomial
         let (r_poly, evaluations) = linearization_poly::compute::<P>(
             fft.generator(),
-            &self.prover_key,
+            &prover_key,
             &(
                 alpha,
                 beta,
@@ -425,7 +415,7 @@ where
 
         // compute aggregate witness to polynomials evaluated at the evaluation
         // challenge z. The challenge v is selected inside
-        let aggregate_witness = self.keypair.compute_aggregate_witness(
+        let aggregate_witness = keypair.compute_aggregate_witness(
             &[
                 quot,
                 r_poly,
@@ -433,9 +423,9 @@ where
                 b_w_poly.clone(),
                 o_w_poly,
                 d_w_poly.clone(),
-                self.prover_key.permutation.s_sigma_1.0.clone(),
-                self.prover_key.permutation.s_sigma_2.0.clone(),
-                self.prover_key.permutation.s_sigma_3.0.clone(),
+                prover_key.permutation.s_sigma_1.0.clone(),
+                prover_key.permutation.s_sigma_2.0.clone(),
+                prover_key.permutation.s_sigma_3.0.clone(),
             ],
             &z_challenge,
             &<Transcript as TranscriptProtocol<P>>::challenge_scalar(
@@ -443,11 +433,11 @@ where
                 b"v_challenge",
             ),
         );
-        let w_z_chall_comm = self.keypair.commit(&aggregate_witness)?;
+        let w_z_chall_comm = keypair.commit(&aggregate_witness)?;
 
         // compute aggregate witness to polynomials evaluated at the shifted
         // evaluation challenge
-        let shifted_aggregate_witness = self.keypair.compute_aggregate_witness(
+        let shifted_aggregate_witness = keypair.compute_aggregate_witness(
             &[z_poly, a_w_poly, b_w_poly, d_w_poly],
             &(z_challenge * fft.generator()),
             &<Transcript as TranscriptProtocol<P>>::challenge_scalar(
@@ -455,8 +445,7 @@ where
                 b"v_challenge",
             ),
         );
-        let w_z_chall_w_comm =
-            self.keypair.commit(&shifted_aggregate_witness)?;
+        let w_z_chall_w_comm = keypair.commit(&shifted_aggregate_witness)?;
 
         let proof = Proof {
             a_comm: a_w_poly_commit,
