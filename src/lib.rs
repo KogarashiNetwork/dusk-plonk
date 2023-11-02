@@ -149,10 +149,6 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
     fn alloc_witness(&mut self, witness: C::Range) -> Self::Wire {
         self.append_witness(witness)
     }
-
-    fn instance(&self) -> Vec<C::Range> {
-        Vec::new()
-    }
 }
 
 impl<C: TwistedEdwardsAffine> ops::Index<PrivateWire> for Plonk<C> {
