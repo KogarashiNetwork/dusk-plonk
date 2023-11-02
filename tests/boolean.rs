@@ -55,7 +55,7 @@ fn boolean_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
+        PlonkKey::<TatePairing, JubjubAffine, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -273,9 +273,11 @@ fn select_works() {
         }
     }
 
-    let (prover, verifier): (Prover<TatePairing>, Verifier<TatePairing>) =
-        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
-            .expect("failed to compile circuit");
+    let (prover, verifier): (
+        Prover<TatePairing, JubjubAffine>,
+        Verifier<TatePairing>,
+    ) = PlonkKey::<TatePairing, JubjubAffine, DummyCircuit>::compile(&mut pp)
+        .expect("failed to compile circuit");
 
     // default works
     {

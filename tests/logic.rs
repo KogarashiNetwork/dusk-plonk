@@ -71,7 +71,7 @@ fn logic_and_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
+        PlonkKey::<TatePairing, JubjubAffine, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works
@@ -228,7 +228,7 @@ fn logic_xor_works() {
     }
 
     let (prover, verifier) =
-        PlonkKey::<TatePairing, DummyCircuit>::compile(&mut pp)
+        PlonkKey::<TatePairing, JubjubAffine, DummyCircuit>::compile(&mut pp)
             .expect("failed to compile circuit");
 
     // default works

@@ -4,13 +4,12 @@
 //
 // Copyright (c) DUSK NETWORK. All rights reserved.
 
-use super::Plonk;
 use crate::prover::Proof;
 
 use poly_commit::EvaluationKey;
 use zksnarks::error::Error;
 use zksnarks::plonk::{Transcript, TranscriptProtocol, VerificationKey};
-use zkstd::common::{Pairing, Vec};
+use zkstd::common::{Group, Pairing, Vec};
 
 /// Verify proofs of a given circuit
 pub struct Verifier<P: Pairing> {
@@ -65,11 +64,12 @@ impl<P: Pairing> Verifier<P> {
             )
         });
 
-        let dense_public_inputs = Plonk::<P::JubjubAffine>::dense_public_inputs(
-            &self.public_input_indexes,
-            public_inputs,
-            self.size,
-        );
+        let mut dense_public_inputs = vec![P::ScalarField::zero(); self.size];
+
+        self.public_input_indexes
+            .iter()
+            .zip(public_inputs.iter())
+            .for_each(|(idx, pi)| dense_public_inputs[*idx] = *pi);
 
         proof.verify(
             &self.verifier_key,

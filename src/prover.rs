@@ -8,6 +8,8 @@ mod linearization_poly;
 mod proof;
 mod quotient_poly;
 
+use core::marker::PhantomData;
+
 use super::Plonk;
 pub use proof::Proof;
 use zksnarks::constraint_system::ConstraintSystem;
@@ -20,24 +22,26 @@ use zksnarks::circuit::Circuit;
 use zksnarks::plonk::{
     PlonkParams, ProvingKey, Transcript, TranscriptProtocol, VerificationKey,
 };
-use zkstd::common::Vec;
-use zkstd::common::{FftField, Group, Pairing};
+use zkstd::common::{FftField, Group, Pairing, TwistedEdwardsAffine, Vec};
 
 /// Turbo Prover with processed keys
 #[derive(Clone)]
-pub struct Prover<P>
+pub struct Prover<P, A>
 where
     P: Pairing,
+    A: TwistedEdwardsAffine<Range = P::ScalarField>,
 {
     pub(crate) prover_key: ProvingKey<P>,
     pub(crate) keypair: PlonkParams<P>,
     pub(crate) transcript: Transcript,
     pub(crate) size: usize,
+    _mark: PhantomData<A>,
 }
 
-impl<P> Prover<P>
+impl<P, A> Prover<P, A>
 where
     P: Pairing,
+    A: TwistedEdwardsAffine<Range = P::ScalarField>,
 {
     pub(crate) fn new(
         label: Vec<u8>,
@@ -55,6 +59,7 @@ where
             keypair,
             transcript,
             size,
+            _mark: PhantomData,
         }
     }
 
@@ -65,10 +70,10 @@ where
         circuit: &C,
     ) -> Result<(Proof<P>, Vec<P::ScalarField>), Error>
     where
-        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
+        C: Circuit<A, ConstraintSystem = Plonk<A>>,
         R: RngCore,
     {
-        let mut prover = Plonk::<P::JubjubAffine>::initialize();
+        let mut prover = Plonk::<A>::initialize();
 
         circuit.synthesize(&mut prover)?;
 
@@ -77,6 +82,7 @@ where
             keypair,
             transcript,
             size,
+            _mark,
         } = self.clone();
         let k = size.trailing_zeros();
         let fft = Fft::<P::ScalarField>::new(k as usize);
@@ -86,7 +92,7 @@ where
         let public_inputs = prover.instance();
         let public_input_indexes = prover.public_input_indexes();
         let dense_public_inputs =
-            PointsValue::new(Plonk::<P::JubjubAffine>::dense_public_inputs(
+            PointsValue::new(Plonk::<A>::dense_public_inputs(
                 &public_input_indexes,
                 &public_inputs,
                 size,

@@ -19,23 +19,29 @@ use zksnarks::{
     circuit::Circuit, constraint_system::ConstraintSystem, error::Error,
     keypair::Keypair, plonk::PlonkParams,
 };
-use zkstd::common::{Group, Pairing, Ring};
+use zkstd::common::{Group, Pairing, Ring, TwistedEdwardsAffine};
 
 /// Generate the arguments to prove and verify a circuit
-pub struct PlonkKey<P: Pairing, C: Circuit<P::JubjubAffine>> {
+pub struct PlonkKey<
+    P: Pairing,
+    A: TwistedEdwardsAffine<Range = P::ScalarField>,
+    C: Circuit<A>,
+> {
     c: PhantomData<C>,
     p: PhantomData<P>,
+    a: PhantomData<A>,
 }
 
 impl<
         P: Pairing,
-        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
-    > Keypair<P, C> for PlonkKey<P, C>
+        A: TwistedEdwardsAffine<Range = P::ScalarField>,
+        C: Circuit<A, ConstraintSystem = Plonk<A>>,
+    > Keypair<P, A, C> for PlonkKey<P, A, C>
 {
-    type Prover = Prover<P>;
+    type Prover = Prover<P, A>;
     type Verifier = Verifier<P>;
     type PublicParameters = PlonkParams<P>;
-    type ConstraintSystem = Plonk<P::JubjubAffine>;
+    type ConstraintSystem = Plonk<A>;
 
     fn compile(
         pp: &Self::PublicParameters,
@@ -46,8 +52,9 @@ impl<
 
 impl<
         P: Pairing,
-        C: Circuit<P::JubjubAffine, ConstraintSystem = Plonk<P::JubjubAffine>>,
-    > PlonkKey<P, C>
+        A: TwistedEdwardsAffine<Range = P::ScalarField>,
+        C: Circuit<A, ConstraintSystem = Plonk<A>>,
+    > PlonkKey<P, A, C>
 {
     #[allow(clippy::type_complexity)]
     /// Create a new arguments set from a given circuit instance
@@ -59,8 +66,8 @@ impl<
         circuit: &C,
     ) -> Result<
         (
-            <Self as Keypair<P, C>>::Prover,
-            <Self as Keypair<P, C>>::Verifier,
+            <Self as Keypair<P, A, C>>::Prover,
+            <Self as Keypair<P, A, C>>::Verifier,
         ),
         Error,
     > {
