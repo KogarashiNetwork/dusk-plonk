@@ -7,9 +7,9 @@
 use crate::prover::Proof;
 
 use poly_commit::EvaluationKey;
+use sp_std::vec;
 use zksnarks::error::Error;
 use zksnarks::plonk::{Transcript, TranscriptProtocol, VerificationKey};
-use sp_std::vec;
 use zkstd::common::{Group, Pairing, Vec};
 
 /// Verify proofs of a given circuit
