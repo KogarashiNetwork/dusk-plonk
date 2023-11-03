@@ -133,10 +133,6 @@ impl<C: TwistedEdwardsAffine> ConstraintSystem<C> for Plonk<C> {
         slf
     }
 
-    fn constraints(&self) -> Self::Constraints {
-        self.constraints.clone()
-    }
-
     fn m(&self) -> usize {
         self.constraints.len()
     }

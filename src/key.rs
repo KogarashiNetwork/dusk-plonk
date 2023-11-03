@@ -100,19 +100,23 @@ impl<
         let mut q_variable_group_add =
             Points::new(vec![P::ScalarField::zero(); n]);
 
-        cs.constraints().into_iter().enumerate().for_each(|(i, c)| {
-            q_m.0[i] = c.q_m;
-            q_l.0[i] = c.q_l;
-            q_r.0[i] = c.q_r;
-            q_o.0[i] = c.q_o;
-            q_c.0[i] = c.q_c;
-            q_d.0[i] = c.q_d;
-            q_arith.0[i] = c.q_arith;
-            q_range.0[i] = c.q_range;
-            q_logic.0[i] = c.q_logic;
-            q_fixed_group_add.0[i] = c.q_fixed_group_add;
-            q_variable_group_add.0[i] = c.q_variable_group_add;
-        });
+        cs.constraints
+            .clone()
+            .iter()
+            .enumerate()
+            .for_each(|(i, c)| {
+                q_m.0[i] = c.q_m;
+                q_l.0[i] = c.q_l;
+                q_r.0[i] = c.q_r;
+                q_o.0[i] = c.q_o;
+                q_c.0[i] = c.q_c;
+                q_d.0[i] = c.q_d;
+                q_arith.0[i] = c.q_arith;
+                q_range.0[i] = c.q_range;
+                q_logic.0[i] = c.q_logic;
+                q_fixed_group_add.0[i] = c.q_fixed_group_add;
+                q_variable_group_add.0[i] = c.q_variable_group_add;
+            });
 
         let q_m_poly = fft.idft(q_m);
         let q_l_poly = fft.idft(q_l);
