@@ -9,7 +9,7 @@ use ec_pairing::TatePairing;
 use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::{Plonk, PlonkKey};
+use zkplonk::{Plonk, PlonkKey};
 use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;

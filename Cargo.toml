@@ -25,12 +25,12 @@ rayon = {version = "1.3", optional = true}
 codec = { default-features = false, features = ['derive'], package = 'parity-scale-codec', version = '2.0.0' }
 sp-std = { version = '3.0.0', default-features = false }
 
-zkstd = {version = "0.0.22", default-features = false}
-zksnarks = {version = "0.0.1", default-features = false}
-poly-commit = {version = "0.0.13", default-features = false}
-jub-jub = {version = "0.0.20", default-features = false}
-ec-pairing = {version = "0.0.14", default-features = false}
-bls-12-381 = {version = "0.0.23", default-features = false}
+zkstd = {path = "../zkstd", default-features = false}
+zksnarks = {path = "../zksnarks", default-features = false}
+poly-commit = {path = "../poly", default-features = false}
+jub-jub = {path = "../jubjub", default-features = false}
+ec-pairing = {path = "../pairing", default-features = false}
+bls-12-381 = {path = "../bls12_381", default-features = false}
 
 [dev-dependencies]
 criterion = "0.3"

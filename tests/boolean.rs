@@ -8,7 +8,7 @@ use ec_pairing::TatePairing;
 use jub_jub::JubjubAffine;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
-use zero_plonk::prelude::*;
+use zkplonk::prelude::*;
 use zksnarks::circuit::Circuit;
 use zksnarks::error::Error;
 use zksnarks::keypair::Keypair;
